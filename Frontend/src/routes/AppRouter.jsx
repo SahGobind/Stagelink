@@ -1,0 +1,170 @@
+import React, { Suspense, lazy } from 'react';
+import { Routes, Route } from 'react-router-dom';
+
+// Common Fallback Component
+import LoadingSpinner from '../components/common/LoadingSpinner';
+
+// Layouts (Loaded eagerly for instant structure rendering)
+import PublicLayout from '../layouts/PublicLayout';
+import AuthLayout from '../layouts/AuthLayout';
+import CandidateLayout from '../layouts/CandidateLayout';
+import AdminLayout from '../layouts/AdminLayout';
+
+// Route Guards
+import ProtectedRoute from './ProtectedRoute';
+import RoleBasedRoute from './RoleBasedRoute';
+
+// Lazy-Loaded Public Pages
+const HomePage = lazy(() => import('../pages/public/HomePage'));
+const AboutPage = lazy(() => import('../pages/public/AboutPage'));
+const HowItWorksPage = lazy(() => import('../pages/public/HowItWorksPage'));
+const ContactPage = lazy(() => import('../pages/public/ContactPage'));
+const PostJobPage = lazy(() => import('../pages/public/PostJobPage'));
+const PaymentPage = lazy(() => import('../pages/public/PaymentPage'));
+const PaymentCallbackPage = lazy(() => import('../pages/public/PaymentCallbackPage'));
+const DesignSystemPage = lazy(() => import('../pages/public/DesignSystemPage'));
+
+// Lazy-Loaded Opportunities Pages
+const OpportunitiesPage = lazy(() => import('../pages/opportunities/OpportunitiesPage'));
+const OpportunityDetailsPage = lazy(() => import('../pages/opportunities/OpportunityDetailsPage'));
+
+// Lazy-Loaded Auth Pages
+const SignUpPage = lazy(() => import('../pages/auth/SignUpPage'));
+const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
+const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage'));
+
+// Lazy-Loaded Candidate Pages
+const CandidateDashboardPage = lazy(() => import('../pages/candidate/DashboardPage'));
+const ProfileSetupPage = lazy(() => import('../pages/candidate/ProfileSetupPage'));
+const MyProfilePage = lazy(() => import('../pages/candidate/MyProfilePage'));
+const EditProfilePage = lazy(() => import('../pages/candidate/EditProfilePage'));
+const SavedOpportunitiesPage = lazy(() => import('../pages/candidate/SavedOpportunitiesPage'));
+const MyApplicationsPage = lazy(() => import('../pages/candidate/MyApplicationsPage'));
+const ApplicationDetailsPage = lazy(() => import('../pages/candidate/ApplicationDetailsPage'));
+const MessagesPage = lazy(() => import('../pages/candidate/MessagesPage'));
+const NotificationsPage = lazy(() => import('../pages/candidate/NotificationsPage'));
+const SettingsPage = lazy(() => import('../pages/candidate/SettingsPage'));
+const PublicCandidateProfilePage = lazy(() => import('../pages/candidate/PublicCandidateProfilePage'));
+
+// Lazy-Loaded Admin Pages
+const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage'));
+const CandidatesPage = lazy(() => import('../pages/admin/CandidatesPage'));
+const CandidateDetailsPage = lazy(() => import('../pages/admin/CandidateDetailsPage'));
+const AdminOpportunitiesPage = lazy(() => import('../pages/admin/AdminOpportunitiesPage'));
+const CreateOpportunityPage = lazy(() => import('../pages/admin/CreateOpportunityPage'));
+const EditOpportunityPage = lazy(() => import('../pages/admin/EditOpportunityPage'));
+const RankedCandidatesPage = lazy(() => import('../pages/admin/RankedCandidatesPage'));
+const AdminApplicationsPage = lazy(() => import('../pages/admin/AdminApplicationsPage'));
+const AdminMessagesPage = lazy(() => import('../pages/admin/AdminMessagesPage'));
+const AdminSettingsPage = lazy(() => import('../pages/admin/AdminSettingsPage'));
+
+// Lazy-Loaded Error Pages
+const NotFoundPage = lazy(() => import('../pages/errors/NotFoundPage'));
+const UnauthorizedPage = lazy(() => import('../pages/errors/UnauthorizedPage'));
+
+const PageFallback = () => (
+  <LoadingSpinner message="Loading..." className="min-h-[60vh]" />
+);
+
+const AppRouter = () => {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        {/* Public Routes */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route
+            path="/opportunities"
+            element={
+              <ProtectedRoute>
+                <OpportunitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/opportunities/:id"
+            element={
+              <ProtectedRoute>
+                <OpportunityDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/post-job" element={<PostJobPage />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+          <Route path="/escrow-payment" element={<PaymentPage />} />
+          <Route path="/design-system" element={<DesignSystemPage />} />
+          <Route path="/talent/:id" element={<PublicCandidateProfilePage />} />
+        </Route>
+
+        {/* Auth Routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+        </Route>
+
+        {/* Candidate Routes */}
+        <Route
+          path="/candidate"
+          element={
+            <ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['candidate', 'admin']}>
+                <CandidateLayout />
+              </RoleBasedRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<CandidateDashboardPage />} />
+          <Route path="profile/setup" element={<ProfileSetupPage />} />
+          <Route path="profile" element={<MyProfilePage />} />
+          <Route path="profile/public" element={<PublicCandidateProfilePage />} />
+          <Route path="profile/edit" element={<EditProfilePage />} />
+          <Route path="saved-opportunities" element={<SavedOpportunitiesPage />} />
+          <Route path="applications" element={<MyApplicationsPage />} />
+          <Route path="applications/:id" element={<ApplicationDetailsPage />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <RoleBasedRoute allowedRoles={['admin']}>
+                <AdminLayout />
+              </RoleBasedRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="candidates" element={<CandidatesPage />} />
+          <Route path="candidates/:id" element={<CandidateDetailsPage />} />
+          <Route path="opportunities" element={<AdminOpportunitiesPage />} />
+          <Route path="opportunities/create" element={<CreateOpportunityPage />} />
+          <Route path="opportunities/:id/edit" element={<EditOpportunityPage />} />
+          <Route path="opportunities/:id/candidates" element={<RankedCandidatesPage />} />
+          <Route path="candidates/ranked" element={<RankedCandidatesPage />} />
+          <Route path="applications" element={<AdminApplicationsPage />} />
+          <Route path="messages" element={<AdminMessagesPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+
+        {/* Error & Fallback Routes */}
+        <Route element={<PublicLayout />}>
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+};
+
+export default AppRouter;

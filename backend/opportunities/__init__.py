@@ -1,0 +1,1 @@
+"""Casting opportunities modular app."""

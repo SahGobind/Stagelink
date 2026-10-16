@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-primary-pink: #E11D48;
+    --color-primary-hover: #BE123C;
+    --color-soft-pink: #FFF1F2;
+    --color-dark-navy: #0F172A;
+    --color-secondary-text: #64748B;
+    --color-border: #E2E8F0;
+    --color-white: #FFFFFF;
+    --color-success: #15803D;
+    --color-warning: #B45309;
+    --color-error: #B91C1C;
+  }
+
+  html,
+  body {
+    @apply bg-white text-black font-sans antialiased selection:bg-black selection:text-white min-h-screen;
+    overflow-x: hidden;
+    width: 100%;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Accessible Visible Keyboard Focus Styling */
+  *:focus-visible {
+    outline: 2px solid #000000 !important;
+    outline-offset: 2px !important;
+  }
+
+  /* Improved contrast for headings */
+  h1, h2, h3, h4, h5, h6, .font-serif-heading {
+    font-feature-settings: "liga" 1;
+    color: #000000;
+  }
+
+  /* Accessible form interactive elements */
+  button, input, select, textarea {
+    touch-action: manipulation;
+  }
+}
+
+/* Reduced Motion Preference Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Subtle sleek accessible scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F3F4F6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9CA3AF;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4B5563;
+}
