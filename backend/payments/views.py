@@ -18,7 +18,7 @@ class CreatePaymentIntentView(APIView):
         intent = payment_service.create_payment_intent(
             amount=data["amount"],
             currency=data.get("currency", "USD"),
-            description=data.get("description", "StarCast Casting Test Fee"),
+            description=data.get("description", "StageLink Casting Test Fee"),
             metadata=data.get("metadata", {})
         )
         return Response({

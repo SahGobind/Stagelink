@@ -18,7 +18,7 @@ const AboutPage = () => {
     {
       icon: Users,
       title: 'Artists & Performers',
-      desc: 'From fresh talent to experienced screen and theatre veterans, StarCast provides a professional stage to showcase verified headshots, showreels, and credits.',
+      desc: 'From fresh talent to experienced screen and theatre veterans, StageLink provides a professional stage to showcase verified headshots, showreels, and credits.',
     },
     {
       icon: Building,
@@ -63,14 +63,14 @@ const AboutPage = () => {
         <PageContainer maxWidth="lg" className="space-y-6">
           <div className="space-y-3">
             <span className="text-xs font-bold text-black uppercase tracking-widest block">
-              About StarCast
+              About StageLink
             </span>
             <h1 className="text-3xl sm:text-5xl font-bold font-serif text-black tracking-tight leading-tight">
               Empowering Performers. <br />
               Elevating the Craft of <span className="text-black italic font-serif">Casting.</span>
             </h1>
             <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl pt-2">
-              StarCast was founded with a singular mission: to build a modern, cinematic, and transparent ecosystem where extraordinary talent and visionary productions discover each other seamlessly.
+              StageLink was founded with a singular mission: to build a modern, cinematic, and transparent ecosystem where extraordinary talent and visionary productions discover each other seamlessly.
             </p>
           </div>
         </PageContainer>
@@ -88,7 +88,7 @@ const AboutPage = () => {
                 Bridging the Gap Between Casting Call & Final Cut
               </h2>
               <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
-                The traditional casting landscape is often fragmented, opaque, and difficult for emerging performers to navigate. StarCast replaces outdated channels with an intuitive, unified platform that safeguards talent while giving filmmakers instant access to a curated roster of performers.
+                The traditional casting landscape is often fragmented, opaque, and difficult for emerging performers to navigate. StageLink replaces outdated channels with an intuitive, unified platform that safeguards talent while giving filmmakers instant access to a curated roster of performers.
               </p>
               <div className="space-y-2 pt-2 text-xs text-black font-semibold">
                 <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ const AboutPage = () => {
         </PageContainer>
       </section>
 
-      {/* 4. HOW STARCAST SUPPORTS PROFESSIONAL CASTING */}
+      {/* 4. HOW STAGELINK SUPPORTS PROFESSIONAL CASTING */}
       <section>
         <PageContainer maxWidth="lg">
           <div className="mb-10 space-y-1">
@@ -162,7 +162,7 @@ const AboutPage = () => {
               Industry Standards
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black">
-              How StarCast Supports Professional Casting
+              How StageLink Supports Professional Casting
             </h2>
           </div>
 
@@ -195,7 +195,7 @@ const AboutPage = () => {
                 Trust, Privacy & Performer Protection
               </h2>
               <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-                We believe trust is the cornerstone of creative collaboration. StarCast enforces strict security policies to protect performer data and promote safe casting environments.
+                We believe trust is the cornerstone of creative collaboration. StageLink enforces strict security policies to protect performer data and promote safe casting environments.
               </p>
             </div>
 
@@ -234,7 +234,7 @@ const AboutPage = () => {
           <div className="bg-neutral-100 border border-neutral-200 rounded-3xl p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="space-y-2 max-w-md">
               <h3 className="text-2xl font-bold font-serif text-black">
-                Ready to Join the StarCast Roster?
+                Ready to Join the StageLink Roster?
               </h3>
               <p className="text-xs text-neutral-600 leading-relaxed">
                 Create your professional acting profile today and explore hundreds of verified casting opportunities.

@@ -71,7 +71,7 @@ const ReportConversationModal = ({
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-900">
             <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <p>
-              StarCast strictly enforces casting professional standards. Verified teams will never solicit personal upfront fees or unauthorized contact.
+              StageLink strictly enforces casting professional standards. Verified teams will never solicit personal upfront fees or unauthorized contact.
             </p>
           </div>
 

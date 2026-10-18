@@ -25,7 +25,7 @@ const NotFoundPage = () => {
           <Link to="/" className="w-full sm:w-auto">
             <Button className="w-full sm:w-auto space-x-2">
               <Home className="w-4 h-4" />
-              <span>Back to StarCast Home</span>
+              <span>Back to StageLink Home</span>
             </Button>
           </Link>
           {isAuthenticated ? (

@@ -52,7 +52,7 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
             <Sparkles className="w-5 h-5 fill-current" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight text-brand-navy font-serif">StarCast</span>
+            <span className="text-lg font-bold tracking-tight text-brand-navy font-serif">StageLink</span>
             <span className="text-[9px] uppercase tracking-widest text-brand-pink font-semibold -mt-1">
               {role === 'admin' ? 'Studio Suite' : 'Performer Portal'}
             </span>

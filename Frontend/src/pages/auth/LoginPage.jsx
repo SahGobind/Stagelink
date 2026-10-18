@@ -16,10 +16,10 @@ import {
   TrendingUp,
   AlertCircle,
   Sparkles,
-  ShieldAlert,
   Building2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/authService';
 import heroActressImg from '../../assets/images/auth_hero_actress.jpg';
 
 const loginSchema = z.object({
@@ -57,7 +57,7 @@ const LoginPage = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: isRedirectToAdmin ? 'admin@starcast.com' : 'sarah@starcast.com',
+      email: isRedirectToAdmin ? 'admin@stagelink.com' : 'sarah@stagelink.com',
       password: 'password123',
       rememberMe: true,
     },
@@ -89,12 +89,23 @@ const LoginPage = () => {
     }
   };
 
-  const handleQuickFill = (role) => {
-    if (role === 'admin') {
-      setValue('email', 'admin@starcast.com', { shouldValidate: true });
+  const registeredCandidates = authService.getRegisteredCandidates();
+
+  const handleQuickFill = (target) => {
+    if (target === 'admin') {
+      setValue('email', 'admin@stagelink.com', { shouldValidate: true });
+      setValue('password', 'password123', { shouldValidate: true });
+    } else if (typeof target === 'object' && target.email) {
+      setValue('email', target.email, { shouldValidate: true });
+      setValue('password', 'password123', { shouldValidate: true });
+    } else if (target === 'aanya') {
+      setValue('email', 'aanya@stagelink.com', { shouldValidate: true });
+      setValue('password', 'password123', { shouldValidate: true });
+    } else if (target === 'rohit') {
+      setValue('email', 'rohit@stagelink.com', { shouldValidate: true });
       setValue('password', 'password123', { shouldValidate: true });
     } else {
-      setValue('email', 'sarah@starcast.com', { shouldValidate: true });
+      setValue('email', 'sarah@stagelink.com', { shouldValidate: true });
       setValue('password', 'password123', { shouldValidate: true });
     }
   };
@@ -146,7 +157,7 @@ const LoginPage = () => {
           {/* Background Actress Image in Cinematic Black and White */}
           <img
             src={heroActressImg}
-            alt="StarCast Glamour Artist"
+            alt="StageLink Glamour Artist"
             className="absolute inset-0 w-full h-full object-cover object-top opacity-90 grayscale contrast-110"
           />
 
@@ -161,7 +172,7 @@ const LoginPage = () => {
                 WELCOME BACK TO
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-serif text-white tracking-tight mt-1">
-                Star<span className="text-gray-400 italic">Cast</span>
+                Stage<span className="text-gray-400 italic">Link</span>
               </h1>
               <h2 className="text-2xl sm:text-3xl font-serif text-white font-medium mt-1">
                 Your Next Opportunity <br className="hidden sm:inline" />
@@ -170,7 +181,7 @@ const LoginPage = () => {
             </div>
 
             <p className="text-xs sm:text-sm text-gray-200/90 leading-relaxed max-w-md">
-              Log in to your StarCast account and continue your journey towards exciting casting opportunities, collaborations and success.
+              Log in to your StageLink account and continue your journey towards exciting casting opportunities, collaborations and success.
             </p>
 
             {/* Checklist with monochrome circular badges */}
@@ -218,7 +229,7 @@ const LoginPage = () => {
               Welcome Back
             </h2>
             <p className="text-xs sm:text-sm text-brand-text-secondary leading-relaxed">
-              Log in to your StarCast account and continue your acting journey.
+              Log in to your StageLink account and continue your acting journey.
             </p>
           </div>
 
@@ -246,13 +257,7 @@ const LoginPage = () => {
             </div>
           )}
 
-          {/* Frontend Demo Mode Security Notice */}
-          <div className="mb-4 p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-amber-900 text-[11px] leading-relaxed">
-            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p>
-              <strong className="font-bold">Frontend Demo Mode:</strong> Passwords are not persisted in plaintext. Real authentication, hashing, email verification, and session tokens require backend implementation.
-            </p>
-          </div>
+          {/* Server / Validation Error */}
 
           {/* Server / Validation Error */}
           {serverError && (
@@ -426,27 +431,53 @@ const LoginPage = () => {
             </button>
           </div>
 
-          {/* Quick Demo Fill Helper */}
-          <div className="mt-4 pt-4 border-t border-dashed border-gray-200 flex items-center justify-between text-[11px] text-gray-500">
-            <span className="flex items-center gap-1 font-semibold text-gray-800">
-              <Sparkles className="w-3 h-3 text-black" /> Quick Fill:
-            </span>
-            <div className="flex gap-2">
+          {/* Quick Candidate Switcher (Profile Isolation Demo) */}
+          <div className="mt-5 pt-4 border-t border-dashed border-gray-200 text-left space-y-2.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="flex items-center gap-1 font-bold text-gray-900">
+                <Sparkles className="w-3.5 h-3.5 text-brand-pink fill-brand-pink" />
+                <span>Switch Candidate to Test Profile:</span>
+              </span>
+              <span className="text-[10px] text-gray-500 font-medium">1-click fill</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              <button
+                type="button"
+                onClick={() => handleQuickFill('aanya')}
+                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center"
+                title="Aanya Sharma (Mumbai - Actor & Model)"
+              >
+                Aanya S.
+              </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('candidate')}
-                className="px-2.5 py-0.5 rounded-lg bg-neutral-100 text-black hover:bg-neutral-200 font-medium transition-colors"
+                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center"
+                title="Sophia Bennett (London - Dramatic Actor)"
               >
-                Candidate
+                Sophia B.
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('rohit')}
+                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center"
+                title="Rohit Verma (Delhi - Action & Stunt)"
+              >
+                Rohit V.
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('admin')}
-                className="px-2.5 py-0.5 rounded-lg bg-neutral-100 text-black hover:bg-neutral-200 font-medium transition-colors"
+                className="px-2.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100/80 text-[11px] font-bold text-purple-900 transition-all text-center"
+                title="Audrey Miller (Production Admin)"
               >
                 Admin
               </button>
             </div>
+            <p className="text-[10px] text-gray-500 leading-tight">
+              Only the profile for the logged-in candidate name is shown. Changing accounts displays that candidate's isolated profile.
+            </p>
           </div>
 
           {/* Bottom Sign Up Link */}
@@ -462,10 +493,10 @@ const LoginPage = () => {
         </div>
       </div>
 
-      {/* Bottom Section: Why Artists Choose StarCast */}
+      {/* Bottom Section: Why Artists Choose StageLink */}
       <div className="pt-6 pb-4">
         <h3 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy text-center mb-10">
-          Why Artists Choose StarCast
+          Why Artists Choose StageLink
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-center">

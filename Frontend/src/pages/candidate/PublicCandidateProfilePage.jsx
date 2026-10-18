@@ -19,12 +19,29 @@ import {
   Bell,
   X,
 } from 'lucide-react';
-import { getCandidateProfile } from '../../data/mockCandidates';
+import { getCandidateProfile, getCandidateById } from '../../data/mockCandidates';
+import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/common/Toast';
+import CandidateAccessLock from '../../components/common/CandidateAccessLock';
+import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 
 const PublicCandidateProfilePage = () => {
   const navigate = useNavigate();
-  const candidate = getCandidateProfile();
+  const { id } = useParams();
+  const { user } = useAuth();
+  const candidate = id ? getCandidateById(id) : getCandidateProfile(user);
+
+  const [hasPaid, setHasPaid] = useState(() => hasCompletedPostingPayment());
+
+  React.useEffect(() => {
+    const checkPayment = () => setHasPaid(hasCompletedPostingPayment());
+    window.addEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+    window.addEventListener('storage', checkPayment);
+    return () => {
+      window.removeEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+      window.removeEventListener('storage', checkPayment);
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState('About');
   const [isSaved, setIsSaved] = useState(false);
@@ -93,6 +110,35 @@ const PublicCandidateProfilePage = () => {
     },
   ];
 
+  if (!hasPaid) {
+    return (
+      <div className="min-h-screen bg-white text-left font-sans pb-24">
+        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+            <Link to="/" className="flex items-center space-x-2">
+              <Star className="w-5 h-5 text-brand-pink fill-brand-pink" />
+              <span className="text-xl font-bold font-serif text-gray-900 tracking-tight">StageLink</span>
+            </Link>
+            <div className="flex items-center space-x-4">
+              <Link to="/opportunities" className="text-xs font-semibold text-gray-600 hover:text-black">
+                Casting Calls
+              </Link>
+              <Link to="/post-job" className="px-4 py-2 bg-brand-pink text-white rounded-xl text-xs font-bold">
+                Announce Work
+              </Link>
+            </div>
+          </div>
+        </header>
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <CandidateAccessLock
+            title="Public Candidate Profile is Locked"
+            subtitle="To view public talent profiles, portfolios, and contact details, please announce work and complete payment via JuicePay or PayPal."
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-left font-sans pb-24">
       {/* Public Header Bar */}
@@ -102,7 +148,7 @@ const PublicCandidateProfilePage = () => {
           <Link to="/" className="flex items-center space-x-2">
             <Star className="w-5 h-5 text-brand-pink fill-brand-pink" />
             <span className="text-xl font-bold font-serif text-gray-900 tracking-tight">
-              StarCast
+              StageLink
             </span>
           </Link>
 
@@ -570,7 +616,7 @@ const PublicCandidateProfilePage = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 setIsContactModalOpen(false);
-                setToastMessage('Casting invitation dispatched via StarCast portal!');
+                setToastMessage('Casting invitation dispatched via StageLink portal!');
               }}
               className="space-y-3 pt-1 text-left"
             >

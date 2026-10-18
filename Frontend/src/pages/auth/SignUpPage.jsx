@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, ShieldAlert, Sparkles, AlertCircle, Building2, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, AlertCircle, Building2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/common/Input';
 import Checkbox from '../../components/common/Checkbox';
@@ -135,26 +135,6 @@ const SignUpPage = () => {
           </div>
         )}
 
-        {/* Profile Setup / Test Your Talent Step 1 Onboarding Banner */}
-        {!isFromProduction && (isProfileRedirect || isFromTestYourTalent) && (
-          <div className="p-4 bg-black text-white rounded-2xl flex items-start gap-3 shadow-xs border border-neutral-800">
-            <div className="w-8 h-8 rounded-xl bg-white text-black flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
-              1
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-sm">Step 1 of 2: Register Performer Account</span>
-                <span className="px-2 py-0.5 bg-neutral-800 text-neutral-300 text-[10px] rounded-full uppercase tracking-wider font-semibold">
-                  Required First
-                </span>
-              </div>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Candidates must create an account first. Once registered, you will be automatically logged in and redirected immediately to <strong className="text-white">Step 2: Create Profile</strong> to assemble your portfolio and headshots.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Heading */}
         <div className="space-y-1">
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
@@ -166,16 +146,6 @@ const SignUpPage = () => {
               : 'Begin your acting journey with verified casting calls. Detailed portfolio and headshots will be collected during profile setup.'}
           </p>
         </div>
-
-      {/* Demo Architecture Notice Banner */}
-      <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-amber-900 text-[11px] leading-relaxed">
-        <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">Frontend Demo Mode:</span> Passwords are not
-          persisted in plaintext. Real authentication, hashing, email verification,
-          and session tokens require backend implementation.
-        </div>
-      </div>
 
       {/* Form-level Error Feedback */}
       {serverError && (

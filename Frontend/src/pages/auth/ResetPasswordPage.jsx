@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, CheckCircle2, ArrowLeft, ShieldAlert, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle2, ArrowLeft, Sparkles } from 'lucide-react';
 import Input from '../../components/common/Input';
 
 const resetPasswordSchema = z
@@ -61,19 +61,9 @@ const ResetPasswordPage = () => {
             Choose New Password
           </h2>
           <p className="text-xs sm:text-sm text-brand-text-secondary leading-relaxed">
-            Create a strong password of at least 8 characters to secure your StarCast account.
+            Create a strong password of at least 8 characters to secure your StageLink account.
           </p>
         </div>
-
-      {/* Demo Architecture Notice Banner */}
-      <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-amber-900 text-[11px] leading-relaxed">
-        <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">Frontend Demo Mode:</span> Passwords are not
-          persisted in plaintext. Real authentication, hashing, email verification,
-          and session tokens require backend implementation.
-        </div>
-      </div>
 
       {isSuccess ? (
         <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
@@ -82,7 +72,7 @@ const ResetPasswordPage = () => {
             <h3 className="text-sm font-bold">Password Successfully Updated!</h3>
           </div>
           <p className="text-xs text-emerald-900 leading-relaxed">
-            Your new password has been saved. You can now use it to sign in to your StarCast account.
+            Your new password has been saved. You can now use it to sign in to your StageLink account.
           </p>
           <div className="pt-2 border-t border-emerald-200/60">
             <Link

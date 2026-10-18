@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import Avatar from '../../components/common/Avatar';
+import CandidateAccessLock from '../../components/common/CandidateAccessLock';
+import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 import { getCandidatesList } from '../../data/mockCandidates';
 
 const PAGE_SIZE = 5;
@@ -64,6 +66,18 @@ const VERIFICATION_OPTIONS = [
 const CandidatesPage = () => {
   const [searchParams] = useSearchParams();
   const initialStatus = searchParams.get('status') || 'all';
+
+  const [hasPaid, setHasPaid] = useState(() => hasCompletedPostingPayment());
+
+  useEffect(() => {
+    const checkPayment = () => setHasPaid(hasCompletedPostingPayment());
+    window.addEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+    window.addEventListener('storage', checkPayment);
+    return () => {
+      window.removeEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+      window.removeEventListener('storage', checkPayment);
+    };
+  }, []);
 
   const [candidates] = useState(() => getCandidatesList());
   const [search, setSearch] = useState('');
@@ -176,6 +190,25 @@ const CandidatesPage = () => {
         );
     }
   };
+
+  if (!hasPaid) {
+    return (
+      <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">
+        <div className="space-y-1 pb-2 border-b border-neutral-200/80">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+            Candidate &amp; Talent Directory
+          </h1>
+          <p className="text-xs text-neutral-500">
+            Browse, search, and discover verified performer profiles across StageLink.
+          </p>
+        </div>
+        <CandidateAccessLock
+          title="Candidate Profiles are Locked"
+          subtitle="You must announce work and complete the posting payment via JuicePay Credit Card or PayPal to view performer profiles and contact details."
+        />
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">

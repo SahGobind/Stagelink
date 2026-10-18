@@ -130,8 +130,24 @@ const ChatWindow = ({
         </div>
       </div>
 
-      {/* 2. RELATED OPPORTUNITY QUICK BANNER */}
-      {opportunity && (
+      {/* 2. RELATED OPPORTUNITY QUICK BANNER OR OPERATIONS DESK BANNER */}
+      {conversation.isOperationsTeam || conversation.id === 'conv-ops' ? (
+        <div className="px-4 py-2 bg-gradient-to-r from-neutral-900 via-neutral-800 to-emerald-950 text-white flex items-center justify-between gap-3 text-xs shrink-0 border-b border-emerald-900/40">
+          <div className="flex items-center gap-2 truncate">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="font-bold text-white shrink-0">
+              StageLink Operations Desk:
+            </span>
+            <span className="hidden sm:inline text-gray-300 truncate">
+              Direct text channel for profile verification, audition queries, shoot schedules & payouts.
+            </span>
+          </div>
+
+          <span className="text-[10px] font-semibold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-700/60 shrink-0">
+            🟢 Online Now
+          </span>
+        </div>
+      ) : opportunity ? (
         <div className="px-4 py-2 bg-neutral-900 text-white flex items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-2 truncate">
             <span className="px-1.5 py-0.5 rounded-md bg-white text-black text-[10px] font-bold shrink-0">
@@ -153,7 +169,7 @@ const ChatWindow = ({
             <ExternalLink className="w-3 h-3" />
           </Link>
         </div>
-      )}
+      ) : null}
 
       {/* 3. MESSAGE FEED */}
       <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-gray-50/40">
@@ -161,7 +177,7 @@ const ChatWindow = ({
           {/* Casting Liaison Disclaimer */}
           <div className="text-center py-2">
             <span className="px-3 py-1 rounded-full bg-gray-200/70 text-gray-500 text-[10px] font-semibold">
-              🔒 StarCast Verified Thread • Safe Talent Communication
+              🔒 StageLink Verified Thread • Safe Talent Communication
             </span>
           </div>
 
@@ -181,7 +197,10 @@ const ChatWindow = ({
 
       {/* 4. COMPOSER AT BOTTOM */}
       <div className="shrink-0">
-        <MessageComposer onSendMessage={onSendMessage} />
+        <MessageComposer
+          onSendMessage={onSendMessage}
+          isOperationsTeam={Boolean(conversation.isOperationsTeam || conversation.id === 'conv-ops')}
+        />
       </div>
     </div>
   );

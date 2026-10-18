@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import Toast from '../../components/common/Toast';
+import { setPendingOpportunity } from '../../utils/paymentAccess';
 
 const TALENT_OPTIONS = [
   'Dancers / Performers',
@@ -41,8 +42,6 @@ const PRODUCTION_TYPES = [
   'Voiceover / Animation',
 ];
 
-const CURRENCIES = ['€', '$', '£', '₹'];
-
 const CreateOpportunityPage = () => {
   const navigate = useNavigate();
 
@@ -53,14 +52,12 @@ const CreateOpportunityPage = () => {
     'Dancers / Performers',
     'Specialized Talent',
   ]);
-  const [shootDate, setShootDate] = useState('2026-11-20');
-  const [location, setLocation] = useState('Berlin');
+  const [shootDate, setShootDate] = useState('');
+  const [location, setLocation] = useState('');
   const [artistsNeeded, setArtistsNeeded] = useState(5);
-  const [compensation, setCompensation] = useState(150);
-  const [currency, setCurrency] = useState('€');
   const [projectTitle, setProjectTitle] = useState('The Berlin Requiem');
   const [description, setDescription] = useState(
-    'Seeking expressive movement performers and specialized talents for an atmospheric night exterior sequence set in Berlin.'
+    'Seeking expressive movement performers and specialized talents for an atmospheric night exterior sequence.'
   );
 
   const [errors, setErrors] = useState({});
@@ -80,8 +77,7 @@ const CreateOpportunityPage = () => {
   const validate = () => {
     const newErrors = {};
     if (!productionCompany.trim()) newErrors.productionCompany = 'Production company is required.';
-    if (!location.trim()) newErrors.location = 'Location is required.';
-    if (!shootDate) newErrors.shootDate = 'Shoot date is required.';
+    // Shoot date & location are NOT mandatory!
     if (selectedTalents.length === 0) newErrors.talents = 'Select at least one talent type.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -96,34 +92,46 @@ const CreateOpportunityPage = () => {
 
     const newOpportunity = {
       id: `opp-${Date.now()}`,
+      refId: `PRD-${Math.floor(100000 + Math.random() * 900000)}`,
       title: `${projectTitle || productionType} — ${selectedTalents.join(', ')}`,
       category: productionCategory,
       productionCompany,
-      location,
-      compensation: `${currency}${compensation} / artist`,
-      shootDate,
-      artistsNeeded: Number(artistsNeeded),
+      productionType,
+      location: location.trim() ? location.trim() : 'Open / Unspecified',
+      shootDate: shootDate ? shootDate : 'Flexible / To be decided',
+      artistsNeeded: Number(artistsNeeded) || 1,
       talentNeeded: selectedTalents,
       description,
       postedTime: 'Just now',
-      status: 'open',
+      listingFee: 1999,
+      currency: 'INR',
+      status: 'pending_payment',
+      listingStatus: 'pending_payment',
+      paymentStatus: 'pending',
     };
 
+    setPendingOpportunity(newOpportunity);
+
+    // Call backend order initializer if active
     try {
-      const stored = localStorage.getItem('starcast_custom_opportunities');
-      const existing = stored ? JSON.parse(stored) : [];
-      localStorage.setItem(
-        'starcast_custom_opportunities',
-        JSON.stringify([newOpportunity, ...existing])
-      );
+      fetch('/api/opportunities/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOpportunity),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.orderId) {
+            newOpportunity.paymentOrderId = data.orderId;
+            setPendingOpportunity(newOpportunity);
+          }
+        })
+        .catch(() => {});
     } catch {
-      // storage fallback
+      // offline fallback
     }
 
-    setToastMessage('Production requirement announced successfully!');
-    setTimeout(() => {
-      navigate('/admin/opportunities');
-    }, 1200);
+    navigate('/payment', { state: { opportunity: newOpportunity } });
   };
 
   return (
@@ -263,33 +271,31 @@ const CreateOpportunityPage = () => {
               {errors.talents && <p className="text-xs text-red-600">{errors.talents}</p>}
             </div>
 
-            {/* Shoot date */}
+            {/* Shoot date (Optional) */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-black">
-                Shoot date <span className="text-red-500">*</span>
+                Shoot date <span className="text-neutral-400 font-normal">(Optional)</span>
               </label>
               <input
                 type="date"
                 value={shootDate}
                 onChange={(e) => setShootDate(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
+                className="w-full px-4 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black cursor-pointer"
               />
-              {errors.shootDate && <p className="text-xs text-red-600">{errors.shootDate}</p>}
             </div>
 
-            {/* Location */}
+            {/* Location (Optional) */}
             <div className="space-y-1.5">
               <label className="block text-xs font-semibold text-black">
-                Location <span className="text-red-500">*</span>
+                Location <span className="text-neutral-400 font-normal">(Optional)</span>
               </label>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Berlin"
+                placeholder="e.g. Berlin (optional)"
                 className="w-full px-4 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
               />
-              {errors.location && <p className="text-xs text-red-600">{errors.location}</p>}
             </div>
 
             {/* Artists needed */}
@@ -305,45 +311,6 @@ const CreateOpportunityPage = () => {
                 placeholder="5"
                 className="w-full px-4 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
               />
-            </div>
-
-            {/* Compensation per talent */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-black">
-                  Compensation per talent ({currency}) <span className="text-red-500">*</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  {CURRENCIES.map((curr) => (
-                    <button
-                      key={curr}
-                      type="button"
-                      onClick={() => setCurrency(curr)}
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        currency === curr
-                          ? 'bg-black text-white'
-                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                      }`}
-                    >
-                      {curr}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 font-semibold text-sm">
-                  {currency}
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="10"
-                  value={compensation}
-                  onChange={(e) => setCompensation(e.target.value)}
-                  placeholder="150"
-                  className="w-full pl-8 pr-4 py-2.5 bg-white border border-neutral-300 rounded-xl text-sm text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black"
-                />
-              </div>
             </div>
 
             {/* Project Title & Description */}
@@ -378,11 +345,16 @@ const CreateOpportunityPage = () => {
             <div className="pt-2">
               <button
                 type="submit"
-                className="w-full py-3.5 px-4 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all active:scale-[0.99] flex items-center justify-center cursor-pointer"
+                className="w-full py-4 px-4 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
               >
-                Publish Work
+                <span>Next</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            <p className="text-center text-[11px] text-neutral-500 font-medium flex items-center justify-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-black" />
+              <span>Publication and candidate profile access require completed payment.</span>
+            </p>
           </form>
         </div>
 

@@ -128,7 +128,7 @@ const NotificationsPage = () => {
       <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between gap-3 text-xs text-gray-500">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>StarCast Verified Casting Notifications • Official Auditions and Legitimate Productions Only</span>
+          <span>StageLink Verified Casting Notifications • Official Auditions and Legitimate Productions Only</span>
         </div>
       </div>
     </PageContainer>

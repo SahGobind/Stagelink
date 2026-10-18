@@ -6,7 +6,7 @@ import Toast from '../../components/common/Toast';
 
 const AdminSettingsPage = () => {
   const [studioName, setStudioName] = useState('Auteur Pictures Studio');
-  const [adminEmail, setAdminEmail] = useState('admin@starcast.com');
+  const [adminEmail, setAdminEmail] = useState('admin@stagelink.com');
   const [toastMsg, setToastMsg] = useState('');
 
   const handleSave = (e) => {

@@ -34,6 +34,8 @@ import ApplicationStatusBadge from '../../components/applications/ApplicationSta
 import PortfolioGallery from '../../components/profile/PortfolioGallery';
 import ExperienceList from '../../components/profile/ExperienceList';
 import SkillsList from '../../components/profile/SkillsList';
+import CandidateAccessLock from '../../components/common/CandidateAccessLock';
+import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 
 import {
   getCandidateById,
@@ -47,6 +49,18 @@ import { mockOpportunities } from '../../data/mockOpportunities';
 
 const CandidateDetailsPage = () => {
   const { id } = useParams();
+
+  const [hasPaid, setHasPaid] = useState(() => hasCompletedPostingPayment());
+
+  useEffect(() => {
+    const checkPayment = () => setHasPaid(hasCompletedPostingPayment());
+    window.addEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+    window.addEventListener('storage', checkPayment);
+    return () => {
+      window.removeEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+      window.removeEventListener('storage', checkPayment);
+    };
+  }, []);
 
   // Candidate state (persisted via mockCandidates helper)
   const [candidate, setCandidate] = useState(null);
@@ -125,8 +139,8 @@ const CandidateDetailsPage = () => {
     setIsVerifyModalOpen(false);
     showToast(
       isCurrentlyVerified
-        ? `StarCast Verified status has been revoked for ${candidate.fullName}.`
-        : `Official StarCast Verified badge awarded to ${candidate.fullName}!`
+        ? `StageLink Verified status has been revoked for ${candidate.fullName}.`
+        : `Official StageLink Verified badge awarded to ${candidate.fullName}!`
     );
   };
 
@@ -202,6 +216,26 @@ const CandidateDetailsPage = () => {
     return (
       <PageContainer className="py-12 text-center">
         <p className="text-gray-500">Loading candidate profile...</p>
+      </PageContainer>
+    );
+  }
+
+  if (!hasPaid) {
+    return (
+      <PageContainer className="space-y-6 pb-16 py-8 text-left">
+        <div>
+          <Link
+            to="/admin/candidates"
+            className="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-black transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+            <span>Back to Candidates</span>
+          </Link>
+        </div>
+        <CandidateAccessLock
+          title="Candidate Profile Details are Locked"
+          subtitle="You must announce work and complete the posting payment via JuicePay Credit Card or PayPal to view performer profiles, audition reels, and contact info."
+        />
       </PageContainer>
     );
   }
@@ -368,7 +402,7 @@ const CandidateDetailsPage = () => {
               {isVerified ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600/95 text-white text-[11px] font-bold backdrop-blur-md shadow-xs">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>StarCast Verified Talent</span>
+                  <span>StageLink Verified Talent</span>
                 </span>
               ) : candidate.verificationStatus === 'pending_review' ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/90 text-white text-[11px] font-bold backdrop-blur-md shadow-xs">
@@ -517,8 +551,8 @@ const CandidateDetailsPage = () => {
 
               <p className="text-xs text-gray-600 leading-relaxed max-w-2xl">
                 {hasContactPermission
-                  ? 'This performer has authorized verified casting teams and StarCast administrators to view their primary phone and email coordinates for audition logistics.'
-                  : 'Candidate has not released private phone or direct email to external contacts. All casting invitations, audition notes, and audition bookings MUST be conducted via the StarCast platform messaging UI.'}
+                  ? 'This performer has authorized verified casting teams and StageLink administrators to view their primary phone and email coordinates for audition logistics.'
+                  : 'Candidate has not released private phone or direct email to external contacts. All casting invitations, audition notes, and audition bookings MUST be conducted via the StageLink platform messaging UI.'}
               </p>
 
               {/* Direct coordinates or masked representation */}
@@ -965,7 +999,7 @@ const CandidateDetailsPage = () => {
             <div className="space-y-1">
               <h4 className="font-bold">Cannot Verify Unreviewed Talent</h4>
               <p>
-                StarCast platform policy requires an admin to complete a preliminary review of headshots and identity before granting official Verified status.
+                StageLink platform policy requires an admin to complete a preliminary review of headshots and identity before granting official Verified status.
               </p>
             </div>
           </div>
@@ -1000,7 +1034,7 @@ const CandidateDetailsPage = () => {
       <Modal
         isOpen={isVerifyModalOpen}
         onClose={() => setIsVerifyModalOpen(false)}
-        title={isVerified ? 'Revoke Verified Talent Status' : 'Grant StarCast Verified Badge'}
+        title={isVerified ? 'Revoke Verified Talent Status' : 'Grant StageLink Verified Badge'}
         size="md"
       >
         <div className="p-6 space-y-4 text-xs">
@@ -1239,7 +1273,7 @@ const CandidateDetailsPage = () => {
               <Play className="w-12 h-12 mx-auto text-brand-pink fill-brand-pink opacity-80 animate-pulse" />
               <p className="font-semibold">{selectedVideo?.title}</p>
               <p className="text-gray-400 text-[11px]">
-                Embedded StarCast Audition Player (Duration: {selectedVideo?.duration})
+                Embedded StageLink Audition Player (Duration: {selectedVideo?.duration})
               </p>
             </div>
           </div>

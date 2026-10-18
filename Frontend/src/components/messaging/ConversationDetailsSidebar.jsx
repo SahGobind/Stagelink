@@ -55,29 +55,48 @@ const ConversationDetailsSidebar = ({
         {/* Quick status pill */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Verified StarCast Casting Partner</span>
+          <span>{conversation.isOperationsTeam ? 'Official StageLink Operations' : 'Verified StageLink Casting Partner'}</span>
         </div>
       </div>
 
-      {/* 2. RELATED CASTING OPPORTUNITY CARD */}
-      <div className="space-y-3 pb-5 border-b border-gray-100">
-        <div className="flex items-center justify-between">
+      {/* 2. RELATED CASTING OPPORTUNITY OR OPERATIONS DESK CARD */}
+      {conversation.isOperationsTeam ? (
+        <div className="space-y-3 pb-5 border-b border-gray-100">
           <h4 className="text-xs font-bold uppercase tracking-wider text-brand-navy">
-            Related Opportunity
+            Operations & Support Desk
           </h4>
-          {opportunity?.id && (
-            <Link
-              to={`/opportunities/${opportunity.id}`}
-              className="text-[11px] font-bold text-brand-navy hover:underline flex items-center gap-1"
-            >
-              <span>Details</span>
-              <ExternalLink className="w-3 h-3" />
-            </Link>
-          )}
+          <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 space-y-2.5 text-xs text-brand-navy">
+            <p className="font-bold text-emerald-950 flex items-center gap-1.5">
+              <span>🌟 Dedicated Performer Support</span>
+            </p>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Text our operations team directly with any questions about audition callbacks, profile approval, shoot logistics, and payment receipts.
+            </p>
+            <div className="pt-2 border-t border-emerald-200/60 text-[10px] text-emerald-900 space-y-1 font-medium">
+              <div>⏰ Desk Hours: Mon - Sat (9:00 AM - 8:00 PM IST)</div>
+              <div>⚡ Response Time: Typically under 15 minutes</div>
+            </div>
+          </div>
         </div>
+      ) : (
+        <div className="space-y-3 pb-5 border-b border-gray-100">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-brand-navy">
+              Related Opportunity
+            </h4>
+            {opportunity?.id && (
+              <Link
+                to={`/opportunities/${opportunity.id}`}
+                className="text-[11px] font-bold text-brand-navy hover:underline flex items-center gap-1"
+              >
+                <span>Details</span>
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            )}
+          </div>
 
-        {opportunity ? (
-          <div className="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-4 space-y-3">
+          {opportunity ? (
+            <div className="bg-gray-50/70 border border-gray-200/80 rounded-2xl p-4 space-y-3">
             {opportunity.image && (
               <div className="h-28 rounded-xl overflow-hidden relative">
                 <img
@@ -127,13 +146,14 @@ const ConversationDetailsSidebar = ({
             >
               View Full Casting Call
             </Link>
-          </div>
-        ) : (
-          <div className="p-4 rounded-xl bg-gray-50 text-center text-xs text-gray-400">
-            No specific opportunity linked to this thread.
-          </div>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-gray-50 text-center text-xs text-gray-400">
+              No specific opportunity linked to this thread.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3. SHARED AUDITION FILES & SIDES */}
       <div className="space-y-3 pb-5 border-b border-gray-100 flex-1">
@@ -202,7 +222,7 @@ const ConversationDetailsSidebar = ({
         </button>
 
         <p className="text-[10px] text-gray-400 text-center leading-normal pt-1">
-          StarCast Talent Trust & Safety • Communications are reviewed upon report submission.
+          StageLink Talent Trust & Safety • Communications are reviewed upon report submission.
         </p>
       </div>
     </div>

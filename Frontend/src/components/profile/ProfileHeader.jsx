@@ -58,7 +58,7 @@ const ProfileHeader = ({
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold border border-white/15 shadow-xs">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>StarCast Verified Talent</span>
+              <span>StageLink Verified Talent</span>
             </span>
             {candidate.unionStatus && (
               <span className="hidden sm:inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-medium border border-white/20">

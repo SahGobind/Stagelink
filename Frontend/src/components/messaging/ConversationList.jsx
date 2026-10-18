@@ -85,6 +85,29 @@ const ConversationList = ({
           )}
         </div>
 
+        {/* Quick Button to Text Operations Team */}
+        <button
+          type="button"
+          onClick={() => onSelect('conv-ops')}
+          className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all ${
+            activeId === 'conv-ops'
+              ? 'bg-black text-white border-black shadow-xs'
+              : 'bg-emerald-50/70 border-emerald-200 text-emerald-950 hover:bg-emerald-100/80'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Text Operations Team</span>
+          </div>
+          <span
+            className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+              activeId === 'conv-ops' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+            }`}
+          >
+            Direct Help
+          </span>
+        </button>
+
         {/* Filter Pills (All / Unread / Archived) */}
         <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 rounded-xl text-xs font-semibold">
           <button

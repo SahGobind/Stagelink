@@ -61,7 +61,7 @@ const ContactPage = () => {
             Get In Touch
           </span>
           <h1 className="text-3xl sm:text-5xl font-bold font-serif text-black tracking-tight">
-            Contact StarCast Support
+            Contact StageLink Support
           </h1>
           <p className="text-xs sm:text-sm text-brand-text-secondary max-w-xl">
             Have questions about casting calls, performer portfolios, or production partnerships? Our team is here to assist you.
@@ -155,8 +155,8 @@ const ContactPage = () => {
                   </div>
                   <div>
                     <h4 className="font-bold text-black">Email Inquiries</h4>
-                    <p className="mt-0.5">support@starcast.com</p>
-                    <p className="text-[11px] text-gray-400">casting@starcast.com (Productions)</p>
+                    <p className="mt-0.5">support@stagelink.com</p>
+                    <p className="text-[11px] text-gray-400">casting@stagelink.com (Productions)</p>
                   </div>
                 </div>
 

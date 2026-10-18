@@ -1,6 +1,6 @@
-// StarCast Application Constants
+// StageLink Application Constants
 
-export const APP_NAME = 'StarCast';
+export const APP_NAME = 'StageLink';
 
 export const USER_ROLES = {
   CANDIDATE: 'candidate',

@@ -21,23 +21,33 @@ import PageContainer from '../../components/layout/PageContainer';
 import PublicProfileModal from '../../components/profile/PublicProfileModal';
 import Toast from '../../components/common/Toast';
 import { getCandidateProfile, saveCandidateProfile } from '../../data/mockCandidates';
+import { useAuth } from '../../context/AuthContext';
 
 const MyProfilePage = () => {
   const navigate = useNavigate();
-  const [candidate, setCandidate] = useState(() => getCandidateProfile());
+  const { user } = useAuth();
+  const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
   const [isPublicPreviewOpen, setIsPublicPreviewOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isResumeUploadOpen, setIsResumeUploadOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
 
-  // Synchronize if profile changes
+  // Synchronize if profile changes or user changes
+  useEffect(() => {
+    setCandidate(getCandidateProfile(user));
+  }, [user]);
+
   useEffect(() => {
     const handleStorageChange = () => {
-      setCandidate(getCandidateProfile());
+      setCandidate(getCandidateProfile(user));
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    window.addEventListener('starcast_profile_updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('starcast_profile_updated', handleStorageChange);
+    };
+  }, [user]);
 
   const profileCompletion = candidate.profileCompletion || 85;
 
@@ -49,16 +59,19 @@ const MyProfilePage = () => {
   const handleResumeUploaded = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const updated = saveCandidateProfile({
-        portfolio: {
-          ...candidate.portfolio,
-          resume: {
-            fileName: file.name,
-            fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-            uploadDate: 'Just now',
+      const updated = saveCandidateProfile(
+        {
+          portfolio: {
+            ...candidate.portfolio,
+            resume: {
+              fileName: file.name,
+              fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+              uploadDate: 'Just now',
+            },
           },
         },
-      });
+        user
+      );
       setCandidate(updated);
       setIsResumeUploadOpen(false);
       setToastMessage('Resume uploaded successfully!');
@@ -67,12 +80,15 @@ const MyProfilePage = () => {
 
   const handleTogglePrivacy = (key) => {
     const current = candidate.privacySettings || {};
-    const updated = saveCandidateProfile({
-      privacySettings: {
-        ...current,
-        [key]: !current[key],
+    const updated = saveCandidateProfile(
+      {
+        privacySettings: {
+          ...current,
+          [key]: !current[key],
+        },
       },
-    });
+      user
+    );
     setCandidate(updated);
     setToastMessage('Privacy preferences updated.');
   };

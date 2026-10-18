@@ -8,25 +8,15 @@ import {
   ArrowRight,
   ShieldCheck,
   Users,
-  Globe,
-  FileText,
-  CreditCard,
-  Megaphone,
   Check,
   AlertCircle,
   Loader2,
-  Info,
   X,
-  Sparkles,
-  CheckCircle2,
-  Smartphone,
-  Building2,
-  QrCode,
-  ExternalLink,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import Toast from '../../components/common/Toast';
 import { useAuth } from '../../context/AuthContext';
+import { setPendingOpportunity } from '../../utils/paymentAccess';
 
 const PRODUCTION_CATEGORIES = [
   'Film & TV',
@@ -118,20 +108,6 @@ const TALENT_CHIPS = [
   'Other',
 ];
 
-const CURRENCIES = [
-  { code: 'INR', symbol: '₹', name: 'INR (₹)' },
-  { code: 'USD', symbol: '$', name: 'USD ($)' },
-  { code: 'EUR', symbol: '€', name: 'EUR (€)' },
-  { code: 'GBP', symbol: '£', name: 'GBP (£)' },
-];
-
-const RATE_UNITS = [
-  { value: 'Per Day', label: 'Per Day' },
-  { value: 'Per Project', label: 'Per Project' },
-  { value: 'Per Hour', label: 'Per Hour' },
-  { value: 'Flat Rate', label: 'Flat Rate' },
-];
-
 const PostJobPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -139,7 +115,7 @@ const PostJobPage = () => {
   // Prefill from authenticated company profile if available
   const defaultCompany =
     user?.companyName ||
-    (user?.role === 'admin' ? 'StarCast Studios' : '') ||
+    (user?.role === 'admin' ? 'StageLink Studios' : '') ||
     'Your production company';
 
   const [productionCompany, setProductionCompany] = useState(defaultCompany);
@@ -165,33 +141,16 @@ const PostJobPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const [shootDate, setShootDate] = useState('2026-11-20');
+  // Shoot date & location are NOT mandatory
+  const [shootDate, setShootDate] = useState('');
   const [location, setLocation] = useState('');
   const [artistsNeeded, setArtistsNeeded] = useState(5);
-  const [compensation, setCompensation] = useState(150);
-  const [currency, setCurrency] = useState('INR');
-  const [rateUnit, setRateUnit] = useState('Per Day');
   const [requirements, setRequirements] = useState('');
 
   // UI state
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
-  // Payment Option Modal & Publishing States
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [createdOpportunity, setCreatedOpportunity] = useState(null);
-  const [activePaymentMethod, setActivePaymentMethod] = useState('upi'); // 'upi' | 'card' | 'netbanking' | 'juspay'
-  const [selectedUpiApp, setSelectedUpiApp] = useState('gpay'); // 'gpay' | 'phonepe' | 'paytm' | 'id'
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [selectedBank, setSelectedBank] = useState('HDFC Bank');
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [publishedSuccessData, setPublishedSuccessData] = useState(null);
-  const [checkoutUrl, setCheckoutUrl] = useState('');
 
   // When production category changes, auto-select the first job type for that category
   const handleCategoryChange = (e) => {
@@ -252,17 +211,9 @@ const PostJobPage = () => {
       newErrors.otherTalent = 'Please specify the other talent needed.';
     }
 
-    if (!shootDate) {
-      newErrors.shootDate = 'Shoot date is required.';
-    }
-    if (!location.trim()) {
-      newErrors.location = 'Location (city, country) is required.';
-    }
+    // Shoot date & location are NOT mandatory!
     if (!artistsNeeded || Number(artistsNeeded) < 1 || !Number.isInteger(Number(artistsNeeded))) {
       newErrors.artistsNeeded = 'Artists needed must be a positive integer.';
-    }
-    if (compensation === '' || Number(compensation) < 0) {
-      newErrors.compensation = 'Valid compensation amount is required.';
     }
     if (requirements.length > 500) {
       newErrors.requirements = 'Requirements must not exceed 500 characters.';
@@ -294,115 +245,55 @@ const PostJobPage = () => {
         ? `Other: ${otherProductionTypeText.trim()}`
         : productionType;
 
-    const payload = {
+    const newOpportunity = {
+      id: `opp-${Date.now()}`,
+      refId: `PRD-${Math.floor(100000 + Math.random() * 900000)}`,
+      title: `${productionCompany.trim()} — ${finalProductionType}`,
       productionCompany: productionCompany.trim(),
       productionCategory: finalCategory,
       productionType: finalProductionType,
       talentNeeded: finalTalents,
-      shootDate,
-      location: location.trim(),
-      artistsNeeded: Number(artistsNeeded),
-      compensation: Number(compensation),
-      currency,
-      rateUnit,
+      shootDate: shootDate ? shootDate : 'Flexible / To be decided',
+      location: location.trim() ? location.trim() : 'Open / Unspecified',
+      artistsNeeded: Number(artistsNeeded) || 1,
       requirements: requirements.trim(),
+      listingFee: 1999,
+      currency: 'INR',
+      status: 'pending_payment',
+      listingStatus: 'pending_payment',
+      paymentStatus: 'pending',
       companyId: user?.id || 'comp-default',
-      customerEmail: user?.email || 'recruiter@starcast.in',
+      customerEmail: user?.email || 'recruiter@stagelink.in',
       customerPhone: user?.phoneNumber || '9876543210',
     };
 
+    // Store in pending session so payment page has immediate access
+    setPendingOpportunity(newOpportunity);
+
+    // Call backend order initializer if active
     try {
-      const response = await fetch('/api/opportunities/create-order', {
+      fetch('/api/opportunities/create-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.code === 'VALIDATION_ERROR') {
-          setErrors(data.errors || {});
-          setToastMessage('Validation failed on server. Please check your inputs.');
-        } else {
-          setToastMessage(data.error || 'Failed to initialize casting order.');
-        }
-        setIsSubmitting(false);
-        return;
-      }
-
-      setCreatedOpportunity(data.opportunity);
-      if (data.checkoutUrl) {
-        setCheckoutUrl(data.checkoutUrl);
-      }
-      setIsSubmitting(false);
-      // Open Payment Options Modal directly upon clicking Publish button!
-      setIsPaymentModalOpen(true);
-      setPublishedSuccessData(null);
-    } catch (err) {
-      console.error('Submission network error:', err);
-      setToastMessage('Backend service connection issue. Please verify server is running on port 5050.');
-      setIsSubmitting(false);
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newOpportunity),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.orderId) {
+            newOpportunity.paymentOrderId = data.orderId;
+            setPendingOpportunity(newOpportunity);
+          }
+        })
+        .catch(() => {});
+    } catch {
+      // offline fallback
     }
+
+    setIsSubmitting(false);
+
+    // Navigate to dedicated separate payment page!
+    navigate('/payment', { state: { opportunity: newOpportunity } });
   };
-
-  const handleConfirmPayment = async () => {
-    if (!createdOpportunity) return;
-    setIsProcessingPayment(true);
-
-    try {
-      // If user selected Juspay redirect mode and checkout URL is available
-      if (activePaymentMethod === 'juspay' && checkoutUrl) {
-        window.location.href = checkoutUrl;
-        return;
-      }
-
-      let methodLabel = 'UPI';
-      if (activePaymentMethod === 'upi') {
-        methodLabel = upiId ? `UPI (${upiId})` : `UPI (${selectedUpiApp.toUpperCase()})`;
-      } else if (activePaymentMethod === 'card') {
-        const last4 = cardNumber ? cardNumber.replace(/\s/g, '').slice(-4) : '4242';
-        methodLabel = `Card (•••• ${last4})`;
-      } else if (activePaymentMethod === 'netbanking') {
-        methodLabel = `NetBanking (${selectedBank})`;
-      } else if (activePaymentMethod === 'juspay') {
-        methodLabel = 'Juspay Gateway';
-      }
-
-      const response = await fetch('/api/opportunities/confirm-payment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          opportunityId: createdOpportunity.id,
-          orderId: createdOpportunity.paymentOrderId,
-          paymentMethod: methodLabel,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        setToastMessage(data.error || 'Payment confirmation failed.');
-        setIsProcessingPayment(false);
-        return;
-      }
-
-      // Successfully published!
-      setPublishedSuccessData(data);
-      setIsProcessingPayment(false);
-      setToastMessage('Payment completed! Casting opportunity is now published.');
-    } catch (err) {
-      console.error('Payment confirmation error:', err);
-      setToastMessage('Failed to confirm payment. Please try again.');
-      setIsProcessingPayment(false);
-    }
-  };
-
-  const selectedCurrencyObj = CURRENCIES.find((c) => c.code === currency) || CURRENCIES[0];
 
   return (
     <div className="bg-white min-h-screen text-gray-900 font-sans pb-24 pt-4 sm:pt-6 text-left">
@@ -721,12 +612,10 @@ const PostJobPage = () => {
                     )}
                   </div>
                 )}
-              </div>
-
-              {/* 5. Shoot Date */}
+              </div>              {/* 5. Shoot Date (Optional) */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-800">
-                  Shoot date <span className="text-brand-pink">*</span>
+                  Shoot date <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
                   <input
@@ -738,7 +627,7 @@ const PostJobPage = () => {
                         setErrors((prev) => ({ ...prev, shootDate: undefined }));
                       }
                     }}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all cursor-pointer"
                   />
                 </div>
                 {errors.shootDate && (
@@ -746,10 +635,10 @@ const PostJobPage = () => {
                 )}
               </div>
 
-              {/* 6. Location */}
+              {/* 6. Location (Optional) */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-800">
-                  Location <span className="text-brand-pink">*</span>
+                  Location <span className="text-gray-400 font-normal">(Optional)</span>
                 </label>
                 <input
                   type="text"
@@ -760,7 +649,7 @@ const PostJobPage = () => {
                       setErrors((prev) => ({ ...prev, location: undefined }));
                     }
                   }}
-                  placeholder="Enter location (city, state, country)"
+                  placeholder="Enter location (city, state, country - optional)"
                   className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
                 />
                 {errors.location && (
@@ -768,93 +657,34 @@ const PostJobPage = () => {
                 )}
               </div>
 
-              {/* 7 & 8. Artists Needed & Compensation per talent */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Artists Needed */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-gray-800">
-                    Artists needed <span className="text-brand-pink">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={artistsNeeded}
-                    onChange={(e) => {
-                      setArtistsNeeded(e.target.value);
-                      if (errors.artistsNeeded) {
-                        setErrors((prev) => ({ ...prev, artistsNeeded: undefined }));
-                      }
-                    }}
-                    placeholder="e.g. 5"
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
-                  />
-                  {errors.artistsNeeded && (
-                    <p className="text-[11px] text-red-600 font-medium">{errors.artistsNeeded}</p>
-                  )}
-                </div>
-
-                {/* Compensation per talent with Currency & Rate Unit */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-gray-800">
-                    Compensation per talent ({selectedCurrencyObj.symbol}){' '}
-                    <span className="text-brand-pink">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative w-28 shrink-0">
-                      <select
-                        value={currency}
-                        onChange={(e) => setCurrency(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-900 appearance-none pr-7 focus:outline-none focus:border-brand-pink cursor-pointer"
-                      >
-                        {CURRENCIES.map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.code}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-
-                    <input
-                      type="number"
-                      min="0"
-                      value={compensation}
-                      onChange={(e) => {
-                        setCompensation(e.target.value);
-                        if (errors.compensation) {
-                          setErrors((prev) => ({ ...prev, compensation: undefined }));
-                        }
-                      }}
-                      placeholder="Amount"
-                      className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
-                    />
-
-                    <div className="relative w-32 shrink-0 hidden sm:block">
-                      <select
-                        value={rateUnit}
-                        onChange={(e) => setRateUnit(e.target.value)}
-                        className="w-full px-2.5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-700 appearance-none pr-7 focus:outline-none focus:border-brand-pink cursor-pointer"
-                      >
-                        {RATE_UNITS.map((u) => (
-                          <option key={u.value} value={u.value}>
-                            {u.label}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
-                  {errors.compensation && (
-                    <p className="text-[11px] text-red-600 font-medium">{errors.compensation}</p>
-                  )}
-                </div>
+              {/* 7. Artists Needed */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-800">
+                  Artists needed <span className="text-brand-pink">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={artistsNeeded}
+                  onChange={(e) => {
+                    setArtistsNeeded(e.target.value);
+                    if (errors.artistsNeeded) {
+                      setErrors((prev) => ({ ...prev, artistsNeeded: undefined }));
+                    }
+                  }}
+                  placeholder="e.g. 5"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
+                />
+                {errors.artistsNeeded && (
+                  <p className="text-[11px] text-red-600 font-medium">{errors.artistsNeeded}</p>
+                )}
               </div>
 
-              {/* 9. Requirements (Optional Multiline 500 chars limit) */}
+              {/* 8. Requirements (Optional Multiline 500 chars limit) */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <label className="block text-xs font-bold text-gray-800">
-                    Requirements
+                    Requirements <span className="text-gray-400 font-normal">(Optional)</span>
                   </label>
                   <span
                     className={`text-[11px] font-medium ${
@@ -874,7 +704,7 @@ const PostJobPage = () => {
                 />
               </div>
 
-              {/* 10. Action Button: Publish Casting Call */}
+              {/* 9. Action Button: Continue to Payment */}
               <div className="pt-3">
                 <button
                   type="submit"
@@ -884,12 +714,11 @@ const PostJobPage = () => {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Validating &amp; Preparing Payment...</span>
+                      <span>Preparing Payment Gateway...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5" />
-                      <span>Publish Casting Call</span>
+                      <span>Next</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -899,392 +728,11 @@ const PostJobPage = () => {
               {/* Helper text */}
               <p className="text-center text-xs text-gray-500 font-medium flex items-center justify-center gap-1.5 pt-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-brand-pink" />
-                <span>Fill in all details above and click publish to select your payment option.</span>
+                <span>Publishing requires payment via JuicePay Credit Card or PayPal. Candidate profiles unlock after payment.</span>
               </p>
             </form>
           </div>
         </div>
-
-        {/* Payment Options Modal: Opens when user clicks Publish Casting Call */}
-        {isPaymentModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200"
-          >
-            <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-gray-100 text-left my-8 animate-in zoom-in-95 duration-200">
-              {!publishedSuccessData ? (
-                <>
-                  {/* Modal Header */}
-                  <div className="flex items-start justify-between border-b border-gray-100 pb-4">
-                    <div>
-                      <span className="text-[11px] font-bold text-brand-pink uppercase tracking-widest block">
-                        STEP 2 — PAYMENT &amp; PUBLICATION
-                      </span>
-                      <h2 className="text-xl sm:text-2xl font-bold font-serif text-gray-900 mt-0.5">
-                        Choose Payment Option
-                      </h2>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Complete payment to publish your casting opportunity live on StarCast.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsPaymentModalOpen(false)}
-                      className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
-                      aria-label="Close payment modal"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  {/* Opportunity Snapshot & Fee Summary */}
-                  <div className="p-4 rounded-2xl bg-pink-50/60 border border-pink-100/90 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <span className="text-[10px] font-semibold text-brand-pink uppercase tracking-wider">
-                          Opportunity Summary
-                        </span>
-                        <h3 className="text-sm font-bold text-gray-900 mt-0.5">
-                          {createdOpportunity?.productionCompany} — {createdOpportunity?.productionType}
-                        </h3>
-                        <p className="text-xs text-gray-500">
-                          {createdOpportunity?.productionCategory} • {createdOpportunity?.location}
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-[11px] text-gray-500 block">Listing Fee</span>
-                        <span className="text-xl font-bold text-gray-900">
-                          ₹{createdOpportunity?.listingFee || 1999}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-1 border-t border-pink-200/50 text-[11px] text-gray-600">
-                      <span>
-                        <strong className="text-gray-800">Shoot Date:</strong> {createdOpportunity?.shootDate}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        <strong className="text-gray-800">Talent:</strong>{' '}
-                        {Array.isArray(createdOpportunity?.talentNeeded)
-                          ? createdOpportunity.talentNeeded.join(', ')
-                          : createdOpportunity?.talentNeeded}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        <strong className="text-gray-800">Compensation:</strong>{' '}
-                        {createdOpportunity?.currency} {createdOpportunity?.compensation}{' '}
-                        {createdOpportunity?.rateUnit}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Payment Method Selector Tabs */}
-                  <div className="space-y-3">
-                    <label className="block text-xs font-bold text-gray-800">
-                      Select Payment Method
-                    </label>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {/* UPI */}
-                      <button
-                        type="button"
-                        onClick={() => setActivePaymentMethod('upi')}
-                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                          activePaymentMethod === 'upi'
-                            ? 'bg-pink-50 border-brand-pink text-brand-pink ring-2 ring-pink-100 font-bold shadow-2xs'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <Smartphone className="w-5 h-5" />
-                        <span className="text-xs">UPI / QR</span>
-                        <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
-                          Instant
-                        </span>
-                      </button>
-
-                      {/* Card */}
-                      <button
-                        type="button"
-                        onClick={() => setActivePaymentMethod('card')}
-                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                          activePaymentMethod === 'card'
-                            ? 'bg-pink-50 border-brand-pink text-brand-pink ring-2 ring-pink-100 font-bold shadow-2xs'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <CreditCard className="w-5 h-5" />
-                        <span className="text-xs">Cards</span>
-                        <span className="text-[10px] text-gray-400">Debit / Credit</span>
-                      </button>
-
-                      {/* Net Banking */}
-                      <button
-                        type="button"
-                        onClick={() => setActivePaymentMethod('netbanking')}
-                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                          activePaymentMethod === 'netbanking'
-                            ? 'bg-pink-50 border-brand-pink text-brand-pink ring-2 ring-pink-100 font-bold shadow-2xs'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <Building2 className="w-5 h-5" />
-                        <span className="text-xs">Net Banking</span>
-                        <span className="text-[10px] text-gray-400">All Banks</span>
-                      </button>
-
-                      {/* Juspay Gateway */}
-                      <button
-                        type="button"
-                        onClick={() => setActivePaymentMethod('juspay')}
-                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
-                          activePaymentMethod === 'juspay'
-                            ? 'bg-pink-50 border-brand-pink text-brand-pink ring-2 ring-pink-100 font-bold shadow-2xs'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        <ShieldCheck className="w-5 h-5" />
-                        <span className="text-xs">Juspay</span>
-                        <span className="text-[10px] text-gray-400">Gateway</span>
-                      </button>
-                    </div>
-
-                    {/* Method Content Panel */}
-                    <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 text-xs text-gray-700 space-y-3">
-                      {/* UPI Option Form */}
-                      {activePaymentMethod === 'upi' && (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between text-xs font-bold text-gray-800">
-                            <span>Choose UPI App or enter VPA ID</span>
-                            <span className="text-[10px] text-gray-400 font-normal">Fast 1-click Pay</span>
-                          </div>
-
-                          <div className="grid grid-cols-4 gap-2">
-                            {['gpay', 'phonepe', 'paytm', 'bhim'].map((app) => (
-                              <button
-                                key={app}
-                                type="button"
-                                onClick={() => setSelectedUpiApp(app)}
-                                className={`py-2 px-1 rounded-xl border text-center text-xs font-semibold capitalize transition-all cursor-pointer ${
-                                  selectedUpiApp === app
-                                    ? 'bg-white border-brand-pink text-brand-pink shadow-xs'
-                                    : 'bg-white/60 border-gray-200 text-gray-600 hover:bg-white'
-                                }`}
-                              >
-                                {app === 'gpay'
-                                  ? 'Google Pay'
-                                  : app === 'phonepe'
-                                  ? 'PhonePe'
-                                  : app === 'paytm'
-                                  ? 'Paytm'
-                                  : 'BHIM'}
-                              </button>
-                            ))}
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="block text-[11px] font-semibold text-gray-600">
-                              Or enter your UPI ID (VPA)
-                            </label>
-                            <input
-                              type="text"
-                              value={upiId}
-                              onChange={(e) => setUpiId(e.target.value)}
-                              placeholder="e.g. mobileNumber@upi or yourname@okhdfcbank"
-                              className="w-full px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-brand-pink"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Card Option Form */}
-                      {activePaymentMethod === 'card' && (
-                        <div className="space-y-3">
-                          <div className="space-y-1">
-                            <label className="block text-[11px] font-semibold text-gray-600">Card Number</label>
-                            <input
-                              type="text"
-                              maxLength={19}
-                              value={cardNumber}
-                              onChange={(e) => setCardNumber(e.target.value)}
-                              placeholder="4111 2222 3333 4444"
-                              className="w-full px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-brand-pink font-mono"
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <label className="block text-[11px] font-semibold text-gray-600">Expiry (MM/YY)</label>
-                              <input
-                                type="text"
-                                maxLength={5}
-                                value={cardExpiry}
-                                onChange={(e) => setCardExpiry(e.target.value)}
-                                placeholder="12/28"
-                                className="w-full px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-brand-pink text-center"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="block text-[11px] font-semibold text-gray-600">CVV</label>
-                              <input
-                                type="password"
-                                maxLength={4}
-                                value={cardCvv}
-                                onChange={(e) => setCardCvv(e.target.value)}
-                                placeholder="•••"
-                                className="w-full px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-brand-pink text-center"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-1">
-                            <label className="block text-[11px] font-semibold text-gray-600">Cardholder Name</label>
-                            <input
-                              type="text"
-                              value={cardName}
-                              onChange={(e) => setCardName(e.target.value)}
-                              placeholder="Name on card"
-                              className="w-full px-3.5 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:border-brand-pink"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Net Banking Form */}
-                      {activePaymentMethod === 'netbanking' && (
-                        <div className="space-y-2.5">
-                          <label className="block text-[11px] font-semibold text-gray-600">
-                            Select Your Bank
-                          </label>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                            {['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank', 'Kotak Mahindra', 'Other Bank'].map(
-                              (bank) => (
-                                <button
-                                  key={bank}
-                                  type="button"
-                                  onClick={() => setSelectedBank(bank)}
-                                  className={`py-2 px-2 rounded-xl border text-center text-xs font-semibold transition-all cursor-pointer ${
-                                    selectedBank === bank
-                                      ? 'bg-white border-brand-pink text-brand-pink shadow-xs'
-                                      : 'bg-white/60 border-gray-200 text-gray-600 hover:bg-white'
-                                  }`}
-                                >
-                                  {bank}
-                                </button>
-                              )
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Juspay Gateway Info */}
-                      {activePaymentMethod === 'juspay' && (
-                        <div className="space-y-2 text-xs">
-                          <p className="font-semibold text-gray-800">Official Juspay Encrypted Gateway</p>
-                          <p className="text-gray-500 text-[11px]">
-                            {checkoutUrl
-                              ? 'Clicking below will securely redirect you to Juspay standard checkout session.'
-                              : 'Juspay gateway integration is ready. Click below to verify and complete direct payment.'}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="space-y-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={handleConfirmPayment}
-                      disabled={isProcessingPayment}
-                      className="w-full py-4 px-6 rounded-2xl bg-brand-pink hover:bg-rose-700 text-white text-sm sm:text-base font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {isProcessingPayment ? (
-                        <>
-                          <Loader2 className="w-5 h-5 animate-spin" />
-                          <span>Processing Payment &amp; Publishing...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-4 h-4" />
-                          <span>Pay ₹{createdOpportunity?.listingFee || 1999} &amp; Publish Job</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsPaymentModalOpen(false)}
-                      className="w-full py-2 text-center text-xs text-gray-500 hover:text-gray-800 font-medium cursor-pointer"
-                    >
-                      Cancel and keep as draft
-                    </button>
-                  </div>
-                </>
-              ) : (
-                /* Success Published State */
-                <div className="text-center py-4 space-y-5 animate-in zoom-in-95 duration-200">
-                  <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center mx-auto shadow-sm">
-                    <CheckCircle2 className="w-9 h-9 stroke-[2.5]" />
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-widest block">
-                      PAYMENT CONFIRMED • LIVE ON STARCAST
-                    </span>
-                    <h2 className="text-2xl font-bold font-serif text-gray-900">
-                      Casting Call Published!
-                    </h2>
-                    <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                      Your casting opportunity has been published live. Talents across StarCast can now discover and apply.
-                    </p>
-                  </div>
-
-                  {/* Reference card */}
-                  <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200 text-left text-xs space-y-2 max-w-md mx-auto">
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>Listing Ref ID:</span>
-                      <span className="font-mono font-bold text-gray-900">
-                        {publishedSuccessData.opportunity?.refId || 'PRD-ACTIVE'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>Transaction ID:</span>
-                      <span className="font-mono text-gray-800 text-[11px]">
-                        {publishedSuccessData.txnId || 'TXN-CONFIRMED'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-gray-600">
-                      <span>Status:</span>
-                      <span className="font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full text-[11px]">
-                        Published &amp; Active
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Navigation links */}
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                    <Link
-                      to="/opportunities"
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-brand-pink text-white text-xs font-bold hover:bg-rose-700 transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <span>View Live Casting Calls</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </Link>
-
-                    <Link
-                      to="/admin/opportunities"
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-800 text-xs font-bold hover:bg-gray-50 transition-all cursor-pointer"
-                    >
-                      <span>Recruiter Dashboard</span>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         <Toast message={toastMessage} onClose={() => setToastMessage('')} />
       </PageContainer>

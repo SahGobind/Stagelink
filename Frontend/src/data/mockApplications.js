@@ -1,5 +1,5 @@
 /**
- * Centralized Mock Application Data for StarCast
+ * Centralized Mock Application Data for StageLink
  *
  * Provides realistic application state shared across Admin and Candidate portals.
  * Persists changes in localStorage so status transitions immediately update My Applications.
@@ -562,7 +562,7 @@ export const updateApplicationStatus = (applicationId, newStatus, internalNote =
       status: newStatus,
       changedAt: timestamp,
       note: internalNote || `Status updated to ${newStatus.replace('_', ' ')} by Admin.`,
-      changedBy: 'StarCast Admin',
+      changedBy: 'StageLink Admin',
     };
 
     // Build internal note entry if provided

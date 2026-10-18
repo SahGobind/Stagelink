@@ -21,9 +21,14 @@ import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Modal from '../../components/common/Modal';
 import { mockOpportunities } from '../../data/mockOpportunities';
+import { getCustomOpportunities } from '../../utils/paymentAccess';
 
 const AdminOpportunitiesPage = () => {
-  const [opportunities, setOpportunities] = useState(mockOpportunities);
+  const [opportunities, setOpportunities] = useState(() => {
+    const custom = getCustomOpportunities();
+    const ids = new Set(custom.map((c) => c.id));
+    return [...custom, ...mockOpportunities.filter((m) => !ids.has(m.id))];
+  });
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [isLoading, setIsLoading] = useState(true);

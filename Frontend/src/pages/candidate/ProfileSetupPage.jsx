@@ -18,6 +18,7 @@ import {
   getCandidateProfile,
   saveCandidateProfile,
 } from '../../data/mockCandidates';
+import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/common/Toast';
 
 const CATEGORIES = ['Actor', 'Model', 'Dancer', 'Singer', 'Voice Artist', 'Other'];
@@ -43,7 +44,8 @@ const PROJECT_TYPES = [
 const ProfileSetupPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const candidate = getCandidateProfile();
+  const { user } = useAuth();
+  const candidate = getCandidateProfile(user);
 
   const stepFromQuery = parseInt(searchParams.get('step') || '1', 10);
   const [currentStep, setCurrentStep] = useState(
@@ -53,17 +55,18 @@ const ProfileSetupPage = () => {
   const [toastMessage, setToastMessage] = useState('');
 
   // Step 1: Basic Information
-  const [fullName, setFullName] = useState(candidate.fullName || 'Aanya Sharma');
+  const initialName = candidate.fullName || user?.fullName || 'Candidate Performer';
+  const [fullName, setFullName] = useState(initialName);
   const [selectedCategories, setSelectedCategories] = useState(
-    candidate.categories || ['Actor', 'Model']
+    candidate.categories || ['Actor']
   );
   const [profilePhoto, setProfilePhoto] = useState(
-    candidate.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'
+    candidate.avatar || user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'
   );
-  const [dateOfBirth, setDateOfBirth] = useState(candidate.dateOfBirth || '1998-03-12');
+  const [dateOfBirth, setDateOfBirth] = useState(candidate.dateOfBirth || user?.dateOfBirth || '2000-01-01');
   const [gender, setGender] = useState(candidate.gender || 'Female');
-  const [country, setCountry] = useState(candidate.country || 'India');
-  const [city, setCity] = useState(candidate.city || 'Mumbai');
+  const [country, setCountry] = useState(candidate.country || (user?.location?.includes(',') ? user.location.split(',')[1].trim() : 'India'));
+  const [city, setCity] = useState(candidate.city || (user?.location ? user.location.split(',')[0].trim() : 'Mumbai'));
 
   // Step 2: Professional Details
   const [headline, setHeadline] = useState(candidate.headline || 'Actor • Model');
@@ -134,35 +137,40 @@ const ProfileSetupPage = () => {
   };
 
   const handleSaveAndNext = () => {
-    const updated = saveCandidateProfile({
-      fullName,
-      categories: selectedCategories,
-      headline: selectedCategories.join(' • '),
-      avatar: profilePhoto,
-      dateOfBirth,
-      gender,
-      country,
-      city,
-      location: `${city}, ${country}`,
-      bio,
-      experienceYears,
-      height,
-      nationality,
-      appearance,
-      bodyType,
-      hairColor,
-      eyeColor,
-      languages,
-      preferredProjectTypes: preferredProjects,
-      portfolio: {
-        ...candidate.portfolio,
-        headshots,
-        showreel: {
-          ...candidate.portfolio?.showreel,
-          url: showreelUrl,
+    const updated = saveCandidateProfile(
+      {
+        fullName,
+        categories: selectedCategories,
+        headline: selectedCategories.join(' • '),
+        avatar: profilePhoto,
+        dateOfBirth,
+        gender,
+        country,
+        city,
+        location: `${city}, ${country}`,
+        contactEmail: user?.email || candidate.contactEmail,
+        phone: user?.phoneNumber || candidate.phone,
+        bio,
+        experienceYears,
+        height,
+        nationality,
+        appearance,
+        bodyType,
+        hairColor,
+        eyeColor,
+        languages,
+        preferredProjectTypes: preferredProjects,
+        portfolio: {
+          ...candidate.portfolio,
+          headshots,
+          showreel: {
+            ...candidate.portfolio?.showreel,
+            url: showreelUrl,
+          },
         },
       },
-    });
+      user
+    );
 
     if (currentStep < 5) {
       setCurrentStep(currentStep + 1);
@@ -191,7 +199,7 @@ const ProfileSetupPage = () => {
             <Link to="/" className="flex items-center space-x-2">
               <Star className="w-6 h-6 text-brand-pink fill-brand-pink" />
               <span className="text-xl font-bold font-serif text-gray-900 tracking-tight">
-                StarCast
+                StageLink
               </span>
             </Link>
 

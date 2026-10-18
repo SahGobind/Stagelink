@@ -11,6 +11,7 @@ import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
 import EmptyState from '../../components/common/EmptyState';
 import { mockOpportunities, OPPORTUNITY_CATEGORIES } from '../../data/mockOpportunities';
+import { getCustomOpportunities } from '../../utils/paymentAccess';
 
 const OpportunitiesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -89,15 +90,20 @@ const OpportunitiesPage = () => {
   );
 
   // Filter & Sort Logic
+  const allOpportunities = useMemo(() => {
+    const custom = getCustomOpportunities();
+    return [...custom, ...mockOpportunities];
+  }, []);
+
   const filteredAndSortedOpportunities = useMemo(() => {
-    const filtered = mockOpportunities.filter((opp) => {
+    const filtered = allOpportunities.filter((opp) => {
       // 1. Search filter (title, company, description, requirementsSummary, tags)
       const q = search.trim().toLowerCase();
       const matchesSearch =
         !q ||
         opp.title.toLowerCase().includes(q) ||
-        opp.productionCompany.toLowerCase().includes(q) ||
-        opp.description.toLowerCase().includes(q) ||
+        (opp.productionCompany && opp.productionCompany.toLowerCase().includes(q)) ||
+        (opp.description && opp.description.toLowerCase().includes(q)) ||
         (opp.roleDescription && opp.roleDescription.toLowerCase().includes(q)) ||
         (opp.requirementsSummary && opp.requirementsSummary.toLowerCase().includes(q)) ||
         (opp.tags && opp.tags.some((t) => t.toLowerCase().includes(q)));

@@ -35,7 +35,7 @@ const PublicNavbar = () => {
           <Link to="/" className="flex items-center space-x-2 focus-visible:outline-none">
             <Star className="w-6 h-6 text-brand-pink fill-brand-pink" />
             <span className="text-2xl font-bold font-serif tracking-tight text-gray-900">
-              StarCast
+              StageLink
             </span>
           </Link>
 

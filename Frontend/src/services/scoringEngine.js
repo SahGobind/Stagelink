@@ -1,5 +1,5 @@
 /**
- * STARCAST — Transparent, Explainable Candidate Match Scoring Engine
+ * STAGELINK — Transparent, Explainable Candidate Match Scoring Engine
  * 
  * Default Weight Distribution (100 Points Total):
  * 1. Required skills and role-specific abilities: 30 points

@@ -1,5 +1,5 @@
 /**
- * Centralized Mock Notifications Data for StarCast
+ * Centralized Mock Notifications Data for StageLink
  */
 
 export const initialMockNotifications = [

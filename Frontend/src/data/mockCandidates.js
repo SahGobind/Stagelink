@@ -1,5 +1,5 @@
 /**
- * Centralized Mock Candidate Data for StarCast
+ * Centralized Mock Candidate Data for StageLink
  *
  * Provides realistic performer profiles with complete personal,
  * professional, skills, portfolio media, and privacy settings.
@@ -780,12 +780,365 @@ export const mockCandidates = [
   },
 ];
 
+export const sophiaCandidateProfile = {
+  id: 'cand-sophia',
+  fullName: 'Sophia Bennett',
+  categories: ['Actor', 'Voice Artist'],
+  headline: 'Actor • Dramatic Screen & Stage Performer',
+  location: 'London, UK / Mumbai',
+  country: 'United Kingdom',
+  city: 'London',
+  dateOfBirth: '2001-04-15',
+  age: 25,
+  gender: 'Female',
+  height: "5'8\" (173 cm)",
+  nationality: 'British / Overseas Citizen',
+  appearance: 'Light',
+  bodyType: 'Athletic / Slim',
+  hairColor: 'Auburn / Brown',
+  eyeColor: 'Hazel Green',
+  contactEmail: 'sophia.bennett@example.com',
+  phone: '+44 7700 900123',
+  avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+  coverImage: 'https://images.unsplash.com/photo-1514306191717-452ec28c7814?auto=format&fit=crop&w=1600&q=80',
+  profileCompletion: 90,
+  verificationStatus: 'verified',
+  isReviewed: true,
+  contactPermissionGranted: true,
+  status: 'active',
+  registeredDate: '2026-09-20',
+  shortlistedOpportunities: ['opp-1', 'opp-2'],
+  availabilityStatus: 'Available for Projects',
+  availability: 'Available for Auditions & Callbacks',
+  travelStatus: 'Open to travel internationally',
+  datesFlexibility: 'Flexible with dates',
+  unionStatus: 'Equity UK & SAG-AFTRA Eligible',
+  experienceYears: '4+',
+  experienceLevel: '4+ Years Experience',
+  yearsOfExperience: 4,
+  projectsCount: '12+',
+  languagesCount: 2,
+  locationDisplay: 'London / Mumbai',
+  bio: 'Classical and contemporary screen actress trained at LAMDA. Experienced in independent period dramas, psychological thrillers, and voiceover performance capture.',
+  languages: ['English (RP & General American)', 'French (Fluent)'],
+  skills: [
+    'Screen Acting',
+    'Stage Combat',
+    'Voice Modulation',
+    'Period Dialects',
+    'Meisner Technique',
+    'Choral Singing',
+  ],
+  preferredProjectTypes: [
+    'Films',
+    'OTT / Web Series',
+    'Theatre',
+    'Advertisements',
+  ],
+  skillsByCategory: {
+    acting: [
+      'Screen Acting',
+      'Stage Combat',
+      'Meisner Technique',
+      'Classical Text',
+      'Monologue Delivery',
+    ],
+    voiceActing: [
+      'Voice-over',
+      'RP British Accent',
+      'American Accent',
+      'French Accent',
+      'Videogame VO',
+    ],
+  },
+  experience: [
+    {
+      id: 'proj-sophia-1',
+      role: 'Lead - Claire Ashton',
+      project: 'The Velvet Horizon (Feature Film)',
+      type: 'Films',
+      director: 'Elena Rostova',
+      year: '2025',
+      description: 'Lead protagonist in post-war European mystery feature selected for London Film Festival.',
+    },
+    {
+      id: 'proj-sophia-2',
+      role: 'Supporting Role - Dr. Tanya Roy',
+      project: 'Mumbai Diaries (OTT Series)',
+      type: 'OTT / Web Series',
+      director: 'Claire Moreau',
+      year: '2026',
+      description: 'Series regular role as forensic investigator in high-stakes crime procedural.',
+    },
+  ],
+  education: [
+    {
+      id: 'edu-sophia-1',
+      institution: 'London Academy of Music & Dramatic Art (LAMDA)',
+      degree: 'BA (Hons) Professional Acting',
+      year: '2020 - 2023',
+      notes: 'Graduated with distinction in Classical Theatre and Screen Performance.',
+    },
+  ],
+  portfolio: {
+    headshots: [
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=800&q=80',
+    ],
+    portfolioPhotos: [
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    ],
+    showreel: {
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      title: 'Sophia Bennett - Drama & Screen Reel',
+      duration: '02:18',
+      thumbnail: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    },
+    introVideo: {
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      title: 'Sophia Bennett - Introduction',
+      duration: '01:30',
+      thumbnail: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    },
+    actingReel: {
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      title: 'Official Drama Showreel',
+      duration: '02:18',
+      thumbnail: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    },
+    resume: {
+      fileName: 'Sophia_Bennett_Acting_Resume.pdf',
+      fileSize: '1.2 MB',
+      uploadDate: 'October 2026',
+      isLocalDemo: true,
+      summary: 'Professional acting resume with London West End and screen drama credits.',
+    },
+  },
+  privacySettings: {
+    showEmailPublicly: false,
+    showPhonePublicly: false,
+    showExactDob: true,
+    profileVisibility: 'public',
+  },
+};
+
+export const rohitCandidateProfile = {
+  id: 'cand-rohit',
+  fullName: 'Rohit Verma',
+  categories: ['Actor', 'Model'],
+  headline: 'Action Performer • Screen Actor • Commercial Model',
+  location: 'Delhi, India / Mumbai',
+  country: 'India',
+  city: 'Delhi',
+  dateOfBirth: '1997-09-05',
+  age: 29,
+  gender: 'Male',
+  height: "5'11\" (180 cm)",
+  nationality: 'Indian',
+  appearance: 'Medium / Olive',
+  bodyType: 'Athletic / Muscular',
+  hairColor: 'Dark Brown',
+  eyeColor: 'Dark Brown',
+  contactEmail: 'rohit.verma@example.com',
+  phone: '+91 98111 87654',
+  avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+  coverImage: 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1600&q=80',
+  profileCompletion: 85,
+  verificationStatus: 'verified',
+  isReviewed: true,
+  contactPermissionGranted: true,
+  status: 'active',
+  registeredDate: '2026-09-25',
+  shortlistedOpportunities: ['opp-2'],
+  availabilityStatus: 'Available for Projects',
+  availability: 'Available for Shoots & Auditions',
+  travelStatus: 'Ready to travel PAN-India & overseas',
+  datesFlexibility: 'Flexible with dates',
+  unionStatus: 'CINTAA Registered',
+  experienceYears: '3+',
+  experienceLevel: '3+ Years Experience',
+  yearsOfExperience: 3,
+  projectsCount: '10+',
+  languagesCount: 3,
+  locationDisplay: 'Delhi / Mumbai',
+  bio: 'Dynamic action performer and screen actor trained in martial arts (Taekwondo Black Belt), screen combat, and high-energy commercial campaigns.',
+  languages: ['Hindi', 'English', 'Punjabi'],
+  skills: [
+    'Screen Combat',
+    'Martial Arts',
+    'Stunt Work',
+    'Commercial Modeling',
+    'Hindi Diction',
+    'Fitness Modeling',
+  ],
+  preferredProjectTypes: [
+    'Films',
+    'OTT / Web Series',
+    'Advertisements',
+    'Music Videos',
+  ],
+  skillsByCategory: {
+    acting: [
+      'Screen Combat',
+      'Action Choreography',
+      'Intense Drama',
+      'Hindi Diction',
+    ],
+    modeling: [
+      'Fitness Modeling',
+      'Commercial Print',
+      'Ramp Walk',
+    ],
+  },
+  experience: [
+    {
+      id: 'proj-rohit-1',
+      role: 'Action Lead - Kabir',
+      project: 'Shadow Strike (Action Thriller)',
+      type: 'OTT / Web Series',
+      director: 'Rohan Sen',
+      year: '2025',
+      description: 'Performed all martial arts and tactical stunt sequences for high-octane mini-series.',
+    },
+  ],
+  education: [
+    {
+      id: 'edu-rohit-1',
+      institution: 'Barry John Acting Studio, Mumbai',
+      degree: 'Diploma in Film & Screen Acting',
+      year: '2021 - 2022',
+      notes: 'Intensive screen acting, body movement, and voice projection.',
+    },
+  ],
+  portfolio: {
+    headshots: [
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    ],
+    portfolioPhotos: [
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    ],
+    showreel: {
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      title: 'Rohit Verma - Action & Drama Showreel',
+      duration: '02:05',
+      thumbnail: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    },
+    introVideo: {
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      title: 'Rohit Verma - Introduction',
+      duration: '01:15',
+      thumbnail: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    },
+    actingReel: {
+      url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+      title: 'Action Stunt Reel',
+      duration: '02:05',
+      thumbnail: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    },
+    resume: {
+      fileName: 'Rohit_Verma_Action_Resume.pdf',
+      fileSize: '1.1 MB',
+      uploadDate: 'October 2026',
+      isLocalDemo: true,
+      summary: 'Action actor and stunt performer resume with martial arts certifications.',
+    },
+  },
+  privacySettings: {
+    showEmailPublicly: false,
+    showPhonePublicly: false,
+    showExactDob: true,
+    profileVisibility: 'public',
+  },
+};
+
 /**
  * Storage helpers for candidate profile synchronization
  */
 export const CANDIDATE_PROFILE_STORAGE_KEY = 'starcast_candidate_profile';
+export const CANDIDATE_PROFILES_MAP_STORAGE_KEY = 'starcast_candidate_profiles_map';
 export const CANDIDATES_LIST_STORAGE_KEY = 'starcast_admin_candidates_list';
 export const PROFILE_WIZARD_DRAFT_KEY = 'starcast_profile_wizard_draft';
+
+// Profile resolution helper
+const resolveCurrentAuthUser = () => {
+  try {
+    const raw = localStorage.getItem('starcast_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeCandidateKey = (userOrKey) => {
+  if (!userOrKey) return 'aanya-sharma';
+  if (typeof userOrKey === 'string') {
+    return userOrKey.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  }
+  // Try ID, email, or fullName
+  const rawKey = userOrKey.id || userOrKey.email || userOrKey.fullName || 'aanya-sharma';
+  return String(rawKey).toLowerCase().replace(/[^a-z0-9]/g, '-');
+};
+
+const getSeededProfileForUser = (user) => {
+  if (!user) return initialCandidateProfile;
+  const identifier = `${user.id || ''} ${user.email || ''} ${user.fullName || ''}`.toLowerCase();
+  if (identifier.includes('sophia') || identifier.includes('sarah@')) {
+    return sophiaCandidateProfile;
+  }
+  if (identifier.includes('rohit')) {
+    return rohitCandidateProfile;
+  }
+  if (identifier.includes('aanya')) {
+    return initialCandidateProfile;
+  }
+  // Construct fresh profile specifically for this candidate name!
+  const candidateName = user.fullName || 'Candidate Performer';
+  const locationCity = user.location ? user.location.split(',')[0].trim() : 'Mumbai';
+  const locationCountry = user.location && user.location.includes(',') ? user.location.split(',')[1].trim() : 'India';
+
+  return {
+    ...initialCandidateProfile,
+    id: user.id || `cand-${Date.now()}`,
+    fullName: candidateName,
+    categories: ['Actor'],
+    headline: `${candidateName} • Performer`,
+    location: user.location || 'Mumbai, India',
+    city: locationCity,
+    country: locationCountry,
+    dateOfBirth: user.dateOfBirth || '2000-01-01',
+    age: user.dateOfBirth ? Math.max(16, new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()) : 24,
+    gender: 'Other',
+    contactEmail: user.email || '',
+    phone: user.phoneNumber || user.phone || '',
+    avatar: user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&q=80',
+    profileCompletion: 40,
+    verificationStatus: 'in_review',
+    bio: `Hello, I'm ${candidateName}. Passionate performer eager to take on meaningful acting, commercial, and creative roles.`,
+    skills: ['Acting', 'Voice-over'],
+    experience: [],
+    education: [],
+    portfolio: {
+      headshots: [
+        user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+      ],
+      portfolioPhotos: [],
+      introVideo: null,
+      actingReel: null,
+      resume: null,
+    },
+    privacySettings: {
+      showEmailPublicly: false,
+      showPhonePublicly: false,
+      showExactDob: false,
+      profileVisibility: 'public',
+    },
+  };
+};
 
 export const getCandidatesList = () => {
   try {
@@ -799,7 +1152,7 @@ export const getCandidatesList = () => {
   } catch {
     // fallback
   }
-  return mockCandidates;
+  return [initialCandidateProfile, sophiaCandidateProfile, rohitCandidateProfile, ...mockCandidates.slice(1)];
 };
 
 export const updateCandidateInList = (id, updates) => {
@@ -818,43 +1171,77 @@ export const getCandidateById = (id) => {
   return list.find((c) => c.id === id) || list[0];
 };
 
-export const getCandidateProfile = () => {
+/**
+ * Returns candidate profile isolated by candidate name / account.
+ * Whenever candidate A signs in, only profile for candidate A is visible.
+ * If candidate B signs in, profile for candidate B is visible.
+ */
+export const getCandidateProfile = (userParam) => {
   try {
-    const stored = localStorage.getItem(CANDIDATE_PROFILE_STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.fullName && parsed.fullName !== 'Sophia Bennett') {
-        return {
-          ...initialCandidateProfile,
-          ...parsed,
-          portfolio: {
-            ...initialCandidateProfile.portfolio,
-            ...(parsed.portfolio || {}),
-          },
-          privacySettings: {
-            ...initialCandidateProfile.privacySettings,
-            ...(parsed.privacySettings || {}),
-          },
-          skillsByCategory: {
-            ...initialCandidateProfile.skillsByCategory,
-            ...(parsed.skillsByCategory || {}),
-          },
-        };
+    const activeUser = userParam || resolveCurrentAuthUser();
+    const key = normalizeCandidateKey(activeUser);
+
+    const storedMapRaw = localStorage.getItem(CANDIDATE_PROFILES_MAP_STORAGE_KEY);
+    const storedMap = storedMapRaw ? JSON.parse(storedMapRaw) : {};
+
+    if (storedMap[key]) {
+      return storedMap[key];
+    }
+
+    // Also check single legacy key if fullName matches
+    const singleRaw = localStorage.getItem(CANDIDATE_PROFILE_STORAGE_KEY);
+    if (singleRaw) {
+      const parsedSingle = JSON.parse(singleRaw);
+      if (
+        activeUser?.fullName &&
+        parsedSingle.fullName?.toLowerCase() === activeUser.fullName.toLowerCase()
+      ) {
+        return parsedSingle;
       }
     }
+
+    // Initialize with candidate-specific seeded profile
+    const seed = getSeededProfileForUser(activeUser);
+    storedMap[key] = seed;
+    localStorage.setItem(CANDIDATE_PROFILES_MAP_STORAGE_KEY, JSON.stringify(storedMap));
+    return seed;
   } catch {
-    // fallback to initial
+    return initialCandidateProfile;
   }
-  return initialCandidateProfile;
 };
 
-export const saveCandidateProfile = (updatedProfile) => {
+/**
+ * Saves candidate profile isolated by candidate name / account.
+ */
+export const saveCandidateProfile = (updatedProfile, userParam) => {
   try {
-    const current = getCandidateProfile();
-    const merged = { ...current, ...updatedProfile };
+    const activeUser = userParam || resolveCurrentAuthUser();
+    const key = normalizeCandidateKey(activeUser || updatedProfile);
+
+    const storedMapRaw = localStorage.getItem(CANDIDATE_PROFILES_MAP_STORAGE_KEY);
+    const storedMap = storedMapRaw ? JSON.parse(storedMapRaw) : {};
+
+    const current = getCandidateProfile(activeUser);
+    const merged = {
+      ...current,
+      ...updatedProfile,
+      fullName: updatedProfile.fullName || current.fullName || activeUser?.fullName || 'Candidate',
+    };
+
+    storedMap[key] = merged;
+    localStorage.setItem(CANDIDATE_PROFILES_MAP_STORAGE_KEY, JSON.stringify(storedMap));
+
+    // Also update legacy single key for backwards compatibility
     localStorage.setItem(CANDIDATE_PROFILE_STORAGE_KEY, JSON.stringify(merged));
-    // Also update in list if cand-1
-    updateCandidateInList('cand-1', merged);
+
+    // Update in candidates list
+    if (merged.id) {
+      updateCandidateInList(merged.id, merged);
+    }
+
+    // Trigger local update event for react components
+    window.dispatchEvent(new CustomEvent('starcast_profile_updated', { detail: merged }));
+
     return merged;
   } catch (error) {
     console.error('Failed to save candidate profile:', error);

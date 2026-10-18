@@ -1,5 +1,5 @@
 """
-URL configuration for StarCast backend.
+URL configuration for StageLink backend.
 """
 from django.urls import path, include
 from rest_framework.views import APIView
@@ -15,7 +15,7 @@ class HealthCheckView(APIView):
     def get(self, request):
         return Response({
             "status": "healthy",
-            "service": "StarCast International Casting Marketplace API",
+            "service": "StageLink International Casting Marketplace API",
             "version": "1.0.0-in-memory",
             "database_connected": False,
             "database_status": "disconnected_by_design (in-memory mode)",

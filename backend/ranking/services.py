@@ -1,5 +1,5 @@
 """
-Transparent Scoring Engine for StarCast Role Matching & Candidate Ranking.
+Transparent Scoring Engine for StageLink Role Matching & Candidate Ranking.
 Evaluates candidate compatibility against specific role requirements.
 """
 

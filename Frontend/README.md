@@ -1,6 +1,6 @@
-# StarCast — Professional Casting & Acting Opportunity Platform
+# StageLink — Professional Casting & Acting Opportunity Platform
 
-StarCast is a modern, cinematic, and professional web platform that connects actresses and actors with top directors, producers, and casting agencies.
+StageLink is a modern, cinematic, and professional web platform that connects actresses and actors with top directors, producers, and casting agencies.
 
 ## Technology Stack
 

@@ -30,6 +30,7 @@ import Avatar from '../../components/common/Avatar';
 import ScoreBadge from '../../components/ranking/ScoreBadge';
 import ScoreBreakdownModal from '../../components/ranking/ScoreBreakdownModal';
 import { mockOpportunities } from '../../data/mockOpportunities';
+import { getCustomOpportunities } from '../../utils/paymentAccess';
 import { saveCandidateApplication } from '../../data/mockApplications';
 import { initialCandidateProfile } from '../../data/mockCandidates';
 import { rankingService } from '../../services/rankingService';
@@ -43,7 +44,10 @@ const OpportunityDetailsPage = () => {
   const { isOpportunitySaved, toggleSaveOpportunity } = useApp();
   const { isAuthenticated, user } = useAuth();
 
-  const opportunity = useMemo(() => mockOpportunities.find((o) => o.id === id) || null, [id]);
+  const opportunity = useMemo(() => {
+    const allOpps = [...getCustomOpportunities(), ...mockOpportunities];
+    return allOpps.find((o) => o.id === id || o.refId === id) || null;
+  }, [id]);
   const [activeImage, setActiveImage] = useState(0);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -705,7 +709,7 @@ const OpportunityDetailsPage = () => {
                 </div>
               </div>
               <p className="text-xs text-brand-text-secondary leading-relaxed">
-                Submissions via StarCast are reviewed directly by the designated production office and casting directors.
+                Submissions via StageLink are reviewed directly by the designated production office and casting directors.
               </p>
             </div>
           </div>
@@ -766,11 +770,11 @@ const OpportunityDetailsPage = () => {
                 </div>
                 <div className="text-xs">
                   <p className="font-bold text-brand-navy">{user?.name || 'Sarah Jenkins'}</p>
-                  <p className="text-[11px] text-brand-text-secondary">{user?.email || 'sarah@starcast.com'}</p>
+                  <p className="text-[11px] text-brand-text-secondary">{user?.email || 'sarah@stagelink.com'}</p>
                 </div>
               </div>
               <p className="text-[11px] text-gray-500 italic">
-                Your StarCast verified performer profile and headshots will be automatically attached to this submission.
+                Your StageLink verified performer profile and headshots will be automatically attached to this submission.
               </p>
             </div>
 

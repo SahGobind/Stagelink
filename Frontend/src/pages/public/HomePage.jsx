@@ -120,9 +120,9 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="space-y-16 sm:space-y-24 pb-16">
+    <div className="pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-white pt-8 pb-12 lg:pt-14 lg:pb-16 border-b border-neutral-200">
+      <section className="relative overflow-hidden bg-white pt-8 pb-8 lg:pt-12 lg:pb-8 border-b border-neutral-200">
         <PageContainer>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Left Content */}
@@ -138,39 +138,14 @@ const HomePage = () => {
               </h1>
 
               <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-lg">
-                StarCast connects aspiring and seasoned performers directly with visionary directors, film productions, OTT series, and commercial casting agencies.
+                StageLink connects aspiring and seasoned performers directly with visionary directors, film productions, OTT series, and commercial casting agencies.
               </p>
-
-              <div className="flex flex-wrap gap-4 pt-2">
-                <Link
-                  to={isAuthenticated ? '/candidate/profile/setup' : '/signup?redirect=/candidate/profile/setup'}
-                  className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Create Performer Profile</span>
-                </Link>
-                {isAuthenticated && (
-                  <Link
-                    to="/opportunities"
-                    className="inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-neutral-50 text-black border border-neutral-300 text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
-                  >
-                    <Search className="w-4 h-4" />
-                    <span>Explore Opportunities</span>
-                  </Link>
-                )}
-                <Link
-                  to="/how-it-works"
-                  className="inline-flex items-center justify-center px-6 py-3.5 text-neutral-600 hover:text-black text-xs font-bold transition-colors"
-                >
-                  <span>How StarCast Works →</span>
-                </Link>
-              </div>
             </div>
 
             {/* Right Side: TEST YOUR TALENT & PRODUCTION Feature Cards */}
             <div className="lg:col-span-6 space-y-5 text-left">
               {/* Feature 1: TEST YOUR TALENT */}
-              <div className="bg-neutral-50 rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-4 relative overflow-hidden group">
+              <div className="bg-neutral-50 rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-3.5 relative overflow-hidden group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center shadow-xs">
@@ -191,53 +166,53 @@ const HomePage = () => {
                 </div>
 
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  Put your acting skills to the test. Sign up to build your verified performer profile, upload self-tape auditions, and connect directly with casting directors.
+                  Build your verified profile, submit self-tape auditions, and get discovered by top casting directors.
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 py-1 text-[11px] text-neutral-600 font-medium">
+                <div className="grid grid-cols-2 gap-2 py-0.5 text-[11px] text-neutral-600 font-medium">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
                     <span>Self-Tape Auditions</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>Direct Director Reach</span>
+                    <span>Direct Callback Invites</span>
                   </div>
                 </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="pt-1.5 flex flex-col sm:flex-row sm:items-center gap-3">
                   {isAuthenticated ? (
                     <Link
                       to="/candidate/profile/setup"
-                      className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                      className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
                     >
                       <UserPlus className="w-4 h-4" />
-                      <span>Create / Edit Your Profile</span>
+                      <span>Edit Your Profile</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   ) : (
                     <>
                       <Link
                         to="/signup?from=test-your-talent&redirect=/candidate/profile/setup"
-                        className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                        className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
                       >
                         <UserPlus className="w-4 h-4" />
-                        <span>Sign Up to Create Profile</span>
+                        <span>Join as Performer</span>
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                       <Link
                         to="/login?redirect=/candidate/profile/setup"
                         className="text-xs font-medium text-neutral-600 hover:text-black underline underline-offset-4"
                       >
-                        Already have an account? Log In →
+                        Already registered? Log In →
                       </Link>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Feature 2: PRODUCTION */}
-              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-4 relative overflow-hidden group">
+              {/* Feature 2: CAST YOUR PROJECT */}
+              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-3.5 relative overflow-hidden group">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-11 h-11 rounded-2xl bg-neutral-100 text-black border border-neutral-200 flex items-center justify-center shadow-xs">
@@ -248,7 +223,7 @@ const HomePage = () => {
                         For Casting Directors & Studios
                       </span>
                       <h2 className="text-xl font-bold font-serif text-black">
-                        Production
+                        Cast Your Project
                       </h2>
                     </div>
                   </div>
@@ -258,26 +233,26 @@ const HomePage = () => {
                 </div>
 
                 <p className="text-xs text-neutral-600 leading-relaxed">
-                  Post casting calls for your upcoming feature film, web series, or TV commercial. Access 5,000+ verified performers, review auditions, and complete secure payment.
+                  Post roles for films, web series, and commercials. Access 5,000+ verified actors with instant matching.
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 py-1 text-[11px] text-neutral-600 font-medium">
+                <div className="grid grid-cols-2 gap-2 py-0.5 text-[11px] text-neutral-600 font-medium">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>5,000+ Verified Artists</span>
+                    <span>5,000+ Verified Actors</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>Instant Payment & Publish</span>
+                    <span>Instant Callbacks & Matching</span>
                   </div>
                 </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="pt-1.5 flex flex-col sm:flex-row sm:items-center gap-3">
                   {isAuthenticated ? (
                     <div className="flex flex-wrap items-center gap-3">
                       <Link
                         to="/admin/dashboard"
-                        className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                        className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
                       >
                         <Building2 className="w-4 h-4" />
                         <span>Studio Dashboard</span>
@@ -293,18 +268,18 @@ const HomePage = () => {
                   ) : (
                     <>
                       <Link
-                        to="/signup?from=production&role=admin&redirect=/admin/dashboard"
-                        className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                        to="/post-job"
+                        className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
                       >
-                        <UserPlus className="w-4 h-4" />
-                        <span>Sign Up to Create Profile</span>
+                        <Building2 className="w-4 h-4" />
+                        <span>Post a Casting Call</span>
                         <ArrowRight className="w-4 h-4" />
                       </Link>
                       <Link
                         to="/login?redirect=/admin/dashboard"
                         className="text-xs font-medium text-neutral-600 hover:text-black underline underline-offset-4"
                       >
-                        Already have an account? Log In →
+                        Studio Log In →
                       </Link>
                     </>
                   )}
@@ -314,7 +289,7 @@ const HomePage = () => {
           </div>
 
           {/* 4 Demo Stats Metrics Strip */}
-          <div className="mt-14 pt-8 border-t border-neutral-200">
+          <div className="mt-6 pt-5 border-t border-neutral-200">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-left">
               <div>
                 <p className="text-2xl sm:text-3xl font-bold font-serif text-black">5,000+</p>
@@ -341,7 +316,7 @@ const HomePage = () => {
       </section>
 
       {/* 2. PRODUCTION COMPANIES LISTED SECTION */}
-      <section className="bg-neutral-50/70 py-14 border-y border-neutral-200">
+      <section className="bg-neutral-50/70 py-10 border-b border-neutral-200">
         <PageContainer>
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 text-left gap-4">
             <div>
@@ -349,7 +324,7 @@ const HomePage = () => {
                 Production Companies & Studios
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight mt-1">
-                Top Production Houses Casting on StarCast
+                Top Production Houses Casting on StageLink
               </h2>
               <p className="text-xs text-neutral-600 mt-1 max-w-xl">
                 Leading film studios, OTT platforms, and commercial production houses discover and cast professional talent every day.
@@ -442,11 +417,11 @@ const HomePage = () => {
       </section>
 
       {/* 3. PLATFORM BENEFITS SECTION */}
-      <section>
+      <section className="py-12 border-b border-neutral-200">
         <PageContainer>
           <div className="text-left mb-8 space-y-1">
             <span className="text-xs font-bold text-black uppercase tracking-widest block">
-              Why Choose StarCast
+              Why Choose StageLink
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
               A Casting Platform Built Around You
@@ -557,7 +532,7 @@ const HomePage = () => {
         </>
       ) : (
         /* Locked teaser banner for unregistered / unauthenticated users */
-        <section className="bg-neutral-50/70 py-14 border-y border-neutral-200">
+        <section className="bg-neutral-50/70 py-12 border-b border-neutral-200">
           <PageContainer>
             <div className="max-w-2xl mx-auto text-center space-y-4">
               <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center mx-auto shadow-sm">
@@ -592,7 +567,7 @@ const HomePage = () => {
       )}
 
       {/* 6. HOW IT WORKS (4 STEPS) */}
-      <section className="bg-neutral-50/50 py-14 border-y border-neutral-200">
+      <section className="bg-neutral-50/50 py-12 border-b border-neutral-200">
         <PageContainer>
           <div className="text-left mb-10 space-y-1">
             <span className="text-xs font-bold text-black uppercase tracking-widest block">
@@ -649,7 +624,7 @@ const HomePage = () => {
       </section>
 
       {/* 7. CALL TO ACTION BOTTOM BANNER */}
-      <section>
+      <section className="py-12">
         <PageContainer>
           <div className="bg-black text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="relative z-10 max-w-xl space-y-3 text-left">

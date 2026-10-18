@@ -5,12 +5,14 @@ import ChatWindow from '../../components/messaging/ChatWindow';
 import ConversationDetailsSidebar from '../../components/messaging/ConversationDetailsSidebar';
 import ReportConversationModal from '../../components/messaging/ReportConversationModal';
 import Toast from '../../components/common/Toast';
+import { useAuth } from '../../context/AuthContext';
 import {
   getStoredMessages,
   saveStoredMessages,
 } from '../../data/mockMessages';
 
 const MessagesPage = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const requestedId = searchParams.get('conversationId') || searchParams.get('id');
 
@@ -58,10 +60,13 @@ const MessagesPage = () => {
   const handleSendMessage = ({ text, attachment }) => {
     if (!activeId) return;
 
+    const senderName = user?.fullName || 'Candidate Artist';
+    const senderId = user?.id || 'cand-current';
+
     const newMessage = {
       id: `m-${Date.now()}`,
-      senderId: 'cand-1',
-      senderName: 'Sophia Bennett',
+      senderId,
+      senderName,
       text: text || '',
       timestamp: 'Just now',
       isOwn: true,
@@ -108,7 +113,39 @@ const MessagesPage = () => {
       return updated;
     });
 
-    setToastMessage('Message sent (demo local session).');
+    setToastMessage('Message sent.');
+
+    // If texting the operations team, provide a realistic simulated prompt response
+    if (activeId === 'conv-ops') {
+      setTimeout(() => {
+        const firstName = senderName.split(' ')[0] || 'there';
+        const opsReply = {
+          id: `m-ops-reply-${Date.now()}`,
+          senderId: 'ops-team',
+          senderName: 'StageLink Operations Team',
+          text: `Thank you for reaching out, ${firstName}! Our operations coordinator has received your message and is on it. We will guide you with anything you need.`,
+          timestamp: 'Just now',
+          isOwn: false,
+          readStatus: 'unread',
+        };
+
+        setConversations((prev) => {
+          const updatedWithReply = prev.map((c) => {
+            if (c.id === 'conv-ops') {
+              return {
+                ...c,
+                lastMessage: opsReply.text,
+                lastMessageTime: 'Just now',
+                messages: [...c.messages, opsReply],
+              };
+            }
+            return c;
+          });
+          saveStoredMessages(updatedWithReply);
+          return updatedWithReply;
+        });
+      }, 1000);
+    }
   };
 
   // Toggle archive status
@@ -140,7 +177,7 @@ const MessagesPage = () => {
   // Confirm report submission
   const handleConfirmReport = ({ reason, participantName }) => {
     setToastMessage(
-      `Thread with ${participantName} reported (${reason}). StarCast safety moderators will review this communication.`
+      `Thread with ${participantName} reported (${reason}). StageLink safety moderators will review this communication.`
     );
   };
 

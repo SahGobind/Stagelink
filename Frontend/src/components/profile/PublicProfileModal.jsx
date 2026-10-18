@@ -77,7 +77,7 @@ const PublicProfileModal = ({ isOpen, onClose, candidate }) => {
             <Eye className="w-4 h-4 text-emerald-400" />
             <span className="font-bold">Public Casting Preview Mode</span>
             <span className="hidden sm:inline text-gray-400">
-              — This is how casting directors view your profile on StarCast
+              — This is how casting directors view your profile on StageLink
             </span>
           </div>
           <button

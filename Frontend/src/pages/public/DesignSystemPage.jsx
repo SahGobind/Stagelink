@@ -39,7 +39,7 @@ const DesignSystemPage = () => {
         <div className="border-b border-brand-border pb-6 space-y-2">
           <div className="inline-flex items-center space-x-2 bg-neutral-100 text-black px-3 py-1 rounded-full text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>StarCast Design System</span>
+            <span>StageLink Design System</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold font-serif text-black">
             Design Tokens & UI Component Suite
@@ -273,7 +273,7 @@ const DesignSystemPage = () => {
         <Modal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
-          title="StarCast Casting Callback Dialog"
+          title="StageLink Casting Callback Dialog"
         >
           <div className="space-y-4">
             <p className="text-sm text-brand-text-secondary leading-relaxed">

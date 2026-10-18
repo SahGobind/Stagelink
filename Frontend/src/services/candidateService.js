@@ -1,18 +1,16 @@
-import { mockCandidates, getCandidateProfile, saveCandidateProfile } from '../data/mockCandidates';
+import { getCandidatesList, getCandidateById, getCandidateProfile, saveCandidateProfile } from '../data/mockCandidates';
 
 export const candidateService = {
   getAll: async () => {
-    const primary = getCandidateProfile();
-    return [primary, ...mockCandidates.slice(1)];
+    return getCandidatesList();
   },
   getById: async (id) => {
-    if (id === 'cand-1') return getCandidateProfile();
-    return mockCandidates.find(c => c.id === id) || null;
-  },
-  updateProfile: async (id, data) => {
-    if (id === 'cand-1' || !id) {
-      return saveCandidateProfile(data);
+    if (!id || id === 'me' || id === 'cand-1') {
+      return getCandidateProfile();
     }
-    return { ...mockCandidates[0], ...data };
+    return getCandidateById(id);
+  },
+  updateProfile: async (id, data, user) => {
+    return saveCandidateProfile(data, user);
   },
 };

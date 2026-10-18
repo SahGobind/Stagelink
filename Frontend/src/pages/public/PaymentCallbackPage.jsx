@@ -201,7 +201,7 @@ const PaymentCallbackPage = () => {
                 Payment Incomplete or Cancelled
               </h1>
               <p className="text-xs sm:text-sm text-gray-600 max-w-lg mx-auto">
-                The payment transaction was not completed. Per StarCast security guidelines, your casting call remains in{' '}
+                The payment transaction was not completed. Per StageLink security guidelines, your casting call remains in{' '}
                 <strong className="text-red-700">Payment Failed</strong> status and has <em>not</em> been published.
               </p>
             </div>

@@ -130,3 +130,104 @@ class RecruiterOpportunitiesView(APIView):
             "count": len(SAMPLE_OPPORTUNITIES),
             "opportunities": SAMPLE_OPPORTUNITIES
         }, status=status.HTTP_200_OK)
+
+class CreateOrderView(APIView):
+    """
+    Initialize a pending casting opportunity order awaiting payment (e.g. via JuicePay or PayPal).
+    """
+    def post(self, request):
+        import uuid
+        import datetime
+        data = request.data
+        prod_company = data.get("productionCompany", "Production Studio")
+        prod_cat = data.get("productionCategory", "Film & TV")
+        prod_type = data.get("productionType", "Feature Film")
+        talents = data.get("talentNeeded", ["Actors"])
+        shoot_date = data.get("shootDate", "")
+        location = data.get("location", "")
+        artists_needed = data.get("artistsNeeded", 1)
+        requirements = data.get("requirements", "")
+        
+        opp_id = f"opp-{int(datetime.datetime.now().timestamp() * 1000)}"
+        ref_id = f"PRD-{uuid.uuid4().hex[:6].upper()}"
+        order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+        
+        opportunity = {
+            "id": opp_id,
+            "refId": ref_id,
+            "title": f"{prod_company} — {prod_type}",
+            "production_company": prod_company,
+            "productionCompany": prod_company,
+            "category": prod_cat,
+            "productionCategory": prod_cat,
+            "type": prod_type,
+            "productionType": prod_type,
+            "talentNeeded": talents,
+            "shootDate": shoot_date or "Flexible / TBD",
+            "location": location or "Open / Unspecified",
+            "artistsNeeded": artists_needed,
+            "requirements": requirements,
+            "listingFee": 1999,
+            "currency": "INR",
+            "paymentOrderId": order_id,
+            "paymentStatus": "pending",
+            "listingStatus": "pending_payment",
+            "status": "pending_payment",
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
+        SAMPLE_OPPORTUNITIES.append(opportunity)
+        
+        return Response({
+            "success": True,
+            "orderId": order_id,
+            "opportunity": opportunity,
+            "amount": 1999,
+            "currency": "INR",
+        }, status=status.HTTP_201_CREATED)
+
+class ConfirmPaymentView(APIView):
+    """
+    Confirm payment (via JuicePay or PayPal) and publish the casting opportunity live on website.
+    """
+    def post(self, request):
+        import uuid
+        import datetime
+        data = request.data
+        opp_id = data.get("opportunityId")
+        order_id = data.get("orderId")
+        method = data.get("paymentMethod", "JuicePay Credit Card")
+        txn_id = data.get("txnId") or f"TXN-{uuid.uuid4().hex[:8].upper()}"
+        
+        opp = next((o for o in SAMPLE_OPPORTUNITIES if o.get("id") == opp_id or o.get("paymentOrderId") == order_id), None)
+        if not opp:
+            opp = {
+                "id": opp_id or f"opp-{int(datetime.datetime.now().timestamp() * 1000)}",
+                "refId": f"PRD-{uuid.uuid4().hex[:6].upper()}",
+                "title": data.get("title", "Production Casting Call"),
+                "production_company": data.get("productionCompany", "StageLink Partner Studio"),
+                "productionCompany": data.get("productionCompany", "StageLink Partner Studio"),
+                "category": data.get("category", "Film & TV"),
+                "productionCategory": data.get("category", "Film & TV"),
+                "type": data.get("type", "Feature Film"),
+                "productionType": data.get("type", "Feature Film"),
+                "talentNeeded": data.get("talentNeeded", ["Actors"]),
+                "shootDate": data.get("shootDate", "Flexible / TBD"),
+                "location": data.get("location", "Open / Unspecified"),
+                "artistsNeeded": data.get("artistsNeeded", 1),
+                "requirements": data.get("requirements", ""),
+            }
+            SAMPLE_OPPORTUNITIES.append(opp)
+            
+        opp["paymentStatus"] = "paid"
+        opp["listingStatus"] = "published"
+        opp["status"] = "published"
+        opp["paymentMethod"] = method
+        opp["txnId"] = txn_id
+        opp["published_at"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        
+        return Response({
+            "success": True,
+            "message": "Payment confirmed! Casting post is now live and published on website.",
+            "txnId": txn_id,
+            "opportunity": opp,
+        }, status=status.HTTP_200_OK)

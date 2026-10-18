@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, CheckCircle2, ArrowLeft, ShieldAlert, Sparkles } from 'lucide-react';
+import { Mail, CheckCircle2, ArrowLeft, Sparkles } from 'lucide-react';
 import Input from '../../components/common/Input';
 
 const forgotPasswordSchema = z.object({
@@ -51,16 +51,6 @@ const ForgotPasswordPage = () => {
           </p>
         </div>
 
-      {/* Demo Architecture Notice Banner */}
-      <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-amber-900 text-[11px] leading-relaxed">
-        <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">Frontend Demo Mode:</span> Passwords are not
-          persisted in plaintext. Real authentication, hashing, email verification,
-          and session tokens require backend implementation.
-        </div>
-      </div>
-
       {submittedEmail ? (
         <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
           <div className="flex items-center gap-2 text-emerald-800">
@@ -86,7 +76,7 @@ const ForgotPasswordPage = () => {
           <Input
             label="Registered Email Address"
             type="email"
-            placeholder="e.g. sarah@starcast.com"
+            placeholder="e.g. sarah@stagelink.com"
             required
             error={errors.email?.message}
             icon={Mail}

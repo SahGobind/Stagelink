@@ -305,7 +305,7 @@ const AdminApplicationsPage = () => {
     e.preventDefault();
     if (!selectedApp || !newNoteText.trim()) return;
 
-    addApplicationInternalNote(selectedApp.id, newNoteText.trim(), 'StarCast Admin');
+    addApplicationInternalNote(selectedApp.id, newNoteText.trim(), 'StageLink Admin');
     setNewNoteText('');
     refreshApplications();
     showToast('Internal casting note recorded.');

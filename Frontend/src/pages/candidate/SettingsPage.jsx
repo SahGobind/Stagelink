@@ -10,7 +10,6 @@ import {
   Trash2,
   LogOut,
   AlertTriangle,
-  ShieldAlert,
   HardDrive,
   Save,
   X,
@@ -32,19 +31,28 @@ const SettingsPage = () => {
   const [toastType, setToastType] = useState('success');
 
   // Candidate Profile State (Account & Privacy)
-  const [candidate, setCandidate] = useState(() => getCandidateProfile());
+  const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
   const [settings, setSettings] = useState(() => getStoredSettings());
+
+  useEffect(() => {
+    const prof = getCandidateProfile(user);
+    setCandidate(prof);
+    setDisplayName(prof.fullName || user?.fullName || 'Candidate Performer');
+    setEmail(prof.contactEmail || user?.email || '');
+    setPhone(prof.phone || user?.phoneNumber || '');
+    setLocation(prof.location || user?.location || '');
+  }, [user]);
 
   // 1. Account Form State
   const [displayName, setDisplayName] = useState(
-    candidate.fullName || user?.fullName || 'Sophia Bennett'
+    candidate.fullName || user?.fullName || 'Candidate Performer'
   );
   const [email, setEmail] = useState(
-    candidate.contactEmail || user?.email || 'sophia.bennett@example.com'
+    candidate.contactEmail || user?.email || ''
   );
-  const [phone, setPhone] = useState(candidate.phone || '+44 7700 900123');
+  const [phone, setPhone] = useState(candidate.phone || user?.phoneNumber || '+91 98000 00000');
   const [location, setLocation] = useState(
-    candidate.location || 'London, UK / Los Angeles, CA'
+    candidate.location || user?.location || 'Mumbai, India'
   );
   const [accountErrors, setAccountErrors] = useState({});
 
@@ -105,12 +113,15 @@ const SettingsPage = () => {
     }
 
     setAccountErrors({});
-    const updated = saveCandidateProfile({
-      fullName: displayName,
-      contactEmail: email,
-      phone,
-      location,
-    });
+    const updated = saveCandidateProfile(
+      {
+        fullName: displayName,
+        contactEmail: email,
+        phone,
+        location,
+      },
+      user
+    );
     setCandidate(updated);
     setToastMessage('Account details updated in local session.');
     setToastType('success');
@@ -145,9 +156,12 @@ const SettingsPage = () => {
   // Handle Privacy Update
   const handleSavePrivacy = (e) => {
     e.preventDefault();
-    const updatedProfile = saveCandidateProfile({
-      privacySettings: privacy,
-    });
+    const updatedProfile = saveCandidateProfile(
+      {
+        privacySettings: privacy,
+      },
+      user
+    );
     setCandidate(updatedProfile);
 
     const updatedSettings = {
@@ -335,14 +349,6 @@ const SettingsPage = () => {
             </h2>
             <p className="text-xs text-brand-text-secondary mt-0.5">
               Change your login password and manage account credentials.
-            </p>
-          </div>
-
-          {/* Frontend Demo Mode Security Notice */}
-          <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-amber-900 text-[11px] leading-relaxed">
-            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <p>
-              <strong className="font-bold">Frontend Demo Mode:</strong> Passwords are not persisted in plaintext. Real authentication, hashing, email verification, and session tokens require backend implementation.
             </p>
           </div>
 
@@ -706,7 +712,7 @@ const SettingsPage = () => {
             <div>
               <h3 className="text-sm font-bold text-brand-navy flex items-center gap-1.5">
                 <LogOut className="w-4 h-4 text-brand-navy" />
-                <span>Sign Out of StarCast</span>
+                <span>Sign Out of StageLink</span>
               </h3>
               <p className="text-xs text-gray-500 mt-1">
                 Log out of this browser session. You can sign back in anytime.

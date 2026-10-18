@@ -230,7 +230,7 @@ const ScoreBreakdownModal = ({
             <span>Fairness & Transparency Policy</span>
           </div>
           <p>
-            StarCast evaluates candidates solely on role requirements: skills, verified work samples, credits, dialogue languages, shooting availability, and travel feasibility.
+            StageLink evaluates candidates solely on role requirements: skills, verified work samples, credits, dialogue languages, shooting availability, and travel feasibility.
             Protected attributes (race, ethnicity, religion, disability, gender, age, appearance, or paid membership tiers) are <strong>strictly excluded</strong> from algorithmic scoring.
             Candidates are never automatically rejected by score. Casting directors inspect evidence and make independent audition decisions.
           </p>

@@ -33,6 +33,8 @@ import ScoringCriteriaModal from '../../components/ranking/ScoringCriteriaModal'
 import PortfolioModal from '../../components/ranking/PortfolioModal';
 import AuditionInviteModal from '../../components/ranking/AuditionInviteModal';
 import Modal from '../../components/common/Modal';
+import CandidateAccessLock from '../../components/common/CandidateAccessLock';
+import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 
 import { rankingService } from '../../services/rankingService';
 import { mockOpportunities } from '../../data/mockOpportunities';
@@ -45,6 +47,18 @@ const RankedCandidatesPage = () => {
 
   // Selected Opportunity
   const opportunityId = routeOppId || searchParams.get('opp') || 'opp-1';
+
+  const [hasPaid, setHasPaid] = useState(() => hasCompletedPostingPayment());
+
+  useEffect(() => {
+    const checkPayment = () => setHasPaid(hasCompletedPostingPayment());
+    window.addEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+    window.addEventListener('storage', checkPayment);
+    return () => {
+      window.removeEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
+      window.removeEventListener('storage', checkPayment);
+    };
+  }, []);
 
   // State
   const [opportunity, setOpportunity] = useState(null);
@@ -219,6 +233,26 @@ const RankedCandidatesPage = () => {
     setSortBy('match_score');
   };
 
+  if (!hasPaid) {
+    return (
+      <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-16 py-6">
+        <div className="flex items-center gap-2 text-xs text-neutral-500">
+          <Link
+            to="/admin/opportunities"
+            className="inline-flex items-center gap-1 hover:text-brand-pink transition-colors font-medium"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Casting Opportunities</span>
+          </Link>
+        </div>
+        <CandidateAccessLock
+          title="Ranked Candidate Matching is Locked"
+          subtitle="Complete your casting post payment via JuicePay Credit Card or PayPal to unlock automated candidate matching, match scoring, and audition invites."
+        />
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">
       {/* Toast Notification */}
@@ -259,7 +293,7 @@ const RankedCandidatesPage = () => {
               <span className="text-xs text-neutral-400">•</span>
               <span className="text-xs font-bold text-neutral-600 flex items-center gap-1">
                 <Building className="w-3.5 h-3.5 text-neutral-400" />
-                {opportunity?.production_company || 'StarCast Productions'}
+                {opportunity?.production_company || 'StageLink Productions'}
               </span>
             </div>
 
@@ -714,7 +748,7 @@ const RankedCandidatesPage = () => {
           <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-xl text-neutral-600 text-[11px] space-y-1">
             <span className="font-bold text-neutral-800">Fairness Reminder:</span>
             <p>
-              StarCast never automatically rejects candidates based on match scores. Casting directors hold full discretion to evaluate unique artistic suitability.
+              StageLink never automatically rejects candidates based on match scores. Casting directors hold full discretion to evaluate unique artistic suitability.
             </p>
           </div>
 

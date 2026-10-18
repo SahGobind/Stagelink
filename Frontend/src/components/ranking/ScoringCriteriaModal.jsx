@@ -8,12 +8,12 @@ const ScoringCriteriaModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="StarCast Transparent Role-Matching Engine Rubric"
+      title="StageLink Transparent Role-Matching Engine Rubric"
       size="lg"
     >
       <div className="space-y-5 text-xs text-left max-h-[80vh] overflow-y-auto">
         <p className="text-neutral-600">
-          StarCast's scoring engine evaluates candidate profiles strictly against the specific casting call requirements.
+          StageLink's scoring engine evaluates candidate profiles strictly against the specific casting call requirements.
           Every applicant receives an explainable breakdown out of 100 points normalized across six key criteria:
         </p>
 

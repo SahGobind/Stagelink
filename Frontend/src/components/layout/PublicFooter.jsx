@@ -12,7 +12,7 @@ const PublicFooter = () => {
           <div className="space-y-4 lg:col-span-2">
             <Link to="/" className="inline-block">
               <span className="text-2xl font-bold font-serif tracking-tight text-white">
-                Star<span className="text-brand-pink">Cast</span>
+                Stage<span className="text-brand-pink">Link</span>
               </span>
             </Link>
             <p className="text-xs text-gray-400 leading-relaxed max-w-sm">
@@ -69,7 +69,7 @@ const PublicFooter = () => {
 
         {/* Bottom copyright row */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-4">
-          <p>© 2026 StarCast. All rights reserved.</p>
+          <p>© 2026 StageLink. All rights reserved.</p>
           <div className="flex items-center space-x-6">
             <a href="#" className="hover:text-gray-400 transition-colors">Terms & Conditions</a>
             <span>•</span>

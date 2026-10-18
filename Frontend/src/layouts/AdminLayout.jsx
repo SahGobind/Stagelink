@@ -14,7 +14,7 @@ const AdminLayout = () => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
-        <DashboardHeader title="StarCast Studio Admin" subtitle="Talent, Casting Calls & Application Management" />
+        <DashboardHeader title="StageLink Studio Admin" subtitle="Talent, Casting Calls & Application Management" />
         <main className="flex-1">
           <Outlet />
         </main>

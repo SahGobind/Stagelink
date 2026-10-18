@@ -4,7 +4,6 @@ import {
   ShieldCheck,
   Lock,
   CreditCard,
-  Building,
   CheckCircle2,
   ArrowLeft,
   Calendar,
@@ -17,321 +16,389 @@ import {
   ChevronRight,
   ExternalLink,
   Sparkles,
+  DollarSign,
+  ArrowRight,
+  Eye,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import {
+  getPendingOpportunity,
+  publishOpportunity,
+  setPostingPaymentCompleted,
+} from '../../utils/paymentAccess';
 
-const DEFAULT_ESCROW_DATA = {
+const DEFAULT_OPPORTUNITY = {
+  id: 'opp-demo-casting',
   refId: 'PRD-842910',
-  id: 'opp-berlin-requiem',
-  projectTitle: 'The Berlin Requiem — Dancers & Performers',
-  productionCompany: 'Northlight Productions',
+  title: 'Apex Vision Studios — Feature Film',
+  productionCompany: 'Apex Vision Studios',
   productionCategory: 'Film & TV',
   productionType: 'Feature Film',
-  talentNeeded: ['Dancers / Performers', 'Actors / Screen Artists'],
-  shootDate: '2026-11-20',
-  location: 'Berlin',
+  talentNeeded: ['Actors / Screen Artists', 'Dancers / Performers'],
+  shootDate: 'Flexible / To be decided',
+  location: 'Open / Unspecified',
   artistsNeeded: 5,
-  compensation: 150,
-  currency: '€',
-  totalEscrow: 750,
-  description:
-    'Seeking expressive movement performers and specialized talents for an atmospheric night exterior sequence set in Berlin. Period-appropriate wardrobe provided on set.',
-  requirements: [
-    'Must have high stamina for choreographed group movement. Prior screen or stage experience preferred.',
-  ],
-  contactEmail: 'casting@northlightproductions.de',
+  requirements: 'High stamina for choreographed group movement and expressive camera acting.',
+  listingFee: 1999,
+  currency: 'INR',
 };
 
 const PaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Retrieve escrow data passed via state, session storage, or default fallback
-  const [escrowData] = useState(() => {
-    if (location.state?.escrowData) {
-      return location.state.escrowData;
+  // Retrieve opportunity from navigation state, sessionStorage, or fallback
+  const [opportunity] = useState(() => {
+    if (location.state?.opportunity) {
+      return location.state.opportunity;
     }
-    try {
-      const saved = sessionStorage.getItem('starcast_pending_payment');
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // Fallback
+    const pending = getPendingOpportunity();
+    if (pending) {
+      return pending;
     }
-    return DEFAULT_ESCROW_DATA;
+    return DEFAULT_OPPORTUNITY;
   });
 
-  // Payment Form States
-  const [paymentMethod, setPaymentMethod] = useState('card'); // 'card' | 'sepa' | 'apple_pay' | 'balance'
-  const [cardName, setCardName] = useState(
-    escrowData.productionCompany ? `${escrowData.productionCompany} GmbH` : 'Northlight Productions GmbH'
-  );
-  const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
-  const [cardExpiry, setCardExpiry] = useState('11/28');
-  const [cardCvv, setCardCvv] = useState('883');
-  const [billingCountry, setBillingCountry] = useState('Germany');
-  const [billingPostal, setBillingPostal] = useState('10115');
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  // Payment Method: 'juicepay' (Credit Card) or 'paypal'
+  const [paymentMethod, setPaymentMethod] = useState('juicepay');
 
-  // Status & UI States
+  // JuicePay Card State
+  const [cardName, setCardName] = useState(
+    opportunity.productionCompany ? `${opportunity.productionCompany} Recruiter` : 'Production Recruiter'
+  );
+  const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
+  const [cardExpiry, setCardExpiry] = useState('12/28');
+  const [cardCvv, setCardCvv] = useState('883');
+  const [cardZip, setCardZip] = useState('400001');
+
+  // PayPal State
+  const [paypalEmail, setPaypalEmail] = useState(
+    opportunity.customerEmail || 'casting-finance@production.com'
+  );
+  const [paypalRemember, setPaypalRemember] = useState(true);
+
+  // General States
+  const [agreeTerms, setAgreeTerms] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
   const [isPaidSuccess, setIsPaidSuccess] = useState(false);
-  const [paymentTxnId, setPaymentTxnId] = useState('');
+  const [paymentResult, setPaymentResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const currency = escrowData.currency || '€';
-  const totalAmount = Number(escrowData.totalEscrow) || 750;
+  const listingFee = opportunity.listingFee || 1999;
+  const currencySymbol = '₹';
 
-  // Handle Card Number Formatting
+  // Handle Card formatting
   const handleCardNumberChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
     const formatted = raw.replace(/(\d{4})/g, '$1 ').trim();
     setCardNumber(formatted || e.target.value);
   };
 
-  const handlePayNow = (e) => {
+  const handleExpiryChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (raw.length >= 3) {
+      setCardExpiry(`${raw.slice(0, 2)}/${raw.slice(2)}`);
+    } else {
+      setCardExpiry(raw);
+    }
+  };
+
+  const handleProcessPayment = (e) => {
     e.preventDefault();
     setErrorMsg('');
 
     if (!agreeTerms) {
-      setErrorMsg('Please confirm agreement with StarCast Escrow Protection terms.');
+      setErrorMsg('Please accept the payment terms & conditions to proceed.');
       return;
     }
 
+    if (paymentMethod === 'juicepay') {
+      const cleanCard = cardNumber.replace(/\s+/g, '');
+      if (cleanCard.length < 15) {
+        setErrorMsg('Please enter a valid 16-digit credit card number.');
+        return;
+      }
+      if (!cardExpiry.includes('/')) {
+        setErrorMsg('Please enter expiry in MM/YY format.');
+        return;
+      }
+      if (cardCvv.length < 3) {
+        setErrorMsg('Please enter a 3 or 4 digit CVV.');
+        return;
+      }
+    } else if (paymentMethod === 'paypal') {
+      if (!paypalEmail || !paypalEmail.includes('@')) {
+        setErrorMsg('Please enter a valid PayPal email address.');
+        return;
+      }
+    }
+
     setIsProcessing(true);
-    setProcessingStep('Connecting to European Banking Gateway...');
+
+    const methodName =
+      paymentMethod === 'juicepay' ? 'JuicePay (Credit Card)' : 'PayPal Express';
+
+    // Simulated multi-step authorization sequence
+    setProcessingStep(
+      paymentMethod === 'juicepay'
+        ? 'Connecting to JuicePay Payment Gateway...'
+        : 'Connecting to PayPal Secure Authorization...'
+    );
 
     setTimeout(() => {
-      setProcessingStep('Authorizing 3D Secure Escrow Deposit...');
+      setProcessingStep(
+        paymentMethod === 'juicepay'
+          ? 'Verifying 3D Secure 2.0 Token with Bank...'
+          : 'Validating PayPal Express Checkout Token...'
+      );
     }, 900);
 
     setTimeout(() => {
-      setProcessingStep('Locking funds in StarCast Segregated Production Vault...');
+      setProcessingStep('Publishing casting post & unlocking candidate directory...');
     }, 1800);
 
     setTimeout(() => {
-      const txnId = `TXN-ESC-${Math.floor(100000 + Math.random() * 900000)}`;
-      setPaymentTxnId(txnId);
+      const txnId = `TXN-${paymentMethod === 'juicepay' ? 'JP' : 'PP'}-${Math.floor(
+        100000 + Math.random() * 900000
+      )}`;
+
+      // 1. Publish opportunity live in localStorage and unlock candidate access
+      const published = publishOpportunity(opportunity, txnId, methodName);
+
+      // 2. Notify backend server
+      try {
+        fetch('/api/opportunities/confirm-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            opportunityId: opportunity.id,
+            orderId: opportunity.paymentOrderId || `ORD-${Date.now()}`,
+            txnId,
+            paymentMethod: methodName,
+            title: opportunity.title,
+            productionCompany: opportunity.productionCompany,
+            category: opportunity.productionCategory || opportunity.category,
+            type: opportunity.productionType || opportunity.type,
+            talentNeeded: opportunity.talentNeeded,
+            shootDate: opportunity.shootDate,
+            location: opportunity.location,
+            artistsNeeded: opportunity.artistsNeeded,
+            requirements: opportunity.requirements,
+          }),
+        }).catch(() => {});
+      } catch {
+        // offline fallback
+      }
+
+      // 3. Mark payment completed in system
+      setPostingPaymentCompleted(true);
+
+      setPaymentResult({
+        txnId,
+        paymentMethod: methodName,
+        opportunity: published || opportunity,
+        paidAt: new Date().toLocaleString(),
+      });
+
       setIsProcessing(false);
       setIsPaidSuccess(true);
-
-      // Save to published opportunities in localStorage so it appears everywhere
-      try {
-        const stored = localStorage.getItem('starcast_custom_opportunities');
-        const existing = stored ? JSON.parse(stored) : [];
-        const newOpportunity = {
-          id: escrowData.id || `opp-${Date.now()}`,
-          refId: escrowData.refId || `PRD-${Math.floor(100000 + Math.random() * 900000)}`,
-          title: escrowData.projectTitle || `${escrowData.productionCompany} Casting Call`,
-          category: escrowData.productionCategory || 'Film & TV',
-          productionCompany: escrowData.productionCompany || 'StarCast Partner Studio',
-          location: escrowData.location || 'Berlin',
-          compensation: `${currency}${escrowData.compensation || 150} / artist`,
-          totalCompensation: `${currency}${totalAmount}`,
-          shootDate: escrowData.shootDate || '2026-11-20',
-          artistsNeeded: Number(escrowData.artistsNeeded) || 5,
-          talentNeeded: escrowData.talentNeeded || ['Performers'],
-          description: escrowData.description || 'Verified production role with automated escrow.',
-          requirements: escrowData.requirements || ['Professional acting/movement audition.'],
-          postedTime: 'Just now',
-          status: 'open',
-          escrowStatus: 'funded',
-          escrowTxnId: txnId,
-          image:
-            escrowData.image ||
-            'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
-        };
-
-        // Filter out if duplicate
-        const filtered = existing.filter((item) => item.refId !== newOpportunity.refId);
-        localStorage.setItem(
-          'starcast_custom_opportunities',
-          JSON.stringify([newOpportunity, ...filtered])
-        );
-
-        // Clear pending session
-        sessionStorage.removeItem('starcast_pending_payment');
-      } catch (err) {
-        console.warn('Storage save failed:', err);
-      }
-    }, 2700);
+    }, 2800);
   };
 
   return (
-    <div className="bg-neutral-50/70 min-h-screen text-black font-sans pb-24">
-      {/* Top Header / Progress Breadcrumb */}
-      <div className="bg-white border-b border-neutral-200">
-        <PageContainer maxWidth="xl" className="py-4">
+    <div className="bg-neutral-50/80 min-h-screen text-gray-900 font-sans pb-24 text-left">
+      {/* Top Header / Breadcrumb Bar */}
+      <div className="bg-white border-b border-gray-200">
+        <PageContainer maxWidth="6xl" className="py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="p-2 rounded-xl border border-neutral-200 hover:border-black text-neutral-600 hover:text-black transition-colors"
-                title="Return to Requirement Setup"
+                className="p-2 rounded-xl border border-gray-200 hover:border-gray-900 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                title="Return to Announcement"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-                    Step 2 of 2
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-brand-pink">
+                    Step 2 of 2 — Publication Payment
                   </span>
-                  <span className="text-neutral-300">•</span>
+                  <span className="text-gray-300">•</span>
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>256-Bit SSL Escrow Gateway</span>
+                    <span>256-Bit SSL Encrypted Checkout</span>
                   </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl font-bold font-serif text-black">
-                  Production Escrow Deposit & Authorization
+                <h1 className="text-xl sm:text-2xl font-bold font-serif text-gray-900">
+                  Choose Payment Option &amp; Publish Post
                 </h1>
               </div>
             </div>
 
-            {/* Stepper Indicator */}
+            {/* Step Progress Pill */}
             <div className="hidden md:flex items-center gap-2 text-xs">
               <Link
                 to="/post-job"
-                className="text-neutral-500 hover:text-black flex items-center gap-1.5 font-medium transition-colors"
+                className="text-gray-500 hover:text-gray-900 flex items-center gap-1.5 font-medium transition-colors"
               >
                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>1. Job & Role Details</span>
+                <span>1. Announce Work</span>
               </Link>
-              <ChevronRight className="w-3.5 h-3.5 text-neutral-300" />
-              <span className="text-black font-bold flex items-center gap-1.5 bg-neutral-100 px-3 py-1 rounded-lg border border-neutral-200">
-                <span className="w-4 h-4 rounded-full bg-black text-white text-[10px] flex items-center justify-center font-bold">
+              <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+              <span className="text-gray-900 font-bold flex items-center gap-1.5 bg-pink-50 text-brand-pink px-3 py-1 rounded-lg border border-pink-200">
+                <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] flex items-center justify-center font-bold">
                   2
                 </span>
-                <span>Escrow & Payment</span>
+                <span>Payment &amp; Publish</span>
               </span>
             </div>
           </div>
         </PageContainer>
       </div>
 
-      <PageContainer maxWidth="xl" className="py-8">
+      <PageContainer maxWidth="6xl" className="py-8">
         {!isPaidSuccess ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* LEFT COLUMN: Payment Method Selection & Checkout Form (7 Cols) */}
+            {/* LEFT COLUMN: Payment Method Selection & Form (7 Cols) */}
             <div className="lg:col-span-7 space-y-6">
-              {/* Payment Methods Tabs */}
-              <div className="bg-white rounded-2xl border border-neutral-200/90 p-6 shadow-xs space-y-5">
-                <div className="flex items-center justify-between border-b border-neutral-100 pb-4">
-                  <div className="space-y-0.5">
-                    <h2 className="text-base font-bold text-black font-serif">
-                      Select Payment Method
+              {/* Payment Methods Box */}
+              <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 shadow-xs space-y-6">
+                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold font-serif text-gray-900">
+                      Select Payment Option
                     </h2>
-                    <p className="text-xs text-neutral-500">
-                      Funds are strictly held in escrow and released only after talent completes the shoot.
+                    <p className="text-xs text-gray-500">
+                      Choose your preferred payment gateway. Once completed, your post goes live and candidate profiles unlock immediately.
                     </p>
                   </div>
-                  <Lock className="w-4 h-4 text-neutral-400" />
+                  <Lock className="w-4 h-4 text-gray-400" />
                 </div>
 
-                {/* Method Options */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {/* Method Options: JuicePay vs PayPal */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* JuicePay via Credit Card */}
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('card')}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      paymentMethod === 'card'
-                        ? 'border-black bg-neutral-900 text-white shadow-xs'
-                        : 'border-neutral-200 bg-white hover:border-neutral-300 text-neutral-700'
+                    onClick={() => {
+                      setPaymentMethod('juicepay');
+                      setErrorMsg('');
+                    }}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                      paymentMethod === 'juicepay'
+                        ? 'border-brand-pink bg-pink-50/70 text-gray-900 ring-2 ring-pink-100 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
                     }`}
                   >
-                    <CreditCard className={`w-5 h-5 ${paymentMethod === 'card' ? 'text-yellow-400' : 'text-neutral-500'}`} />
-                    <div>
-                      <div className="text-xs font-bold leading-tight">Credit Card</div>
-                      <div className={`text-[10px] ${paymentMethod === 'card' ? 'text-neutral-300' : 'text-neutral-400'}`}>
-                        Visa / MC / Amex
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <CreditCard
+                          className={`w-5 h-5 ${
+                            paymentMethod === 'juicepay' ? 'text-brand-pink' : 'text-gray-400'
+                          }`}
+                        />
+                        <span className="text-xs font-bold uppercase tracking-wider text-brand-pink">
+                          JuicePay
+                        </span>
                       </div>
+                      <span className="text-[10px] font-bold bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-600">
+                        Credit Card
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-bold">JuicePay Credit Card</div>
+                      <div className="text-[11px] text-gray-500">
+                        Visa, Mastercard, Amex, RuPay
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 pt-1 text-[10px] text-emerald-700 font-semibold">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>3D Secure 2.0 Protected</span>
                     </div>
                   </button>
 
+                  {/* PayPal */}
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('sepa')}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      paymentMethod === 'sepa'
-                        ? 'border-black bg-neutral-900 text-white shadow-xs'
-                        : 'border-neutral-200 bg-white hover:border-neutral-300 text-neutral-700'
+                    onClick={() => {
+                      setPaymentMethod('paypal');
+                      setErrorMsg('');
+                    }}
+                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
+                      paymentMethod === 'paypal'
+                        ? 'border-[#003087] bg-blue-50/60 text-gray-900 ring-2 ring-blue-100 shadow-sm'
+                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
                     }`}
                   >
-                    <Building className={`w-5 h-5 ${paymentMethod === 'sepa' ? 'text-emerald-400' : 'text-neutral-500'}`} />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-sm font-extrabold tracking-tight">
+                        <span className="text-[#003087]">Pay</span>
+                        <span className="text-[#0079C1]">Pal</span>
+                      </div>
+                      <span className="text-[10px] font-bold bg-[#FFC439] text-[#003087] px-2 py-0.5 rounded shadow-2xs">
+                        Express Checkout
+                      </span>
+                    </div>
+
                     <div>
-                      <div className="text-xs font-bold leading-tight">SEPA Bank</div>
-                      <div className={`text-[10px] ${paymentMethod === 'sepa' ? 'text-neutral-300' : 'text-neutral-400'}`}>
-                        Direct Wire (EU)
+                      <div className="text-sm font-bold text-gray-900">PayPal</div>
+                      <div className="text-[11px] text-gray-500">
+                        PayPal Balance, Bank, or Global Cards
                       </div>
                     </div>
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('apple_pay')}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      paymentMethod === 'apple_pay'
-                        ? 'border-black bg-neutral-900 text-white shadow-xs'
-                        : 'border-neutral-200 bg-white hover:border-neutral-300 text-neutral-700'
-                    }`}
-                  >
-                    <Sparkles className={`w-5 h-5 ${paymentMethod === 'apple_pay' ? 'text-sky-400' : 'text-neutral-500'}`} />
-                    <div>
-                      <div className="text-xs font-bold leading-tight">Digital Pay</div>
-                      <div className={`text-[10px] ${paymentMethod === 'apple_pay' ? 'text-neutral-300' : 'text-neutral-400'}`}>
-                        Apple / Google
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('balance')}
-                    className={`p-3.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      paymentMethod === 'balance'
-                        ? 'border-black bg-neutral-900 text-white shadow-xs'
-                        : 'border-neutral-200 bg-white hover:border-neutral-300 text-neutral-700'
-                    }`}
-                  >
-                    <ShieldCheck className={`w-5 h-5 ${paymentMethod === 'balance' ? 'text-yellow-400' : 'text-neutral-500'}`} />
-                    <div>
-                      <div className="text-xs font-bold leading-tight">Studio Credit</div>
-                      <div className={`text-[10px] ${paymentMethod === 'balance' ? 'text-neutral-300' : 'text-neutral-400'}`}>
-                        €2,400 Avail.
-                      </div>
+                    <div className="flex items-center gap-1.5 pt-1 text-[10px] text-blue-800 font-semibold">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                      <span>PayPal Buyer Protection</span>
                     </div>
                   </button>
                 </div>
 
-                {/* Card Payment Form */}
-                {paymentMethod === 'card' && (
-                  <form onSubmit={handlePayNow} className="space-y-4 pt-2">
+                {/* FORM: JuicePay via Credit Card */}
+                {paymentMethod === 'juicepay' && (
+                  <form onSubmit={handleProcessPayment} className="space-y-4 pt-2">
+                    <div className="p-3 rounded-xl bg-pink-50/50 border border-pink-100 text-xs text-gray-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 font-semibold text-gray-900">
+                        <CreditCard className="w-4 h-4 text-brand-pink" />
+                        <span>JuicePay Direct Gateway</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-gray-500">
+                        PCI-DSS Level 1 Compliant
+                      </span>
+                    </div>
+
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-semibold text-neutral-800">
-                        Cardholder / Company Name *
+                      <label className="block text-xs font-bold text-gray-800">
+                        Cardholder Name <span className="text-brand-pink">*</span>
                       </label>
                       <input
                         type="text"
                         required
                         value={cardName}
                         onChange={(e) => setCardName(e.target.value)}
-                        placeholder="e.g. Northlight Productions GmbH"
-                        className="w-full px-3.5 py-2.5 bg-white border border-neutral-300 rounded-xl text-xs text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
+                        placeholder="Name on card / Production company"
+                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
                       />
                     </div>
 
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="block text-xs font-semibold text-neutral-800">
-                          Card Number *
+                        <label className="block text-xs font-bold text-gray-800">
+                          Card Number <span className="text-brand-pink">*</span>
                         </label>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
                           <span>VISA</span>
                           <span>•</span>
-                          <span>MC</span>
+                          <span>MASTERCARD</span>
                           <span>•</span>
                           <span>AMEX</span>
+                          <span>•</span>
+                          <span>RUPAY</span>
                         </div>
                       </div>
                       <div className="relative">
@@ -341,106 +408,93 @@ const PaymentPage = () => {
                           value={cardNumber}
                           onChange={handleCardNumberChange}
                           placeholder="4242 4242 4242 4242"
-                          className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-neutral-300 rounded-xl text-xs font-mono text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all tracking-wider"
+                          className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-mono text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all tracking-wider"
                         />
-                        <Lock className="w-3.5 h-3.5 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+                        <Lock className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-neutral-800">
-                          Expiry Date (MM/YY) *
+                        <label className="block text-xs font-bold text-gray-800">
+                          Expiry Date (MM/YY) <span className="text-brand-pink">*</span>
                         </label>
                         <input
                           type="text"
                           required
+                          maxLength={5}
                           value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
+                          onChange={handleExpiryChange}
                           placeholder="MM/YY"
-                          className="w-full px-3.5 py-2.5 bg-white border border-neutral-300 rounded-xl text-xs font-mono text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-center"
+                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-mono text-gray-900 focus:outline-none focus:border-brand-pink text-center"
                         />
                       </div>
 
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="block text-xs font-semibold text-neutral-800">
-                            CVC / CVV *
+                          <label className="block text-xs font-bold text-gray-800">
+                            CVV / CVC <span className="text-brand-pink">*</span>
                           </label>
-                          <span className="text-[10px] text-neutral-400">3 or 4 digits</span>
+                          <span className="text-[10px] text-gray-400">3-4 digits</span>
                         </div>
                         <input
                           type="password"
                           required
                           maxLength={4}
                           value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
+                          onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
                           placeholder="•••"
-                          className="w-full px-3.5 py-2.5 bg-white border border-neutral-300 rounded-xl text-xs font-mono text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all text-center tracking-widest"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Billing address section */}
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-neutral-100">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-neutral-800">
-                          Billing Country
-                        </label>
-                        <input
-                          type="text"
-                          value={billingCountry}
-                          onChange={(e) => setBillingCountry(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-white border border-neutral-300 rounded-xl text-xs text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
+                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-mono text-gray-900 focus:outline-none focus:border-brand-pink text-center tracking-widest"
                         />
                       </div>
 
-                      <div className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-neutral-800">
+                      <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                        <label className="block text-xs font-bold text-gray-800">
                           Postal / ZIP Code
                         </label>
                         <input
                           type="text"
-                          value={billingPostal}
-                          onChange={(e) => setBillingPostal(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-white border border-neutral-300 rounded-xl text-xs text-black focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-black transition-all"
+                          value={cardZip}
+                          onChange={(e) => setCardZip(e.target.value)}
+                          placeholder="Postal code"
+                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink"
                         />
                       </div>
                     </div>
 
-                    {/* Terms Agreement Checkbox */}
+                    {/* Terms Agreement */}
                     <div className="pt-2">
-                      <label className="flex items-start gap-2.5 cursor-pointer text-xs text-neutral-700 leading-relaxed">
+                      <label className="flex items-start gap-2.5 cursor-pointer text-xs text-gray-600 leading-relaxed">
                         <input
                           type="checkbox"
                           checked={agreeTerms}
                           onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="mt-0.5 rounded border-neutral-300 text-black focus:ring-black"
+                          className="mt-0.5 rounded border-gray-300 text-brand-pink focus:ring-brand-pink cursor-pointer"
                         />
                         <span>
-                          I authorize StarCast Escrow Services to safely lock{' '}
-                          <strong>
-                            {currency}
-                            {totalAmount.toLocaleString()}
+                          I authorize JuicePay to charge{' '}
+                          <strong className="text-gray-900 font-bold">
+                            {currencySymbol}
+                            {listingFee.toLocaleString()}
                           </strong>{' '}
-                          until the production date ({escrowData.shootDate || '2026-11-20'}). Funds will be released only upon confirmed attendance.
+                          for publishing this casting requirement and unlocking immediate talent candidate profile access.
                         </span>
                       </label>
                     </div>
 
                     {errorMsg && (
-                      <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
                         <span>{errorMsg}</span>
                       </div>
                     )}
 
-                    {/* Submit Pay Button */}
+                    {/* Pay Button */}
                     <div className="pt-3">
                       <button
                         type="submit"
                         disabled={isProcessing}
-                        className="w-full py-4 px-6 bg-black hover:bg-neutral-800 text-white font-bold text-sm uppercase tracking-wider rounded-xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2.5 disabled:opacity-75 disabled:cursor-not-allowed"
+                        className="w-full py-4 px-6 bg-brand-pink hover:bg-rose-700 text-white font-bold text-sm uppercase tracking-wider rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
                       >
                         {isProcessing ? (
                           <>
@@ -449,10 +503,10 @@ const PaymentPage = () => {
                           </>
                         ) : (
                           <>
-                            <Lock className="w-4 h-4 text-yellow-400" />
+                            <Lock className="w-4 h-4" />
                             <span>
-                              Confirm & Deposit {currency}
-                              {totalAmount.toLocaleString()} in Escrow
+                              Pay {currencySymbol}
+                              {listingFee.toLocaleString()} via JuicePay Credit Card
                             </span>
                           </>
                         )}
@@ -461,294 +515,325 @@ const PaymentPage = () => {
                   </form>
                 )}
 
-                {/* Alternative SEPA Wire Details */}
-                {paymentMethod === 'sepa' && (
-                  <div className="space-y-4 pt-2">
-                    <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2 text-xs">
-                      <div className="font-bold text-black flex items-center justify-between">
-                        <span>StarCast European Escrow Trust Account</span>
-                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-mono">
-                          SEPA INSTANT ACTIVE
+                {/* FORM: PayPal Express */}
+                {paymentMethod === 'paypal' && (
+                  <form onSubmit={handleProcessPayment} className="space-y-4 pt-2">
+                    <div className="p-4 rounded-2xl bg-[#003087]/5 border border-[#003087]/20 text-xs text-gray-700 space-y-2">
+                      <div className="flex items-center justify-between font-bold text-gray-900">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[#003087] font-extrabold text-sm">PayPal</span>
+                          <span>Express Checkout</span>
+                        </div>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">
+                          Instant Authorization
                         </span>
                       </div>
-                      <div className="space-y-1 text-neutral-600 font-mono text-[11px]">
-                        <div>IBAN: DE89 3704 0044 0532 0130 00</div>
-                        <div>BIC / SWIFT: COBADEFFXXX</div>
-                        <div>Reference: {escrowData.refId || 'PRD-842910'}</div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handlePayNow}
-                      disabled={isProcessing}
-                      className="w-full py-3.5 px-6 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
-                    >
-                      <Building className="w-4 h-4 text-emerald-400" />
-                      <span>Generate SEPA Payment Reference & Lock Escrow</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Alternative Digital Pay */}
-                {paymentMethod === 'apple_pay' && (
-                  <div className="space-y-4 pt-2 text-center">
-                    <p className="text-xs text-neutral-600">
-                      Use Apple Pay, Google Pay, or Biometric Authentication to authorize this talent escrow deposit instantly.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handlePayNow}
-                      disabled={isProcessing}
-                      className="w-full py-4 px-6 bg-black hover:bg-neutral-800 text-white font-bold text-sm rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                    >
-                      <span>Pay with</span>
-                      <strong className="tracking-tight text-white">Pay / GPay</strong>
-                      <span>({currency}{totalAmount.toLocaleString()})</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Alternative Studio Balance */}
-                {paymentMethod === 'balance' && (
-                  <div className="space-y-4 pt-2">
-                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 text-xs space-y-2">
-                      <div className="flex justify-between items-center text-amber-900 font-bold">
-                        <span>Available Studio Escrow Balance</span>
-                        <span className="text-sm font-serif">€2,400.00</span>
-                      </div>
-                      <p className="text-[11px] text-amber-800">
-                        {currency}{totalAmount} will be deducted from your prepaid balance and allocated to booking ref #{escrowData.refId || 'PRD-842910'}.
+                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                        Log in with your PayPal credentials or pay as a guest using your linked bank account or international debit/credit cards.
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handlePayNow}
-                      disabled={isProcessing}
-                      className="w-full py-3.5 px-6 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-all flex items-center justify-center gap-2"
-                    >
-                      <ShieldCheck className="w-4 h-4 text-yellow-400" />
-                      <span>Deduct & Allocate from Studio Balance</span>
-                    </button>
-                  </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-gray-800">
+                        PayPal Account Email <span className="text-brand-pink">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={paypalEmail}
+                        onChange={(e) => setPaypalEmail(e.target.value)}
+                        placeholder="your-email@paypal.com"
+                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#003087] focus:ring-2 focus:ring-blue-100 transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <input
+                        type="checkbox"
+                        id="paypalRemember"
+                        checked={paypalRemember}
+                        onChange={(e) => setPaypalRemember(e.target.checked)}
+                        className="rounded border-gray-300 text-[#003087] focus:ring-[#003087] cursor-pointer"
+                      />
+                      <label htmlFor="paypalRemember" className="text-xs text-gray-600 cursor-pointer">
+                        Remember this PayPal account for future casting calls
+                      </label>
+                    </div>
+
+                    {/* Terms Agreement */}
+                    <div className="pt-2">
+                      <label className="flex items-start gap-2.5 cursor-pointer text-xs text-gray-600 leading-relaxed">
+                        <input
+                          type="checkbox"
+                          checked={agreeTerms}
+                          onChange={(e) => setAgreeTerms(e.target.checked)}
+                          className="mt-0.5 rounded border-gray-300 text-[#003087] focus:ring-[#003087] cursor-pointer"
+                        />
+                        <span>
+                          I agree to PayPal's user agreement and authorize{' '}
+                          <strong className="text-gray-900 font-bold">
+                            {currencySymbol}
+                            {listingFee.toLocaleString()}
+                          </strong>{' '}
+                          deduction to publish this casting call and unlock candidate profiles.
+                        </span>
+                      </label>
+                    </div>
+
+                    {errorMsg && (
+                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                        <span>{errorMsg}</span>
+                      </div>
+                    )}
+
+                    {/* PayPal Button */}
+                    <div className="pt-3">
+                      <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className="w-full py-4 px-6 bg-[#FFC439] hover:bg-[#F2BA36] text-[#003087] font-extrabold text-sm rounded-2xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                      >
+                        {isProcessing ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-[#003087]/30 border-t-[#003087] rounded-full animate-spin" />
+                            <span>{processingStep}</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>Pay with</span>
+                            <span className="font-extrabold text-base tracking-tight text-[#003087]">
+                              Pay<span className="text-[#0079C1]">Pal</span>
+                            </span>
+                            <span>({currencySymbol}{listingFee.toLocaleString()})</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
                 )}
               </div>
 
               {/* Guarantees Box */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-4 rounded-xl bg-white border border-neutral-200/90 shadow-2xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-black">
+                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
                     <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Performer Guarantee</span>
+                    <span>Instant Live Post</span>
                   </div>
-                  <p className="text-[11px] text-neutral-500 leading-normal">
-                    Funds released only after production verifies check-in.
+                  <p className="text-[11px] text-gray-500 leading-normal">
+                    Opportunity becomes discoverable to verified talents across the platform.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white border border-neutral-200/90 shadow-2xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-black">
-                    <Clock className="w-4 h-4 text-sky-600" />
-                    <span>100% Refundable</span>
+                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
+                    <Eye className="w-4 h-4 text-brand-pink" />
+                    <span>Profiles Unlocked</span>
                   </div>
-                  <p className="text-[11px] text-neutral-500 leading-normal">
-                    Cancel anytime before booking confirmation for full refund.
+                  <p className="text-[11px] text-gray-500 leading-normal">
+                    Gain full access to browse candidate portfolios, showreels, and contacts.
                   </p>
                 </div>
 
-                <div className="p-4 rounded-xl bg-white border border-neutral-200/90 shadow-2xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-black">
-                    <HelpCircle className="w-4 h-4 text-neutral-600" />
-                    <span>Dispute Mediation</span>
+                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
+                    <HelpCircle className="w-4 h-4 text-sky-600" />
+                    <span>Recruiter Support</span>
                   </div>
-                  <p className="text-[11px] text-neutral-500 leading-normal">
-                    StarCast legal mediation team resolves any production issues.
+                  <p className="text-[11px] text-gray-500 leading-normal">
+                    Dedicated StageLink production support team ready for any assistance.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Escrow Financial Summary & Timeline (5 Cols) */}
+            {/* RIGHT COLUMN: Order Summary & Opportunity Review (5 Cols) */}
             <div className="lg:col-span-5 space-y-5">
-              {/* Exact Escrow Card As Seen In Screenshot */}
-              <div className="bg-white rounded-2xl border border-neutral-200/90 p-6 shadow-xs space-y-5">
+              <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 shadow-xs space-y-5">
                 {/* Header Badge */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-700 tracking-wide">
+                  <div className="flex items-center gap-2 text-xs font-bold text-gray-700 tracking-wide">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="uppercase text-[11px]">Live Production Escrow</span>
+                    <span className="uppercase text-[11px]">Ready to Publish</span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Automated Escrow
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-brand-pink border border-pink-200">
+                    Listing Fee
                   </span>
                 </div>
 
-                {/* Total Escrow Highlight Block */}
-                <div className="p-5 rounded-2xl bg-neutral-900 text-white space-y-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">
-                    Total Talent Escrow
+                {/* Amount Highlight Block */}
+                <div className="p-5 rounded-2xl bg-linear-to-br from-rose-600 via-pink-600 to-rose-700 text-white space-y-2 shadow-md shadow-pink-500/20">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-pink-200 block">
+                    Total Publication Fee
                   </span>
                   <div className="flex items-baseline justify-between">
                     <div className="text-3xl sm:text-4xl font-extrabold font-serif text-white tracking-tight">
-                      {currency}
-                      {totalAmount.toLocaleString()}
+                      {currencySymbol}
+                      {listingFee.toLocaleString()}
                     </div>
-                    <span className="text-[10px] font-semibold text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded">
-                      0% Platform Surcharge
+                    <span className="text-[10px] font-semibold text-white/90 bg-white/20 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+                      One-time charge
                     </span>
                   </div>
                 </div>
 
-                {/* Breakdown List */}
-                <div className="space-y-3 text-xs divide-y divide-neutral-100">
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-neutral-500 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-neutral-400" />
+                {/* Opportunity Snapshot Breakdown */}
+                <div className="space-y-3 text-xs divide-y divide-gray-100">
+                  <div className="flex items-start justify-between pt-1 gap-2">
+                    <span className="text-gray-500">Production:</span>
+                    <span className="font-bold text-gray-900 text-right">
+                      {opportunity.productionCompany}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start justify-between pt-3 gap-2">
+                    <span className="text-gray-500">Category &amp; Type:</span>
+                    <span className="font-semibold text-gray-800 text-right">
+                      {opportunity.productionCategory || opportunity.category} •{' '}
+                      {opportunity.productionType || opportunity.type}
+                    </span>
+                  </div>
+
+                  <div className="flex items-start justify-between pt-3 gap-2">
+                    <span className="text-gray-500">Talent Needed:</span>
+                    <span className="font-semibold text-gray-800 text-right">
+                      {Array.isArray(opportunity.talentNeeded)
+                        ? opportunity.talentNeeded.join(', ')
+                        : opportunity.talentNeeded}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3">
+                    <span className="text-gray-500 flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-gray-400" />
                       <span>Artists Needed:</span>
                     </span>
-                    <span className="font-bold text-black">
-                      {escrowData.artistsNeeded || 5} performers
+                    <span className="font-bold text-gray-900">
+                      {opportunity.artistsNeeded || 1} talent
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between pt-3">
-                    <span className="text-neutral-500">Compensation / Artist:</span>
-                    <span className="font-bold text-black font-mono">
-                      {currency}
-                      {escrowData.compensation || 150}
+                    <span className="text-gray-500 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                      <span>Location:</span>
+                    </span>
+                    <span className="font-medium text-gray-800">
+                      {opportunity.location || 'Open / Unspecified (Optional)'}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between pt-3">
-                    <span className="text-neutral-500 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Shooting City:</span>
+                    <span className="text-gray-500 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                      <span>Shoot Date:</span>
                     </span>
-                    <span className="font-bold text-black">{escrowData.location || 'Berlin'}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3">
-                    <span className="text-neutral-500 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Production Date:</span>
-                    </span>
-                    <span className="font-bold text-black font-mono">
-                      {escrowData.shootDate || '2026-11-20'}
+                    <span className="font-medium text-gray-800">
+                      {opportunity.shootDate || 'Flexible / To be decided (Optional)'}
                     </span>
                   </div>
                 </div>
 
-                <div className="border-t border-neutral-100" />
+                <div className="border-t border-gray-100" />
 
-                {/* Payment Protection Text & Timeline */}
-                <div className="space-y-3">
+                {/* Recruiter Privilege Notice */}
+                <div className="space-y-2.5 p-4 rounded-2xl bg-gray-50 border border-gray-200/80">
                   <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-black shrink-0" />
-                    <h3 className="text-xs font-bold text-black">Payment Protection</h3>
+                    <Sparkles className="w-4 h-4 text-brand-pink shrink-0" />
+                    <h3 className="text-xs font-bold text-gray-900">What Unlocks After Payment:</h3>
                   </div>
-                  <p className="text-[11px] text-neutral-600 leading-relaxed font-normal">
-                    The agreed compensation is securely locked in platform escrow. Funds are disbursed to verified talent once the shoot is confirmed.
-                  </p>
-
-                  {/* 3-Step Escrow Timeline */}
-                  <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 block">
-                      Escrow Booking Timeline:
-                    </span>
-                    <div className="grid grid-cols-3 gap-1.5 text-center">
-                      <div className="p-2 rounded-lg bg-black text-white shadow-2xs">
-                        <span className="block text-[10px] font-bold text-white">1. Secured</span>
-                        <span className="text-[9px] text-yellow-300">🔒 In Escrow</span>
-                      </div>
-                      <div className="p-2 rounded-lg bg-white border border-neutral-200 shadow-2xs">
-                        <span className="block text-[10px] font-bold text-black">2. Shoot Done</span>
-                        <span className="text-[9px] text-neutral-500">🎬 Verified</span>
-                      </div>
-                      <div className="p-2 rounded-lg bg-white border border-neutral-200 shadow-2xs">
-                        <span className="block text-[10px] font-bold text-black">3. Paid</span>
-                        <span className="text-[9px] text-neutral-400">✓ Instant</span>
-                      </div>
-                    </div>
-                  </div>
+                  <ul className="text-[11px] text-gray-600 space-y-1.5 list-disc list-inside">
+                    <li>Immediate public broadcast in Casting Directory</li>
+                    <li>Full access to view and search candidate profiles</li>
+                    <li>Direct audition tapes and contact details</li>
+                    <li>Automated talent matching and ranking</li>
+                  </ul>
                 </div>
 
-                {/* Production Summary Footer */}
-                <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-100 text-[11px] space-y-1">
-                  <div className="font-semibold text-black truncate">
-                    {escrowData.projectTitle || 'The Berlin Requiem'}
+                {/* Production Reference Footer */}
+                <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 text-[11px] space-y-0.5">
+                  <div className="font-semibold text-gray-900 truncate">
+                    {opportunity.title || 'Casting Requirement Announcement'}
                   </div>
-                  <div className="text-neutral-500">
-                    By <strong>{escrowData.productionCompany || 'Northlight Productions'}</strong>
-                  </div>
-                  <div className="text-neutral-400 font-mono text-[10px]">
-                    Booking Reference: {escrowData.refId || 'PRD-842910'}
+                  <div className="text-gray-500">
+                    Draft Reference: <span className="font-mono">{opportunity.refId || 'PRD-NEW'}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          /* PAYMENT SUCCESS RECEIPT SCREEN */
-          <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-neutral-200 p-8 sm:p-10 shadow-lg text-center space-y-8 animate-in fade-in duration-300">
-            <div className="w-20 h-20 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
-              <CheckCircle2 className="w-10 h-10" />
+          /* PAYMENT SUCCESS & RECEIPT SCREEN */
+          <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-gray-200 p-8 sm:p-10 shadow-xl text-center space-y-7 animate-in fade-in duration-300">
+            {/* Success Icon */}
+            <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+              <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
             </div>
 
             <div className="space-y-2">
               <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest block">
-                Escrow Deposit Secured & Verified
+                Payment Authorized • Post Published Live
               </span>
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black">
-                Payment Authorized Successfully!
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900">
+                Casting Call is Live on StageLink!
               </h2>
-              <p className="text-xs text-neutral-600 max-w-md mx-auto leading-relaxed">
+              <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
                 Your payment of{' '}
-                <strong className="text-black font-semibold">
-                  {currency}
-                  {totalAmount.toLocaleString()}
+                <strong className="text-gray-900 font-bold">
+                  {currencySymbol}
+                  {listingFee.toLocaleString()}
                 </strong>{' '}
-                is safely locked in StarCast Production Escrow. The casting call is now officially active and being broadcast to verified performers.
+                was successfully authorized via{' '}
+                <strong className="text-brand-pink font-bold">
+                  {paymentResult?.paymentMethod || 'JuicePay / PayPal'}
+                </strong>
+                . Your casting post is now live, and candidate profiles are fully unlocked!
               </p>
             </div>
 
             {/* Official Digital Receipt Box */}
-            <div className="bg-neutral-50 rounded-2xl border border-neutral-200 p-6 text-left text-xs space-y-3.5">
-              <div className="flex justify-between items-center border-b border-neutral-200/80 pb-3">
-                <span className="text-neutral-500 font-medium">Transaction Hash:</span>
-                <span className="font-mono font-bold text-black bg-white px-2.5 py-1 rounded border border-neutral-200">
-                  {paymentTxnId}
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 text-left text-xs space-y-3">
+              <div className="flex justify-between items-center border-b border-gray-200/80 pb-3">
+                <span className="text-gray-500 font-medium">Transaction ID:</span>
+                <span className="font-mono font-bold text-gray-900 bg-white px-2.5 py-1 rounded border border-gray-200">
+                  {paymentResult?.txnId}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-500 font-medium">Production Reference:</span>
-                <span className="font-mono font-bold text-black">{escrowData.refId || 'PRD-842910'}</span>
+                <span className="text-gray-500 font-medium">Listing Reference:</span>
+                <span className="font-mono font-bold text-gray-900">
+                  {paymentResult?.opportunity?.refId || opportunity.refId}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-500 font-medium">Production Company:</span>
-                <span className="font-bold text-black">{escrowData.productionCompany}</span>
+                <span className="text-gray-500 font-medium">Production Company:</span>
+                <span className="font-bold text-gray-900">
+                  {paymentResult?.opportunity?.productionCompany || opportunity.productionCompany}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-500 font-medium">Escrow Amount Locked:</span>
+                <span className="text-gray-500 font-medium">Payment Option:</span>
+                <span className="font-semibold text-brand-pink">
+                  {paymentResult?.paymentMethod}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium">Amount Paid:</span>
                 <span className="font-bold text-emerald-700 text-sm font-mono">
-                  {currency}
-                  {totalAmount.toLocaleString()} EUR
+                  {currencySymbol}
+                  {listingFee.toLocaleString()} INR
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-500 font-medium">Performer Allocation:</span>
-                <span className="font-medium text-black">
-                  {escrowData.artistsNeeded || 5} artists × {currency}
-                  {escrowData.compensation || 150}
-                </span>
+                <span className="text-gray-500 font-medium">Authorized At:</span>
+                <span className="font-medium text-gray-800">{paymentResult?.paidAt}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-500 font-medium">Scheduled Shoot Date:</span>
-                <span className="font-medium text-black">{escrowData.shootDate || '2026-11-20'}</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-neutral-200/80">
-                <span className="text-neutral-500 font-medium">Escrow Status:</span>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-200/80">
+                <span className="text-gray-500 font-medium">Candidate Profiles:</span>
                 <span className="inline-flex items-center gap-1 font-bold text-emerald-700">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>Funds Segregated & Guarded</span>
+                  <span>Unlocked &amp; Viewable</span>
                 </span>
               </div>
             </div>
@@ -757,18 +842,25 @@ const PaymentPage = () => {
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
                 to="/opportunities"
-                className="flex-1 py-3.5 px-5 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-4 px-5 bg-brand-pink hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>View in Casting Directory</span>
+                <span>View Live Casting Post</span>
                 <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <Link
+                to="/admin/candidates"
+                className="flex-1 py-4 px-5 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Users className="w-3.5 h-3.5 text-yellow-400" />
+                <span>View Candidate Profiles</span>
               </Link>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="py-3.5 px-5 bg-white border border-neutral-300 hover:border-black text-black font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2"
+                className="py-4 px-5 bg-white border border-gray-300 hover:border-gray-900 text-gray-900 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>Print Official Escrow Receipt</span>
+                <span>Print Receipt</span>
               </button>
             </div>
           </div>

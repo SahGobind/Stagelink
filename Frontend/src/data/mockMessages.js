@@ -1,8 +1,56 @@
 /**
- * Centralized Mock Messages Data for StarCast In-Website Messaging
+ * Centralized Mock Messages Data for StageLink In-Website Messaging
  */
 
 export const initialMockMessages = [
+  {
+    id: 'conv-ops',
+    isOperationsTeam: true,
+    participant: {
+      id: 'ops-team',
+      name: 'StageLink Operations Team',
+      organization: 'StageLink HQ • Operations & Talent Support',
+      role: 'Operations Desk',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
+      initials: 'OP',
+      verified: true,
+      badge: 'Official StageLink Operations',
+    },
+    opportunity: null,
+    unreadCount: 0,
+    isArchived: false,
+    lastMessage: 'Hi! Welcome to StageLink. Text our operations team anytime with any questions about auditions, verification, or payouts.',
+    lastMessageTime: 'Active now',
+    sharedFiles: [
+      {
+        id: 'file-ops-guide',
+        name: 'StageLink_Performer_Operations_Guide.pdf',
+        size: '1.2 MB',
+        date: 'Oct 15, 2026',
+        type: 'pdf',
+      },
+    ],
+    messages: [
+      {
+        id: 'm-ops-1',
+        senderId: 'ops-team',
+        senderName: 'StageLink Operations Team',
+        text: 'Hello and welcome! Our Operations Team is here to help you navigate auditions, contract verification, shoot logistics, and banking or compensation queries.',
+        timestamp: 'Today 9:00 AM',
+        isOwn: false,
+        readStatus: 'read',
+      },
+      {
+        id: 'm-ops-2',
+        senderId: 'ops-team',
+        senderName: 'StageLink Operations Team',
+        text: 'Feel free to text us directly using the message box below or click any quick topic prompt.',
+        timestamp: 'Today 9:01 AM',
+        isOwn: false,
+        readStatus: 'read',
+      },
+    ],
+  },
   {
     id: 'conv-1',
     participant: {
@@ -200,7 +248,15 @@ export const getStoredMessages = () => {
   try {
     const stored = localStorage.getItem(MESSAGES_STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Ensure conv-ops is included
+        const hasOps = parsed.some((c) => c.id === 'conv-ops');
+        if (!hasOps) {
+          return [initialMockMessages[0], ...parsed];
+        }
+        return parsed;
+      }
     }
   } catch {
     // fallback

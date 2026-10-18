@@ -197,7 +197,7 @@ const VideoReelsSection = ({ introVideo, actingReel }) => {
                   <Film className="w-8 h-8" />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold">Simulated StarCast Media Stream</h4>
+                  <h4 className="text-base font-bold">Simulated StageLink Media Stream</h4>
                   <p className="text-xs text-zinc-400 mt-1">
                     Playing {activeVideoModal.title} from host link:
                   </p>

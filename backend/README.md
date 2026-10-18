@@ -1,6 +1,6 @@
-# StarCast Backend API (Django & Django REST Framework)
+# StageLink Backend API (Django & Django REST Framework)
 
-Modular, database-free backend architecture designed for the **StarCast International Casting Marketplace**.
+Modular, database-free backend architecture designed for the **StageLink International Casting Marketplace**.
 
 ---
 
@@ -136,7 +136,7 @@ Expected response:
 ```json
 {
   "status": "healthy",
-  "service": "StarCast International Casting Marketplace API",
+  "service": "StageLink International Casting Marketplace API",
   "version": "1.0.0-in-memory",
   "database_connected": false,
   "database_status": "disconnected_by_design (in-memory mode)",

@@ -1,6 +1,6 @@
 /**
  * Predefined Curated Skills and Languages for Performer Profiles
- * StarCast Casting & Performer Platform
+ * StageLink Casting & Performer Platform
  */
 
 export const SKILL_CATEGORIES = [

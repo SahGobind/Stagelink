@@ -22,13 +22,15 @@ import Textarea from '../../components/common/Textarea';
 import Button from '../../components/common/Button';
 import Toast from '../../components/common/Toast';
 import { getCandidateProfile, saveCandidateProfile } from '../../data/mockCandidates';
+import { useAuth } from '../../context/AuthContext';
 import SkillDropdownPicker from '../../components/profile/SkillDropdownPicker';
 import { POPULAR_LANGUAGES } from '../../data/skillsData';
 
 const EditProfilePage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const candidate = getCandidateProfile();
+  const { user } = useAuth();
+  const candidate = getCandidateProfile(user);
 
   const initialTab = searchParams.get('tab') || 'personal';
   const [activeTab, setActiveTab] = useState(initialTab); // 'personal' | 'professional' | 'credits' | 'skills' | 'media' | 'privacy'
@@ -178,7 +180,7 @@ const EditProfilePage = () => {
       privacySettings,
     };
 
-    saveCandidateProfile(updatedProfile);
+    saveCandidateProfile(updatedProfile, user);
     setToastMessage('Profile changes saved successfully!');
 
     setTimeout(() => {
@@ -836,7 +838,7 @@ const EditProfilePage = () => {
                 <div>
                   <span className="text-xs font-bold text-brand-navy">Show Exact Date of Birth</span>
                   <p className="text-xs text-gray-500">
-                    When turned off, StarCast displays a flexible playing age bracket (e.g. 22-30 yrs).
+                    When turned off, StageLink displays a flexible playing age bracket (e.g. 22-30 yrs).
                   </p>
                 </div>
                 <input

@@ -162,7 +162,7 @@ const ApplicationDetailsPage = () => {
               <span>Recommended Profile Enhancements for Future Applications</span>
             </div>
             <p className="text-[11px] text-sky-800">
-              Adding the following items to your StarCast performer profile will strengthen compatibility evaluations across casting opportunities:
+              Adding the following items to your StageLink performer profile will strengthen compatibility evaluations across casting opportunities:
             </p>
             <ul className="list-disc list-inside space-y-1 text-[11px] text-sky-900 font-medium pl-1">
               {matchResult.improvementSuggestions.map((tip, i) => (

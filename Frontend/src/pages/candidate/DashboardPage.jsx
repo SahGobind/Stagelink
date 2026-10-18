@@ -35,20 +35,28 @@ const DashboardPage = () => {
   const { notifications } = useNotifications();
 
   // Synchronize candidate profile & applications from storage
-  const [candidate, setCandidate] = useState(() => getCandidateProfile());
+  const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
   const [applications, setApplications] = useState(() => getCandidateApplications());
 
   useEffect(() => {
+    setCandidate(getCandidateProfile(user));
+  }, [user]);
+
+  useEffect(() => {
     const handleStorageChange = () => {
-      setCandidate(getCandidateProfile());
+      setCandidate(getCandidateProfile(user));
       setApplications(getCandidateApplications());
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+    window.addEventListener('starcast_profile_updated', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('starcast_profile_updated', handleStorageChange);
+    };
+  }, [user]);
 
-  // Personalized details
-  const displayName = user?.fullName || candidate?.fullName || 'Sophia Bennett';
+  // Personalized details isolated to this candidate
+  const displayName = candidate?.fullName || user?.fullName || 'Candidate Artist';
   const firstName = displayName.split(' ')[0] || 'Artist';
 
   // Derived profile completion
@@ -379,7 +387,7 @@ const DashboardPage = () => {
               <div className="flex items-center gap-2">
                 <Compass className="w-4 h-4 text-emerald-400" />
                 <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-400">
-                  StarCast Casting Directory
+                  StageLink Casting Directory
                 </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold font-serif">
@@ -411,12 +419,22 @@ const DashboardPage = () => {
                   Recent Messages
                 </h3>
               </div>
-              <Link
-                to="/candidate/messages"
-                className="text-[11px] font-bold text-brand-navy hover:underline"
-              >
-                Open Inbox
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/candidate/messages?conversationId=conv-ops"
+                  className="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200 transition-colors flex items-center gap-1"
+                  title="Direct text channel to StageLink Operations"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Text Operations</span>
+                </Link>
+                <Link
+                  to="/candidate/messages"
+                  className="text-[11px] font-bold text-brand-navy hover:underline"
+                >
+                  Inbox
+                </Link>
+              </div>
             </div>
 
             {recentMessages.length === 0 ? (

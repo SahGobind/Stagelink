@@ -1,4 +1,4 @@
-// StarCast formatting helpers
+// StageLink formatting helpers
 
 export const formatDate = (dateString, options = {}) => {
   if (!dateString) return '';

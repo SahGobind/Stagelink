@@ -26,7 +26,7 @@ const ResumeSection = ({ resume, candidate }) => {
     // Generate simple text CV for local demo download
     const cvContent = `
 ======================================================
-STARCAST TALENT REPRESENTATION RESUME
+STAGELINK TALENT REPRESENTATION RESUME
 ======================================================
 Name: ${candidate?.fullName || 'Sophia Bennett'}
 Headline: ${candidate?.headline || 'Film & Theatre Performer'}
@@ -56,7 +56,7 @@ Dialects & Languages: ${(candidate?.languages || []).join(', ')}
 Special Movement & Combat: ${(candidate?.skillsByCategory?.otherSkills || []).join(', ')}
 
 ======================================================
-Generated via StarCast Performer Suite (Local Draft)
+Generated via StageLink Performer Suite (Local Draft)
 ======================================================
     `.trim();
 
@@ -139,7 +139,7 @@ Generated via StarCast Performer Suite (Local Draft)
       <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100/80 text-[11px] text-blue-900 flex items-start gap-2.5">
         <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong className="font-semibold">Privacy & Storage Notice:</strong> Resume files selected in StarCast are stored in your client draft session. In this demo, files are processed in your local browser and are never permanently uploaded to any remote server without prior authorization.
+          <strong className="font-semibold">Privacy & Storage Notice:</strong> Resume files selected in StageLink are stored in your client draft session. In this demo, files are processed in your local browser and are never permanently uploaded to any remote server without prior authorization.
         </p>
       </div>
 

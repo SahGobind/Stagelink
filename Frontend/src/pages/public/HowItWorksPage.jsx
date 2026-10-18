@@ -67,7 +67,7 @@ const HowItWorksPage = () => {
     {
       num: '04',
       title: 'Schedule Auditions & Callbacks',
-      desc: 'Send callback invitations, request script readings, and coordinate audition slots directly via StarCast’s messaging suite.',
+      desc: 'Send callback invitations, request script readings, and coordinate audition slots directly via StageLink’s messaging suite.',
       icon: Calendar,
     },
   ];
@@ -75,15 +75,15 @@ const HowItWorksPage = () => {
   const faqs = [
     {
       q: 'Is it free for artists to sign up and apply for roles?',
-      a: 'Yes, basic performer registration and applying to standard casting calls is completely free on StarCast. We believe every talented artist deserves direct access to legitimate opportunities.',
+      a: 'Yes, basic performer registration and applying to standard casting calls is completely free on StageLink. We believe every talented artist deserves direct access to legitimate opportunities.',
     },
     {
-      q: 'How does StarCast verify casting calls and production houses?',
-      a: 'Every production house and casting call posted on StarCast undergoes manual review by our team. We verify the production entity, project legitimacy, and ensure safe audition standards before public listing.',
+      q: 'How does StageLink verify casting calls and production houses?',
+      a: 'Every production house and casting call posted on StageLink undergoes manual review by our team. We verify the production entity, project legitimacy, and ensure safe audition standards before public listing.',
     },
     {
       q: 'Can beginners or unrepresented actors apply?',
-      a: 'Absolutely. Many casting calls on StarCast specifically seek fresh faces and debut performers across student films, commercials, and independent feature projects.',
+      a: 'Absolutely. Many casting calls on StageLink specifically seek fresh faces and debut performers across student films, commercials, and independent feature projects.',
     },
     {
       q: 'How do video auditions and self-tapes work?',
@@ -104,7 +104,7 @@ const HowItWorksPage = () => {
             The Process
           </span>
           <h1 className="text-3xl sm:text-5xl font-bold font-serif text-black tracking-tight leading-tight">
-            How StarCast Works
+            How StageLink Works
           </h1>
           <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl">
             A transparent, modern casting platform tailored for both performers seeking breakthrough roles and production teams discovering top talent.
@@ -174,7 +174,7 @@ const HowItWorksPage = () => {
               For Casting Teams & Studios
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black">
-              How Production Houses Cast with StarCast
+              How Production Houses Cast with StageLink
             </h2>
             <p className="text-xs text-neutral-600">
               Find, evaluate, and cast talent faster with streamlined digital audition workflows.
