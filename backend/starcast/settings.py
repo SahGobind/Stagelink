@@ -17,11 +17,25 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'starcast-dev-insecure-key-2026-xyz'
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'True').lower() in ('true', '1', 't')
 
+# ALLOWED_HOSTS = [
+#     host.strip()
+#     for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
+#     if host.strip()
+# ]
+
 ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0').split(',')
-    if host.strip()
+    "stagelink-nv45.vercel.app",
+    "stagelink-nv45-r142trfqq-gobind-sahs-projects.vercel.app",
+    "localhost",
+    "127.0.0.1",
 ]
+
+
+# ALLOWED_HOSTS = [
+#     "stagelink-b6ls-e17276pa-gobind-sahs-projects.vercel.app",
+# ]
+
+
 
 # Application definition
 # NOTE: database-backed apps (django.contrib.auth, contenttypes, sessions, admin) are intentionally omitted.
