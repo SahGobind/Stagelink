@@ -31,6 +31,15 @@ SAMPLE_USERS = [
     }
 ]
 
+class UserListView(APIView):
+    """List all registered users / talent & recruiter directory."""
+    def get(self, request):
+        role = request.query_params.get("role")
+        if role:
+            filtered = [u for u in SAMPLE_USERS if u.get("role") == role]
+            return Response(filtered, status=status.HTTP_200_OK)
+        return Response(SAMPLE_USERS, status=status.HTTP_200_OK)
+
 class UserRegisterView(APIView):
     """Register a new user account (in-memory demo)."""
     def post(self, request):

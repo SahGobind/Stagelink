@@ -36,3 +36,7 @@ wheels/
 # Databases (explicitly ignored should one be added in future)
 *.sqlite3
 *.db
+
+# Static files collected for production
+staticfiles/
+

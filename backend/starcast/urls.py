@@ -34,10 +34,12 @@ class HealthCheckView(APIView):
         }, status=status.HTTP_200_OK)
 
 urlpatterns = [
-    # Health check endpoint
+    # Health check and root entry points
+    path('', HealthCheckView.as_view(), name='api-root'),
+    path('health/', HealthCheckView.as_view(), name='health-check-short'),
     path('api/health/', HealthCheckView.as_view(), name='api-health-check'),
     
-    # Modular StarCast API routes
+    # Modular StarCast API routes (standard /api/ prefix)
     path('api/users/', include('users.urls')),
     path('api/companies/', include('companies.urls')),
     path('api/opportunities/', include('opportunities.urls')),
@@ -46,4 +48,14 @@ urlpatterns = [
     path('api/messaging/', include('messaging.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/payments/', include('payments.urls')),
+
+    # Convenience direct routes (aliases without /api/ prefix)
+    path('users/', include('users.urls')),
+    path('companies/', include('companies.urls')),
+    path('opportunities/', include('opportunities.urls')),
+    path('applications/', include('applications.urls')),
+    path('ranking/', include('ranking.urls')),
+    path('messaging/', include('messaging.urls')),
+    path('notifications/', include('notifications.urls')),
+    path('payments/', include('payments.urls')),
 ]
