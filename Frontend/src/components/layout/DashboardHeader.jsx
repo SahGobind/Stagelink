@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Bell, Search, LogOut, User, Settings } from 'lucide-react';
+import { Bell, Search, LogOut, User, Settings, LifeBuoy, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import Avatar from '../common/Avatar';
@@ -13,6 +13,7 @@ const DashboardHeader = ({ title, subtitle }) => {
   const notifLink = role === 'admin' ? '/admin/messages' : '/candidate/notifications';
   const profileLink = role === 'admin' ? '/admin/settings' : '/candidate/profile';
   const settingsLink = role === 'admin' ? '/admin/settings' : '/candidate/settings';
+  const supportLink = role === 'admin' || role === 'recruiter' ? '/admin/support' : '/candidate/support';
 
   return (
     <header className="bg-white border-b border-brand-border px-4 sm:px-6 md:px-8 xl:px-10 py-3.5 sm:py-4 flex items-center justify-between sticky top-0 z-30">
@@ -88,6 +89,22 @@ const DashboardHeader = ({ title, subtitle }) => {
               <Settings className="w-4 h-4 text-gray-400" />
               <span>Settings</span>
             </Link>
+            <Link
+              to={supportLink}
+              className="flex items-center space-x-2 px-4 py-2 text-xs font-medium text-brand-navy hover:bg-gray-50 transition-colors"
+            >
+              <LifeBuoy className="w-4 h-4 text-brand-pink" />
+              <span>Help &amp; Support</span>
+            </Link>
+            {(role === 'admin' || user?.role === 'admin' || user?.role === 'operations') && (
+              <Link
+                to="/admin/operations/support"
+                className="flex items-center space-x-2 px-4 py-2 text-xs font-medium text-brand-navy hover:bg-gray-50 transition-colors"
+              >
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                <span>Operations Desk</span>
+              </Link>
+            )}
           </div>
           <div className="pt-1 border-t border-gray-100">
             <button

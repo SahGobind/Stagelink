@@ -7,6 +7,8 @@
  *    live and candidate profiles become fully unlocked.
  */
 
+import { isBrokenImageUrl, getCategoryFallbackImage } from './opportunityImageHelper';
+
 export const STORAGE_KEY_PAID = 'starcast_has_paid_posting';
 export const STORAGE_KEY_CUSTOM_OPPS = 'starcast_custom_opportunities';
 export const STORAGE_KEY_PENDING = 'starcast_pending_payment';
@@ -99,7 +101,36 @@ export const clearPendingOpportunity = () => {
 };
 
 /**
- * Retrieve custom published opportunities from localStorage
+ * Sanitize custom opportunities: automatically repairs missing or known 404 image URLs
+ */
+export const sanitizeCustomOpportunities = (list) => {
+  if (!Array.isArray(list)) return [];
+  let hasRepairs = false;
+  const sanitized = list.map((opp) => {
+    if (!opp.image || isBrokenImageUrl(opp.image)) {
+      hasRepairs = true;
+      return {
+        ...opp,
+        image: getCategoryFallbackImage(
+          opp.productionCategory || opp.category,
+          opp.productionType || opp.type
+        ),
+      };
+    }
+    return opp;
+  });
+  if (hasRepairs) {
+    try {
+      localStorage.setItem(STORAGE_KEY_CUSTOM_OPPS, JSON.stringify(sanitized));
+    } catch {
+      // ignore
+    }
+  }
+  return sanitized;
+};
+
+/**
+ * Retrieve custom published opportunities from localStorage for public viewing
  */
 export const getCustomOpportunities = () => {
   try {
@@ -107,7 +138,8 @@ export const getCustomOpportunities = () => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        return parsed.filter((o) => o.status === 'published' || o.status === 'open');
+        const sanitized = sanitizeCustomOpportunities(parsed);
+        return sanitized.filter((o) => o.status === 'published' || o.listingStatus === 'published');
       }
     }
   } catch (err) {
@@ -117,11 +149,37 @@ export const getCustomOpportunities = () => {
 };
 
 /**
- * Mark a casting post as paid & published, saving it to localStorage and unlocking talent profiles.
+ * Retrieve all custom opportunities regardless of status for recruiter dashboard
  */
-export const publishOpportunity = (oppData, txnId = '', paymentMethod = 'JuicePay Credit Card') => {
+export const getAllCustomOpportunities = () => {
   try {
-    const existing = getCustomOpportunities();
+    const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_OPPS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return sanitizeCustomOpportunities(parsed);
+    }
+  } catch (err) {
+    console.warn('Error fetching all custom opportunities:', err);
+  }
+  return [];
+};
+
+/**
+ * Mark a casting post as paid, setting status to pending_review or published.
+ */
+export const publishOpportunity = (oppData, txnId = '', paymentMethod = 'Juspay HyperCheckout') => {
+  try {
+    const existing = getAllCustomOpportunities();
+    const finalStatus = oppData.status === 'draft' ? 'draft' : 'published';
+
+    const safeImage =
+      oppData.image && !isBrokenImageUrl(oppData.image)
+        ? oppData.image
+        : getCategoryFallbackImage(
+            oppData.productionCategory || oppData.category,
+            oppData.productionType || oppData.type
+          );
+
     const publishedOpp = {
       ...oppData,
       id: oppData.id || `opp-${Date.now()}`,
@@ -140,16 +198,15 @@ export const publishOpportunity = (oppData, txnId = '', paymentMethod = 'JuicePa
         : oppData.requirements ? [oppData.requirements] : ['Professional audition submissions welcomed.'],
       postedTime: 'Just now',
       postedDate: new Date().toISOString().split('T')[0],
-      deadline: oppData.shootDate || 'Open',
+      deadline: oppData.applicationDeadline || oppData.deadline || oppData.shootDate || 'Open',
       status: 'published',
       listingStatus: 'published',
+      isOpen: true,
       paymentStatus: 'paid',
       paymentMethod,
-      txnId: txnId || `TXN-${Math.floor(100000 + Math.random() * 900000)}`,
-      publishedAt: new Date().toISOString(),
-      image:
-        oppData.image ||
-        'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
+      txnId: txnId || `TXN-JSP-${Math.floor(100000 + Math.random() * 900000)}`,
+      paidAt: new Date().toISOString(),
+      image: safeImage,
     };
 
     // Replace if same ID or refId, otherwise prepend
@@ -158,9 +215,27 @@ export const publishOpportunity = (oppData, txnId = '', paymentMethod = 'JuicePa
     );
     localStorage.setItem(STORAGE_KEY_CUSTOM_OPPS, JSON.stringify([publishedOpp, ...filtered]));
 
+    // Store in session storage for immediate discover talent page spotlight
+    try {
+      sessionStorage.setItem('starcast_last_published_opportunity', JSON.stringify(publishedOpp));
+    } catch {
+      // ignore
+    }
+
     // Unlock candidate profiles
     setPostingPaymentCompleted(true);
     clearPendingOpportunity();
+
+    // Dispatch custom event for real-time reactive sync across components
+    try {
+      window.dispatchEvent(
+        new CustomEvent('starcast:opportunity-published', {
+          detail: { opportunity: publishedOpp },
+        })
+      );
+    } catch {
+      // ignore
+    }
 
     return publishedOpp;
   } catch (err) {
@@ -168,3 +243,95 @@ export const publishOpportunity = (oppData, txnId = '', paymentMethod = 'JuicePa
     return null;
   }
 };
+
+/**
+ * Get last published opportunity from this session (if any)
+ */
+export const getLastPublishedOpportunity = () => {
+  try {
+    const raw = sessionStorage.getItem('starcast_last_published_opportunity');
+    if (raw) return JSON.parse(raw);
+  } catch (err) {
+    console.warn('Error reading last published opportunity:', err);
+  }
+  return null;
+};
+
+/**
+ * Save or update any custom opportunity with arbitrary status (draft, pending_payment, payment_failed, etc.)
+ */
+export const saveCustomOpportunity = (oppData) => {
+  try {
+    const existing = getAllCustomOpportunities();
+    const id = oppData.id || `opp-${Date.now()}`;
+    const refId = oppData.refId || `PRD-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const safeImage =
+      oppData.image && !isBrokenImageUrl(oppData.image)
+        ? oppData.image
+        : getCategoryFallbackImage(
+            oppData.productionCategory || oppData.category,
+            oppData.productionType || oppData.type
+          );
+
+    const savedOpp = {
+      ...oppData,
+      id,
+      refId,
+      image: safeImage,
+      status: oppData.status || oppData.listingStatus || 'draft',
+      listingStatus: oppData.listingStatus || oppData.status || 'draft',
+      paymentStatus: oppData.paymentStatus || (oppData.status === 'paid' ? 'paid' : 'pending'),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const filtered = existing.filter((item) => item.id !== id && item.refId !== refId);
+    localStorage.setItem(STORAGE_KEY_CUSTOM_OPPS, JSON.stringify([savedOpp, ...filtered]));
+    window.dispatchEvent(new CustomEvent(EVENT_PAYMENT_STATE_CHANGED, { detail: { opportunity: savedOpp } }));
+    return savedOpp;
+  } catch (err) {
+    console.error('Failed to save opportunity:', err);
+    return null;
+  }
+};
+
+/**
+ * Update the status of an existing opportunity
+ */
+export const updateCustomOpportunityStatus = (id, newStatus) => {
+  try {
+    const existing = getAllCustomOpportunities();
+    const target = existing.find((o) => o.id === id);
+    if (!target) return false;
+
+    const updated = {
+      ...target,
+      status: newStatus,
+      listingStatus: newStatus,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const filtered = existing.filter((item) => item.id !== id);
+    localStorage.setItem(STORAGE_KEY_CUSTOM_OPPS, JSON.stringify([updated, ...filtered]));
+    window.dispatchEvent(new CustomEvent(EVENT_PAYMENT_STATE_CHANGED, { detail: { opportunity: updated } }));
+    return updated;
+  } catch (err) {
+    console.error('Failed to update opportunity status:', err);
+    return null;
+  }
+};
+
+/**
+ * Close an opportunity, strictly preserving applicant data and records
+ */
+export const closeCustomOpportunity = (id) => {
+  return updateCustomOpportunityStatus(id, 'closed');
+};
+
+/**
+ * Archive an opportunity
+ */
+export const archiveCustomOpportunity = (id) => {
+  return updateCustomOpportunityStatus(id, 'archived');
+};
+

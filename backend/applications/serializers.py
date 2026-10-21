@@ -5,7 +5,9 @@ class ApplicationSubmitSerializer(serializers.Serializer):
     role_id = serializers.CharField(required=False, default='role-1')
     candidate_id = serializers.CharField(required=False, default='usr-1')
     cover_message = serializers.CharField(required=False, allow_blank=True)
-    video_audition_url = serializers.URLField(required=False, allow_blank=True)
+    video_audition_url = serializers.CharField(required=False, allow_blank=True)
+    portfolio_url = serializers.CharField(required=False, allow_blank=True)
+    answers = serializers.DictField(required=False, default=dict)
 
 class ApplicationStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=[
@@ -17,5 +19,9 @@ class ApplicationStatusUpdateSerializer(serializers.Serializer):
 class AuditionInviteSerializer(serializers.Serializer):
     date = serializers.CharField()
     time = serializers.CharField()
+    timezone = serializers.CharField(required=False, default='IST')
     mode = serializers.CharField(default='In-Studio Chemistry Read')
+    instructions = serializers.CharField(required=False, allow_blank=True)
     notes = serializers.CharField(required=False, allow_blank=True)
+    submission_deadline = serializers.CharField(required=False, allow_blank=True)
+    private_notes = serializers.CharField(required=False, allow_blank=True)

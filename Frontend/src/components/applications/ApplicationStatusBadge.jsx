@@ -12,15 +12,17 @@ const ApplicationStatusBadge = ({ status, className = '' }) => {
         return 'info';
       case 'shortlisted':
         return 'warning';
-      case 'interview':
       case 'audition_requested':
+      case 'interview':
         return 'primary';
       case 'selected':
       case 'accepted':
         return 'success';
-      case 'not_selected':
       case 'rejected':
+      case 'not_selected':
         return 'danger';
+      case 'withdrawn':
+        return 'neutral';
       default:
         return 'default';
     }
@@ -30,20 +32,22 @@ const ApplicationStatusBadge = ({ status, className = '' }) => {
     switch (s) {
       case 'applied':
       case 'submitted':
-        return 'Applied';
+        return 'Submitted';
       case 'under_review':
         return 'Under Review';
       case 'shortlisted':
         return 'Shortlisted';
-      case 'interview':
       case 'audition_requested':
-        return 'Interview';
+      case 'interview':
+        return 'Audition Requested';
       case 'selected':
       case 'accepted':
         return 'Selected';
-      case 'not_selected':
       case 'rejected':
-        return 'Not Selected';
+      case 'not_selected':
+        return 'Rejected';
+      case 'withdrawn':
+        return 'Withdrawn';
       default:
         return formatStatus(s);
     }

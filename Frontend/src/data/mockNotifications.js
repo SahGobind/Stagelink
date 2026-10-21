@@ -115,4 +115,17 @@ export const saveStoredNotifications = (notifications) => {
   }
 };
 
+export const addStoredNotification = (notif) => {
+  const current = getStoredNotifications();
+  const newItem = {
+    id: `notif-${Date.now()}`,
+    timestamp: 'Just now',
+    read: false,
+    ...notif,
+  };
+  const updated = [newItem, ...current];
+  saveStoredNotifications(updated);
+  return updated;
+};
+
 export const mockNotifications = initialMockNotifications;

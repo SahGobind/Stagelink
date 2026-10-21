@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'messaging.apps.MessagingConfig',
     'notifications.apps.NotificationsConfig',
     'payments.apps.PaymentsConfig',
+    'support.apps.SupportConfig',
 ]
 
 MIDDLEWARE = [
@@ -85,10 +86,20 @@ WSGI_APPLICATION = 'starcast.wsgi.application'
 ASGI_APPLICATION = 'starcast.asgi.application'
 
 # ==============================================================================
-# DATABASE CONSTRAINT: NO DATABASE CONNECTED OR CONFIGURED
+# DATABASE CONFIGURATION: PyMongo Direct Integration with MongoDB Atlas
 # ==============================================================================
-# As requested, do not connect, configure, or create a database at this stage.
+# Note: Django's relational ORM is intentionally not used for MongoDB.
+# PyMongo provides direct, type-safe, driver-level connection management.
 DATABASES = {}
+
+MONGODB_URI = os.getenv('MONGODB_URI', '')
+MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'stagelink_db')
+MONGODB_SERVER_SELECTION_TIMEOUT_MS = int(os.getenv('MONGODB_SERVER_SELECTION_TIMEOUT_MS', 5000))
+MONGODB_CONNECT_TIMEOUT_MS = int(os.getenv('MONGODB_CONNECT_TIMEOUT_MS', 5000))
+MONGODB_SOCKET_TIMEOUT_MS = int(os.getenv('MONGODB_SOCKET_TIMEOUT_MS', 10000))
+
+# Frontend URL
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 # Internationalization
 LANGUAGE_CODE = 'en-us'

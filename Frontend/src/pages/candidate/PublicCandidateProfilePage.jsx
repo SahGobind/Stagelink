@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   Star,
@@ -18,11 +18,15 @@ import {
   Search,
   Bell,
   X,
+  Lock,
 } from 'lucide-react';
 import { getCandidateProfile, getCandidateById } from '../../data/mockCandidates';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/common/Toast';
 import CandidateAccessLock from '../../components/common/CandidateAccessLock';
+import InviteToCastingModal from '../../components/talent/InviteToCastingModal';
+import { talentService, EVENT_SAVED_TALENT_CHANGED } from '../../services/talentService';
+import { FALLBACK_TALENT_AVATAR } from '../../data/mockTalentDirectory';
 import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 
 const PublicCandidateProfilePage = () => {
@@ -33,7 +37,7 @@ const PublicCandidateProfilePage = () => {
 
   const [hasPaid, setHasPaid] = useState(() => hasCompletedPostingPayment());
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkPayment = () => setHasPaid(hasCompletedPostingPayment());
     window.addEventListener(EVENT_PAYMENT_STATE_CHANGED, checkPayment);
     window.addEventListener('storage', checkPayment);
@@ -44,13 +48,26 @@ const PublicCandidateProfilePage = () => {
   }, []);
 
   const [activeTab, setActiveTab] = useState('About');
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(() => talentService.isTalentSaved(candidate.id));
   const [toastMessage, setToastMessage] = useState('');
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState('');
   const [selectedVideoTitle, setSelectedVideoTitle] = useState('');
   const [lightboxImage, setLightboxImage] = useState(null);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSaved(talentService.isTalentSaved(candidate.id));
+    const handleSavedChanged = () => {
+      setIsSaved(talentService.isTalentSaved(candidate.id));
+    };
+    window.addEventListener(EVENT_SAVED_TALENT_CHANGED, handleSavedChanged);
+    window.addEventListener('storage', handleSavedChanged);
+    return () => {
+      window.removeEventListener(EVENT_SAVED_TALENT_CHANGED, handleSavedChanged);
+      window.removeEventListener('storage', handleSavedChanged);
+    };
+  }, [candidate.id]);
 
   const tabs = [
     'About',
@@ -71,8 +88,9 @@ const PublicCandidateProfilePage = () => {
   };
 
   const handleSaveProfile = () => {
-    setIsSaved(!isSaved);
-    setToastMessage(!isSaved ? 'Profile saved to your talent roster!' : 'Profile removed from roster.');
+    const nextSaved = talentService.toggleSaveTalent(candidate);
+    setIsSaved(nextSaved);
+    setToastMessage(nextSaved ? `${candidate.fullName} saved to your talent roster!` : `${candidate.fullName} removed from roster.`);
   };
 
   const playVideo = (url, title) => {
@@ -110,35 +128,6 @@ const PublicCandidateProfilePage = () => {
     },
   ];
 
-  if (!hasPaid) {
-    return (
-      <div className="min-h-screen bg-white text-left font-sans pb-24">
-        <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-100">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <Star className="w-5 h-5 text-brand-pink fill-brand-pink" />
-              <span className="text-xl font-bold font-serif text-gray-900 tracking-tight">StageLink</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link to="/opportunities" className="text-xs font-semibold text-gray-600 hover:text-black">
-                Casting Calls
-              </Link>
-              <Link to="/post-job" className="px-4 py-2 bg-brand-pink text-white rounded-xl text-xs font-bold">
-                Announce Work
-              </Link>
-            </div>
-          </div>
-        </header>
-        <div className="max-w-4xl mx-auto px-4 py-12">
-          <CandidateAccessLock
-            title="Public Candidate Profile is Locked"
-            subtitle="To view public talent profiles, portfolios, and contact details, please announce work and complete payment via JuicePay or PayPal."
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white text-left font-sans pb-24">
       {/* Public Header Bar */}
@@ -153,11 +142,12 @@ const PublicCandidateProfilePage = () => {
           </Link>
 
           {/* Nav Links */}
+          {/* Nav Links */}
           <nav className="hidden md:flex items-center space-x-8 text-xs font-semibold text-gray-600">
             <Link to="/opportunities" className="hover:text-gray-900 transition-colors">
               Casting Calls
             </Link>
-            <Link to="/candidate/profile" className="text-gray-900 font-bold">
+            <Link to="/talent" className="text-gray-900 font-bold">
               Discover Talent
             </Link>
             <Link to="/how-it-works" className="hover:text-gray-900 transition-colors">
@@ -186,7 +176,15 @@ const PublicCandidateProfilePage = () => {
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-brand-pink rounded-full" />
             </button>
             <Link to="/candidate/profile" className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 shadow-2xs">
-              <img src={candidate.avatar} alt="User" className="w-full h-full object-cover" />
+              <img
+                src={candidate.avatar || FALLBACK_TALENT_AVATAR}
+                alt="User"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+                }}
+                className="w-full h-full object-cover"
+              />
             </Link>
           </div>
         </div>
@@ -197,10 +195,14 @@ const PublicCandidateProfilePage = () => {
         {/* Candidate Hero Card */}
         <div className="flex flex-col md:flex-row items-center md:items-start gap-8 bg-white">
           {/* Large Rounded Photo */}
-          <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-sm border border-gray-100 shrink-0">
+          <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-sm border border-gray-100 shrink-0 bg-gray-100">
             <img
-              src={candidate.avatar}
+              src={candidate.avatar || FALLBACK_TALENT_AVATAR}
               alt={candidate.fullName}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+              }}
               className="w-full h-full object-cover"
             />
           </div>
@@ -466,6 +468,10 @@ const PublicCandidateProfilePage = () => {
                 <img
                   src={photoUrl}
                   alt={`Photo ${idx + 1}`}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+                  }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
@@ -487,8 +493,12 @@ const PublicCandidateProfilePage = () => {
               className="md:col-span-2 relative aspect-16/9 rounded-3xl overflow-hidden shadow-sm border border-gray-100 cursor-pointer group bg-black"
             >
               <img
-                src={candidate.portfolio?.showreel?.thumbnail || candidate.avatar}
+                src={candidate.portfolio?.showreel?.thumbnail || candidate.avatar || FALLBACK_TALENT_AVATAR}
                 alt="Showreel Thumbnail"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+                }}
                 className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300 opacity-90"
               />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -513,7 +523,15 @@ const PublicCandidateProfilePage = () => {
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0 relative">
-                        <img src={clip.thumbnail} alt={clip.title} className="w-full h-full object-cover" />
+                        <img
+                          src={clip.thumbnail || FALLBACK_TALENT_AVATAR}
+                          alt={clip.title}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+                          }}
+                          className="w-full h-full object-cover"
+                        />
                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Play className="w-3.5 h-3.5 text-white fill-white" />
                         </div>
@@ -589,73 +607,15 @@ const PublicCandidateProfilePage = () => {
         </div>
       )}
 
-      {/* Contact for Casting Modal */}
-      {isContactModalOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setIsContactModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-gray-100"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <h3 className="text-base font-bold text-gray-900">
-                Contact {candidate.fullName}
-              </h3>
-              <button onClick={() => setIsContactModalOpen(false)}>
-                <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-600">
-              Send a direct audition invite or casting opportunity slate to {candidate.fullName}.
-            </p>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                setIsContactModalOpen(false);
-                setToastMessage('Casting invitation dispatched via StageLink portal!');
-              }}
-              className="space-y-3 pt-1 text-left"
-            >
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                  Project Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Untitled Mumbai Feature"
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                  Character / Role Description
-                </label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Role details, audition sides, filming dates..."
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-900"
-                />
-              </div>
-
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full py-2.5 rounded-xl bg-brand-pink text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-xs"
-                >
-                  Send Audition Slate
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Invite to Casting Modal */}
+      <InviteToCastingModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+        talent={candidate}
+        onSuccess={() => {
+          setToastMessage(`Audition invitation dispatched to ${candidate.fullName}!`);
+        }}
+      />
 
       <Toast message={toastMessage} onClose={() => setToastMessage('')} />
     </div>

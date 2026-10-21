@@ -229,6 +229,18 @@ const CandidatesPage = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/talent"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-pink text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-2xs"
+          >
+            <span>Discover Talent Gallery</span>
+          </Link>
+          <Link
+            to="/admin/saved-talent"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-neutral-300 text-xs font-bold text-neutral-800 hover:bg-neutral-50 transition-colors shadow-2xs"
+          >
+            <span>Saved Roster</span>
+          </Link>
           {isFiltering && (
             <button
               type="button"
@@ -236,7 +248,7 @@ const CandidatesPage = () => {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-300 text-xs font-semibold text-neutral-700 hover:text-black hover:bg-neutral-100 transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Filters</span>
+              <span>Reset</span>
             </button>
           )}
         </div>

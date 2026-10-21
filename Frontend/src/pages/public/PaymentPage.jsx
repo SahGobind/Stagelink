@@ -10,22 +10,28 @@ import {
   MapPin,
   Users,
   AlertCircle,
-  HelpCircle,
   Clock,
   Printer,
-  ChevronRight,
   ExternalLink,
   Sparkles,
-  DollarSign,
-  ArrowRight,
-  Eye,
+  Edit,
+  Info,
+  Smartphone,
+  Building,
+  Check,
+  ChevronDown,
+  HelpCircle,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import WorkflowStepper from '../../components/opportunities/WorkflowStepper';
+import { paymentService } from '../../services/paymentService';
 import {
   getPendingOpportunity,
   publishOpportunity,
   setPostingPaymentCompleted,
+  saveCustomOpportunity,
 } from '../../utils/paymentAccess';
+import { authService } from '../../services/authService';
 
 const DEFAULT_OPPORTUNITY = {
   id: 'opp-demo-casting',
@@ -36,12 +42,22 @@ const DEFAULT_OPPORTUNITY = {
   productionType: 'Feature Film',
   talentNeeded: ['Actors / Screen Artists', 'Dancers / Performers'],
   shootDate: 'Flexible / To be decided',
-  location: 'Open / Unspecified',
+  location: 'Mumbai, India',
   artistsNeeded: 5,
   requirements: 'High stamina for choreographed group movement and expressive camera acting.',
   listingFee: 1999,
   currency: 'INR',
 };
+
+const POPULAR_BANKS = [
+  { id: 'HDFC', name: 'HDFC Bank', popular: true },
+  { id: 'ICICI', name: 'ICICI Bank', popular: true },
+  { id: 'SBI', name: 'State Bank of India', popular: true },
+  { id: 'AXIS', name: 'Axis Bank', popular: true },
+  { id: 'KOTAK', name: 'Kotak Mahindra Bank', popular: false },
+  { id: 'PNB', name: 'Punjab National Bank', popular: false },
+  { id: 'BOB', name: 'Bank of Baroda', popular: false },
+];
 
 const PaymentPage = () => {
   const location = useLocation();
@@ -59,42 +75,60 @@ const PaymentPage = () => {
     return DEFAULT_OPPORTUNITY;
   });
 
-  // Payment Method: 'juicepay' (Credit Card) or 'paypal'
-  const [paymentMethod, setPaymentMethod] = useState('juicepay');
+  const configDetails = paymentService.getConfigDetails();
+  const pricing = location.state?.pricingDetails;
 
-  // JuicePay Card State
+  // Accurate transparent pricing calculations
+  const baseFee = pricing?.listing_fee || (opportunity.currency === 'USD' ? 29 : 1999);
+  const taxRate = pricing?.tax_rate !== undefined ? pricing.tax_rate : (opportunity.currency === 'USD' ? 0 : 0.18);
+  const taxAmount =
+    pricing?.tax_amount !== undefined
+      ? pricing.tax_amount
+      : Math.round(baseFee * taxRate * 100) / 100;
+  const discountAmount = pricing?.discount_amount || 0;
+  const finalPayable =
+    pricing?.final_payable_amount ||
+    Math.round((baseFee + taxAmount - discountAmount) * 100) / 100;
+  const currencySymbol = pricing?.symbol || (opportunity.currency === 'USD' ? '$' : '₹');
+
+  // Payment Method Tabs: 'card' | 'upi' | 'netbanking'
+  const [paymentMethodTab, setPaymentMethodTab] = useState('card');
+
+  // Card Inputs
   const [cardName, setCardName] = useState(
     opportunity.productionCompany ? `${opportunity.productionCompany} Recruiter` : 'Production Recruiter'
   );
   const [cardNumber, setCardNumber] = useState('4242 4242 4242 4242');
   const [cardExpiry, setCardExpiry] = useState('12/28');
   const [cardCvv, setCardCvv] = useState('883');
-  const [cardZip, setCardZip] = useState('400001');
+  const [saveCard, setSaveCard] = useState(true);
 
-  // PayPal State
-  const [paypalEmail, setPaypalEmail] = useState(
-    opportunity.customerEmail || 'casting-finance@production.com'
-  );
-  const [paypalRemember, setPaypalRemember] = useState(true);
+  // UPI Inputs
+  const [upiId, setUpiId] = useState('recruiter@okhdfcbank');
+
+  // Net Banking Inputs
+  const [selectedBank, setSelectedBank] = useState('HDFC');
 
   // General States
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStep, setProcessingStep] = useState('');
-  const [isPaidSuccess, setIsPaidSuccess] = useState(false);
   const [paymentResult, setPaymentResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [infoNotice, setInfoNotice] = useState('');
 
-  const listingFee = opportunity.listingFee || 1999;
-  const currencySymbol = '₹';
+  // Optional QA Controls (collapsed by default)
+  const [showQaControls, setShowQaControls] = useState(false);
+  const [simulationOutcome, setSimulationOutcome] = useState('success');
 
-  // Handle Card formatting
+  // Format Card Number
   const handleCardNumberChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
     const formatted = raw.replace(/(\d{4})/g, '$1 ').trim();
     setCardNumber(formatted || e.target.value);
   };
 
+  // Format Expiry Date
   const handleExpiryChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
     if (raw.length >= 3) {
@@ -104,155 +138,155 @@ const PaymentPage = () => {
     }
   };
 
-  const handleProcessPayment = (e) => {
+  // Process Payment Submission
+  const handleProcessPayment = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+    setInfoNotice('');
 
     if (!agreeTerms) {
-      setErrorMsg('Please accept the payment terms & conditions to proceed.');
+      setErrorMsg('Please accept the publication terms to proceed.');
       return;
     }
 
-    if (paymentMethod === 'juicepay') {
-      const cleanCard = cardNumber.replace(/\s+/g, '');
-      if (cleanCard.length < 15) {
-        setErrorMsg('Please enter a valid 16-digit credit card number.');
-        return;
-      }
-      if (!cardExpiry.includes('/')) {
-        setErrorMsg('Please enter expiry in MM/YY format.');
-        return;
-      }
-      if (cardCvv.length < 3) {
-        setErrorMsg('Please enter a 3 or 4 digit CVV.');
-        return;
-      }
-    } else if (paymentMethod === 'paypal') {
-      if (!paypalEmail || !paypalEmail.includes('@')) {
-        setErrorMsg('Please enter a valid PayPal email address.');
-        return;
-      }
+    if (paymentMethodTab === 'upi' && !upiId.trim()) {
+      setErrorMsg('Please enter a valid UPI ID (e.g. yourname@okhdfcbank).');
+      return;
     }
 
     setIsProcessing(true);
+    setProcessingStep('Connecting to secure payment gateway...');
+    await new Promise((r) => setTimeout(r, 600));
 
-    const methodName =
-      paymentMethod === 'juicepay' ? 'JuicePay (Credit Card)' : 'PayPal Express';
+    setProcessingStep('Verifying order and authorizing payment...');
+    await new Promise((r) => setTimeout(r, 700));
 
-    // Simulated multi-step authorization sequence
-    setProcessingStep(
-      paymentMethod === 'juicepay'
-        ? 'Connecting to JuicePay Payment Gateway...'
-        : 'Connecting to PayPal Secure Authorization...'
-    );
+    const orderId = opportunity.paymentOrderId || `ORD-${Date.now()}`;
+    const txnId = `TXN-JSP-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    setTimeout(() => {
-      setProcessingStep(
-        paymentMethod === 'juicepay'
-          ? 'Verifying 3D Secure 2.0 Token with Bank...'
-          : 'Validating PayPal Express Checkout Token...'
-      );
-    }, 900);
+    const methodLabel =
+      paymentMethodTab === 'upi'
+        ? `UPI (${upiId.trim()})`
+        : paymentMethodTab === 'netbanking'
+        ? `Net Banking (${selectedBank})`
+        : configDetails.isConfigured
+        ? 'Juspay HyperCheckout'
+        : 'Credit / Debit Card';
 
-    setTimeout(() => {
-      setProcessingStep('Publishing casting post & unlocking candidate directory...');
-    }, 1800);
+    try {
+      setProcessingStep('Publishing casting call live on StageLink...');
+      const verifyResult = await paymentService.verifyPaymentServerSide({
+        orderId,
+        opportunityId: opportunity.id,
+        paymentMethod: methodLabel,
+        txnId,
+        simulationStatus: configDetails.isConfigured ? 'success' : simulationOutcome,
+      });
 
-    setTimeout(() => {
-      const txnId = `TXN-${paymentMethod === 'juicepay' ? 'JP' : 'PP'}-${Math.floor(
-        100000 + Math.random() * 900000
-      )}`;
-
-      // 1. Publish opportunity live in localStorage and unlock candidate access
-      const published = publishOpportunity(opportunity, txnId, methodName);
-
-      // 2. Notify backend server
-      try {
-        fetch('/api/opportunities/confirm-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            opportunityId: opportunity.id,
-            orderId: opportunity.paymentOrderId || `ORD-${Date.now()}`,
-            txnId,
-            paymentMethod: methodName,
-            title: opportunity.title,
-            productionCompany: opportunity.productionCompany,
-            category: opportunity.productionCategory || opportunity.category,
-            type: opportunity.productionType || opportunity.type,
-            talentNeeded: opportunity.talentNeeded,
-            shootDate: opportunity.shootDate,
-            location: opportunity.location,
-            artistsNeeded: opportunity.artistsNeeded,
-            requirements: opportunity.requirements,
-          }),
-        }).catch(() => {});
-      } catch {
-        // offline fallback
+      if (!verifyResult.verified) {
+        setIsProcessing(false);
+        if (verifyResult.status === 'failed') {
+          saveCustomOpportunity({
+            ...opportunity,
+            status: 'payment_failed',
+            listingStatus: 'payment_failed',
+            paymentStatus: 'failed',
+            paymentOrderId: orderId,
+          });
+          setErrorMsg(
+            verifyResult.message ||
+              'Payment was not authorized. No charges were made. You can try again or use another payment method.'
+          );
+        } else if (verifyResult.status === 'cancelled') {
+          saveCustomOpportunity({
+            ...opportunity,
+            status: 'pending_payment',
+            listingStatus: 'pending_payment',
+            paymentStatus: 'cancelled',
+            paymentOrderId: orderId,
+          });
+          setInfoNotice('Transaction was cancelled. No charges were made.');
+        } else if (verifyResult.status === 'pending') {
+          saveCustomOpportunity({
+            ...opportunity,
+            status: 'pending_payment',
+            listingStatus: 'pending_payment',
+            paymentStatus: 'pending',
+            paymentOrderId: orderId,
+          });
+          setInfoNotice('Transaction is awaiting bank authorization.');
+        }
+        return;
       }
 
-      // 3. Mark payment completed in system
+      // Automatically publish casting call live upon confirmed payment
+      const published = publishOpportunity(
+        {
+          ...opportunity,
+          status: 'published',
+          listingStatus: 'published',
+          isOpen: true,
+          paymentStatus: 'paid',
+        },
+        txnId,
+        methodLabel
+      );
+
       setPostingPaymentCompleted(true);
+
+      // Ensure recruiter session so user has seamless dashboard access
+      authService.ensureRecruiterSession({
+        companyName: published?.productionCompany || opportunity.productionCompany,
+        email: published?.email || opportunity.email,
+        fullName: published?.recruiterName || `${published?.productionCompany || 'Studio'} Recruiter`,
+      });
 
       setPaymentResult({
         txnId,
-        paymentMethod: methodName,
+        orderId,
+        paymentMethod: methodLabel,
         opportunity: published || opportunity,
         paidAt: new Date().toLocaleString(),
+        listingStatus: 'published',
+        isSimulation: !configDetails.isConfigured,
       });
 
       setIsProcessing(false);
-      setIsPaidSuccess(true);
-    }, 2800);
+    } catch (err) {
+      setIsProcessing(false);
+      setErrorMsg(`Payment verification failed: ${err.message || 'Network error'}. Please try again.`);
+    }
   };
 
   return (
-    <div className="bg-neutral-50/80 min-h-screen text-gray-900 font-sans pb-24 text-left">
+    <div className="bg-neutral-50/70 min-h-screen text-gray-900 font-sans pb-24 text-left">
       {/* Top Header / Breadcrumb Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <PageContainer maxWidth="6xl" className="py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 backdrop-blur-md bg-white/95">
+        <PageContainer maxWidth="6xl" className="py-3.5">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/post-job', { state: { opportunity } })}
                 className="p-2 rounded-xl border border-gray-200 hover:border-gray-900 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-                title="Return to Announcement"
+                title="Return to Job Details"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-brand-pink">
-                    Step 2 of 2 — Publication Payment
-                  </span>
-                  <span className="text-gray-300">•</span>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>256-Bit SSL Encrypted Checkout</span>
-                  </span>
-                </div>
-                <h1 className="text-xl sm:text-2xl font-bold font-serif text-gray-900">
-                  Choose Payment Option &amp; Publish Post
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-pink block">
+                  {paymentResult ? 'Step 5 of 5 — Confirmation & Live Publication' : 'Step 4 of 5 — Secure Payment'}
+                </span>
+                <h1 className="text-lg sm:text-xl font-bold font-serif text-gray-900">
+                  {paymentResult ? 'Payment Verified & Opportunity Published' : 'Secure Checkout & Listing Activation'}
                 </h1>
               </div>
             </div>
 
-            {/* Step Progress Pill */}
-            <div className="hidden md:flex items-center gap-2 text-xs">
-              <Link
-                to="/post-job"
-                className="text-gray-500 hover:text-gray-900 flex items-center gap-1.5 font-medium transition-colors"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>1. Announce Work</span>
-              </Link>
-              <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
-              <span className="text-gray-900 font-bold flex items-center gap-1.5 bg-pink-50 text-brand-pink px-3 py-1 rounded-lg border border-pink-200">
-                <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] flex items-center justify-center font-bold">
-                  2
-                </span>
-                <span>Payment &amp; Publish</span>
+            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+              <span className="hidden sm:inline-flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 text-[11px] font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>256-Bit SSL Encrypted</span>
               </span>
             </div>
           </div>
@@ -260,505 +294,481 @@ const PaymentPage = () => {
       </div>
 
       <PageContainer maxWidth="6xl" className="py-8">
-        {!isPaidSuccess ? (
+        {/* Workflow Stepper */}
+        <WorkflowStepper currentStep={paymentResult ? 5 : 4} className="mb-8" />
+
+        {!paymentResult ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* LEFT COLUMN: Payment Method Selection & Form (7 Cols) */}
+            {/* LEFT COLUMN: Modern, Simple Payment Interface */}
             <div className="lg:col-span-7 space-y-6">
-              {/* Payment Methods Box */}
-              <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 shadow-xs space-y-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                  <div>
-                    <h2 className="text-base sm:text-lg font-bold font-serif text-gray-900">
-                      Select Payment Option
-                    </h2>
-                    <p className="text-xs text-gray-500">
-                      Choose your preferred payment gateway. Once completed, your post goes live and candidate profiles unlock immediately.
-                    </p>
+              {/* Test / Sandbox Notice (Polite & Subtle) */}
+              {!configDetails.isConfigured && (
+                <div className="p-3.5 rounded-2xl bg-pink-50/70 border border-pink-200/80 flex items-center justify-between gap-3 text-xs text-neutral-800">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-brand-pink border border-pink-200 shrink-0">
+                      Demo Mode
+                    </span>
+                    <span className="text-[11px] text-gray-700">
+                      Test checkout active. You can proceed without any real money deduction.
+                    </span>
                   </div>
-                  <Lock className="w-4 h-4 text-gray-400" />
-                </div>
-
-                {/* Method Options: JuicePay vs PayPal */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* JuicePay via Credit Card */}
                   <button
                     type="button"
-                    onClick={() => {
-                      setPaymentMethod('juicepay');
-                      setErrorMsg('');
-                    }}
-                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                      paymentMethod === 'juicepay'
-                        ? 'border-brand-pink bg-pink-50/70 text-gray-900 ring-2 ring-pink-100 shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
-                    }`}
+                    onClick={() => setShowQaControls((prev) => !prev)}
+                    className="text-[10px] font-semibold text-brand-pink hover:underline shrink-0 cursor-pointer"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CreditCard
-                          className={`w-5 h-5 ${
-                            paymentMethod === 'juicepay' ? 'text-brand-pink' : 'text-gray-400'
-                          }`}
-                        />
-                        <span className="text-xs font-bold uppercase tracking-wider text-brand-pink">
-                          JuicePay
-                        </span>
-                      </div>
-                      <span className="text-[10px] font-bold bg-white px-2 py-0.5 rounded border border-gray-200 text-gray-600">
-                        Credit Card
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="text-sm font-bold">JuicePay Credit Card</div>
-                      <div className="text-[11px] text-gray-500">
-                        Visa, Mastercard, Amex, RuPay
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 pt-1 text-[10px] text-emerald-700 font-semibold">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>3D Secure 2.0 Protected</span>
-                    </div>
+                    {showQaControls ? 'Hide QA Options' : 'QA Options'}
                   </button>
+                </div>
+              )}
 
-                  {/* PayPal */}
+              {/* Collapsible QA Testing Options (Kept clean & hidden for normal users) */}
+              {!configDetails.isConfigured && showQaControls && (
+                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-2.5 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+                      Simulate Transaction Outcome:
+                    </label>
+                    <span className="text-[10px] text-gray-400">For platform QA testing only</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { id: 'success', label: 'Success (Approve)' },
+                      { id: 'failed', label: 'Decline / Fail' },
+                      { id: 'pending', label: 'Pending Auth' },
+                      { id: 'cancelled', label: 'User Cancel' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setSimulationOutcome(opt.id)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                          simulationOutcome === opt.id
+                            ? 'bg-black text-white border-black font-bold'
+                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Main Payment Card Box */}
+              <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-xs space-y-6">
+                {/* Section Header */}
+                <div className="border-b border-gray-100 pb-4">
+                  <h2 className="text-base sm:text-lg font-bold font-serif text-gray-900">
+                    Select Payment Method
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Choose your preferred payment method to complete verification and publish.
+                  </p>
+                </div>
+
+                {/* Modern Payment Method Tabs */}
+                <div className="grid grid-cols-3 gap-2 p-1.5 bg-gray-100/80 rounded-2xl">
                   <button
                     type="button"
-                    onClick={() => {
-                      setPaymentMethod('paypal');
-                      setErrorMsg('');
-                    }}
-                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                      paymentMethod === 'paypal'
-                        ? 'border-[#003087] bg-blue-50/60 text-gray-900 ring-2 ring-blue-100 shadow-sm'
-                        : 'border-gray-200 bg-white hover:border-gray-300 text-gray-700'
+                    onClick={() => setPaymentMethodTab('card')}
+                    className={`py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                      paymentMethodTab === 'card'
+                        ? 'bg-white text-black shadow-xs ring-1 ring-black/5'
+                        : 'text-gray-500 hover:text-gray-900'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-sm font-extrabold tracking-tight">
-                        <span className="text-[#003087]">Pay</span>
-                        <span className="text-[#0079C1]">Pal</span>
-                      </div>
-                      <span className="text-[10px] font-bold bg-[#FFC439] text-[#003087] px-2 py-0.5 rounded shadow-2xs">
-                        Express Checkout
-                      </span>
-                    </div>
+                    <CreditCard className="w-4 h-4" />
+                    <span>Card</span>
+                  </button>
 
-                    <div>
-                      <div className="text-sm font-bold text-gray-900">PayPal</div>
-                      <div className="text-[11px] text-gray-500">
-                        PayPal Balance, Bank, or Global Cards
-                      </div>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethodTab('upi')}
+                    className={`py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                      paymentMethodTab === 'upi'
+                        ? 'bg-white text-black shadow-xs ring-1 ring-black/5'
+                        : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>UPI / QR</span>
+                  </button>
 
-                    <div className="flex items-center gap-1.5 pt-1 text-[10px] text-blue-800 font-semibold">
-                      <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                      <span>PayPal Buyer Protection</span>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethodTab('netbanking')}
+                    className={`py-3 px-2 sm:px-4 rounded-xl text-xs font-bold transition-all flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer ${
+                      paymentMethodTab === 'netbanking'
+                        ? 'bg-white text-black shadow-xs ring-1 ring-black/5'
+                        : 'text-gray-500 hover:text-gray-900'
+                    }`}
+                  >
+                    <Building className="w-4 h-4" />
+                    <span>Net Banking</span>
                   </button>
                 </div>
 
-                {/* FORM: JuicePay via Credit Card */}
-                {paymentMethod === 'juicepay' && (
-                  <form onSubmit={handleProcessPayment} className="space-y-4 pt-2">
-                    <div className="p-3 rounded-xl bg-pink-50/50 border border-pink-100 text-xs text-gray-700 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 font-semibold text-gray-900">
-                        <CreditCard className="w-4 h-4 text-brand-pink" />
-                        <span>JuicePay Direct Gateway</span>
-                      </span>
-                      <span className="text-[10px] font-mono text-gray-500">
-                        PCI-DSS Level 1 Compliant
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-gray-800">
-                        Cardholder Name <span className="text-brand-pink">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        placeholder="Name on card / Production company"
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between">
-                        <label className="block text-xs font-bold text-gray-800">
-                          Card Number <span className="text-brand-pink">*</span>
-                        </label>
-                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
-                          <span>VISA</span>
-                          <span>•</span>
-                          <span>MASTERCARD</span>
-                          <span>•</span>
-                          <span>AMEX</span>
-                          <span>•</span>
-                          <span>RUPAY</span>
-                        </div>
-                      </div>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          required
-                          value={cardNumber}
-                          onChange={handleCardNumberChange}
-                          placeholder="4242 4242 4242 4242"
-                          className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-mono text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all tracking-wider"
-                        />
-                        <Lock className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* Form Elements Based on Selected Tab */}
+                <form onSubmit={handleProcessPayment} className="space-y-4 pt-1">
+                  {/* TAB 1: CREDIT / DEBIT CARD */}
+                  {paymentMethodTab === 'card' && (
+                    <div className="space-y-4 animate-in fade-in duration-150">
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-gray-800">
-                          Expiry Date (MM/YY) <span className="text-brand-pink">*</span>
+                          Name on Card <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           required
-                          maxLength={5}
-                          value={cardExpiry}
-                          onChange={handleExpiryChange}
-                          placeholder="MM/YY"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-mono text-gray-900 focus:outline-none focus:border-brand-pink text-center"
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                          placeholder="e.g. Apex Vision Studios Recruiter"
+                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:bg-white focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
                         />
                       </div>
 
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <label className="block text-xs font-bold text-gray-800">
-                            CVV / CVC <span className="text-brand-pink">*</span>
+                            Card Number <span className="text-red-500">*</span>
                           </label>
-                          <span className="text-[10px] text-gray-400">3-4 digits</span>
+                          <div className="flex items-center gap-1.5 text-[10px] text-gray-400 font-semibold uppercase">
+                            <span>Visa</span> • <span>Mastercard</span> • <span>RuPay</span>
+                          </div>
                         </div>
-                        <input
-                          type="password"
-                          required
-                          maxLength={4}
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
-                          placeholder="•••"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-mono text-gray-900 focus:outline-none focus:border-brand-pink text-center tracking-widest"
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            value={cardNumber}
+                            onChange={handleCardNumberChange}
+                            placeholder="4242 4242 4242 4242"
+                            className="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 font-mono tracking-wider focus:bg-white focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
+                          />
+                          <CreditCard className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
                       </div>
 
-                      <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-gray-800">
+                            Expiry Date <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={cardExpiry}
+                            onChange={handleExpiryChange}
+                            placeholder="MM/YY"
+                            maxLength={5}
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 font-mono focus:bg-white focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-gray-800">
+                            CVV / CVC <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            maxLength={4}
+                            value={cardCvv}
+                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
+                            placeholder="•••"
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 font-mono focus:bg-white focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-600 pt-1">
+                        <input
+                          type="checkbox"
+                          checked={saveCard}
+                          onChange={(e) => setSaveCard(e.target.checked)}
+                          className="rounded border-gray-300 text-brand-pink focus:ring-brand-pink cursor-pointer"
+                        />
+                        <span>Save card securely for future casting call publications</span>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* TAB 2: UPI / QR CODE */}
+                  {paymentMethodTab === 'upi' && (
+                    <div className="space-y-4 animate-in fade-in duration-150">
+                      <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-gray-800">
-                          Postal / ZIP Code
+                          Enter UPI ID / VPA <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
-                          value={cardZip}
-                          onChange={(e) => setCardZip(e.target.value)}
-                          placeholder="Postal code"
-                          className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-brand-pink"
+                          required
+                          value={upiId}
+                          onChange={(e) => setUpiId(e.target.value)}
+                          placeholder="e.g. yourname@okhdfcbank or 9876543210@paytm"
+                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:bg-white focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all font-mono"
                         />
                       </div>
-                    </div>
 
-                    {/* Terms Agreement */}
-                    <div className="pt-2">
-                      <label className="flex items-start gap-2.5 cursor-pointer text-xs text-gray-600 leading-relaxed">
-                        <input
-                          type="checkbox"
-                          checked={agreeTerms}
-                          onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="mt-0.5 rounded border-gray-300 text-brand-pink focus:ring-brand-pink cursor-pointer"
-                        />
-                        <span>
-                          I authorize JuicePay to charge{' '}
-                          <strong className="text-gray-900 font-bold">
-                            {currencySymbol}
-                            {listingFee.toLocaleString()}
-                          </strong>{' '}
-                          for publishing this casting requirement and unlocking immediate talent candidate profile access.
+                      {/* Quick Apps Selection */}
+                      <div className="space-y-1.5">
+                        <span className="text-[11px] font-semibold text-gray-500 block">
+                          Supported Apps:
                         </span>
-                      </label>
-                    </div>
-
-                    {errorMsg && (
-                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-                        <span>{errorMsg}</span>
-                      </div>
-                    )}
-
-                    {/* Pay Button */}
-                    <div className="pt-3">
-                      <button
-                        type="submit"
-                        disabled={isProcessing}
-                        className="w-full py-4 px-6 bg-brand-pink hover:bg-rose-700 text-white font-bold text-sm uppercase tracking-wider rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            <span>{processingStep}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-4 h-4" />
-                            <span>
-                              Pay {currencySymbol}
-                              {listingFee.toLocaleString()} via JuicePay Credit Card
-                            </span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                {/* FORM: PayPal Express */}
-                {paymentMethod === 'paypal' && (
-                  <form onSubmit={handleProcessPayment} className="space-y-4 pt-2">
-                    <div className="p-4 rounded-2xl bg-[#003087]/5 border border-[#003087]/20 text-xs text-gray-700 space-y-2">
-                      <div className="flex items-center justify-between font-bold text-gray-900">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[#003087] font-extrabold text-sm">PayPal</span>
-                          <span>Express Checkout</span>
+                        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                          {['Google Pay', 'PhonePe', 'Paytm', 'BHIM UPI'].map((app) => (
+                            <div
+                              key={app}
+                              className="p-2.5 rounded-xl border border-gray-200 bg-gray-50 font-medium text-gray-700 text-[11px]"
+                            >
+                              {app}
+                            </div>
+                          ))}
                         </div>
-                        <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">
-                          Instant Authorization
-                        </span>
                       </div>
-                      <p className="text-[11px] text-gray-600 leading-relaxed">
-                        Log in with your PayPal credentials or pay as a guest using your linked bank account or international debit/credit cards.
-                      </p>
                     </div>
+                  )}
 
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-gray-800">
-                        PayPal Account Email <span className="text-brand-pink">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={paypalEmail}
-                        onChange={(e) => setPaypalEmail(e.target.value)}
-                        placeholder="your-email@paypal.com"
-                        className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:border-[#003087] focus:ring-2 focus:ring-blue-100 transition-all"
-                      />
+                  {/* TAB 3: NET BANKING */}
+                  {paymentMethodTab === 'netbanking' && (
+                    <div className="space-y-4 animate-in fade-in duration-150">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-gray-800">
+                          Popular Indian Banks
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {POPULAR_BANKS.filter((b) => b.popular).map((bank) => (
+                            <button
+                              key={bank.id}
+                              type="button"
+                              onClick={() => setSelectedBank(bank.id)}
+                              className={`p-3 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer ${
+                                selectedBank === bank.id
+                                  ? 'border-brand-pink bg-pink-50 text-brand-pink ring-1 ring-brand-pink shadow-xs'
+                                  : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-white'
+                              }`}
+                            >
+                              {bank.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-gray-800">
+                          Or Choose from All Banks
+                        </label>
+                        <select
+                          value={selectedBank}
+                          onChange={(e) => setSelectedBank(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs sm:text-sm text-gray-900 focus:bg-white focus:outline-none focus:border-brand-pink"
+                        >
+                          {POPULAR_BANKS.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="flex items-center gap-2 pt-1">
+                  {/* Agreement Terms */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-xs text-gray-600 leading-relaxed">
                       <input
                         type="checkbox"
-                        id="paypalRemember"
-                        checked={paypalRemember}
-                        onChange={(e) => setPaypalRemember(e.target.checked)}
-                        className="rounded border-gray-300 text-[#003087] focus:ring-[#003087] cursor-pointer"
+                        checked={agreeTerms}
+                        onChange={(e) => setAgreeTerms(e.target.checked)}
+                        className="mt-0.5 rounded border-gray-300 text-brand-pink focus:ring-brand-pink cursor-pointer"
                       />
-                      <label htmlFor="paypalRemember" className="text-xs text-gray-600 cursor-pointer">
-                        Remember this PayPal account for future casting calls
-                      </label>
-                    </div>
-
-                    {/* Terms Agreement */}
-                    <div className="pt-2">
-                      <label className="flex items-start gap-2.5 cursor-pointer text-xs text-gray-600 leading-relaxed">
-                        <input
-                          type="checkbox"
-                          checked={agreeTerms}
-                          onChange={(e) => setAgreeTerms(e.target.checked)}
-                          className="mt-0.5 rounded border-gray-300 text-[#003087] focus:ring-[#003087] cursor-pointer"
-                        />
-                        <span>
-                          I agree to PayPal's user agreement and authorize{' '}
-                          <strong className="text-gray-900 font-bold">
-                            {currencySymbol}
-                            {listingFee.toLocaleString()}
-                          </strong>{' '}
-                          deduction to publish this casting call and unlock candidate profiles.
-                        </span>
-                      </label>
-                    </div>
-
-                    {errorMsg && (
-                      <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-                        <span>{errorMsg}</span>
-                      </div>
-                    )}
-
-                    {/* PayPal Button */}
-                    <div className="pt-3">
-                      <button
-                        type="submit"
-                        disabled={isProcessing}
-                        className="w-full py-4 px-6 bg-[#FFC439] hover:bg-[#F2BA36] text-[#003087] font-extrabold text-sm rounded-2xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-[#003087]/30 border-t-[#003087] rounded-full animate-spin" />
-                            <span>{processingStep}</span>
-                          </>
-                        ) : (
-                          <>
-                            <span>Pay with</span>
-                            <span className="font-extrabold text-base tracking-tight text-[#003087]">
-                              Pay<span className="text-[#0079C1]">Pal</span>
-                            </span>
-                            <span>({currencySymbol}{listingFee.toLocaleString()})</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-
-              {/* Guarantees Box */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                    <span>Instant Live Post</span>
+                      <span>
+                        I confirm that the casting call information is accurate and agree to publish it live on StageLink.
+                      </span>
+                    </label>
                   </div>
-                  <p className="text-[11px] text-gray-500 leading-normal">
-                    Opportunity becomes discoverable to verified talents across the platform.
-                  </p>
-                </div>
 
-                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
-                    <Eye className="w-4 h-4 text-brand-pink" />
-                    <span>Profiles Unlocked</span>
-                  </div>
-                  <p className="text-[11px] text-gray-500 leading-normal">
-                    Gain full access to browse candidate portfolios, showreels, and contacts.
-                  </p>
-                </div>
+                  {/* Error & Info Alerts */}
+                  {errorMsg && (
+                    <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                      <span>{errorMsg}</span>
+                    </div>
+                  )}
 
-                <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
-                    <HelpCircle className="w-4 h-4 text-sky-600" />
-                    <span>Recruiter Support</span>
+                  {infoNotice && (
+                    <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                      <Info className="w-4 h-4 shrink-0 text-amber-600" />
+                      <span>{infoNotice}</span>
+                    </div>
+                  )}
+
+                  {/* Primary Pay & Publish Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={isProcessing}
+                      className="w-full py-4 px-6 bg-brand-pink hover:bg-rose-700 text-white font-bold text-sm rounded-2xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>{processingStep}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-4 h-4" />
+                          <span>
+                            Pay {currencySymbol}
+                            {finalPayable.toLocaleString()} &amp; Publish Casting Call
+                          </span>
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <p className="text-[11px] text-gray-500 leading-normal">
-                    Dedicated StageLink production support team ready for any assistance.
-                  </p>
+                </form>
+
+                {/* Guarantees & Trust Footnote */}
+                <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-[11px] text-gray-500">
+                  <div className="flex items-center justify-center gap-1.5 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Instant Live Publishing</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 font-medium">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                    <span>256-Bit SSL Protection</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 font-medium">
+                    <Printer className="w-3.5 h-3.5 text-gray-600" />
+                    <span>GST Invoice Generated</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* RIGHT COLUMN: Order Summary & Opportunity Review (5 Cols) */}
+            {/* RIGHT COLUMN: Clean, Concise Order & Opportunity Summary */}
             <div className="lg:col-span-5 space-y-5">
               <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 shadow-xs space-y-5">
-                {/* Header Badge */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs font-bold text-gray-700 tracking-wide">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="uppercase text-[11px]">Ready to Publish</span>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-brand-pink border border-pink-200">
-                    Listing Fee
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                  <h3 className="text-base font-bold font-serif text-gray-900">
+                    Order Summary
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Standard Listing
                   </span>
                 </div>
 
-                {/* Amount Highlight Block */}
-                <div className="p-5 rounded-2xl bg-linear-to-br from-rose-600 via-pink-600 to-rose-700 text-white space-y-2 shadow-md shadow-pink-500/20">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-pink-200 block">
-                    Total Publication Fee
-                  </span>
-                  <div className="flex items-baseline justify-between">
-                    <div className="text-3xl sm:text-4xl font-extrabold font-serif text-white tracking-tight">
-                      {currencySymbol}
-                      {listingFee.toLocaleString()}
-                    </div>
-                    <span className="text-[10px] font-semibold text-white/90 bg-white/20 px-2.5 py-1 rounded-lg backdrop-blur-xs">
-                      One-time charge
+                {/* Opportunity Details Card */}
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
+                      Production &amp; Role
                     </span>
-                  </div>
-                </div>
-
-                {/* Opportunity Snapshot Breakdown */}
-                <div className="space-y-3 text-xs divide-y divide-gray-100">
-                  <div className="flex items-start justify-between pt-1 gap-2">
-                    <span className="text-gray-500">Production:</span>
-                    <span className="font-bold text-gray-900 text-right">
+                    <h4 className="text-sm font-bold text-gray-900 font-serif mt-0.5">
+                      {opportunity.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 font-medium mt-0.5">
                       {opportunity.productionCompany}
+                    </p>
+                  </div>
+
+                  {/* Attribute Chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-800 text-[11px] font-medium flex items-center gap-1">
+                      <Users className="w-3 h-3 text-gray-500" />
+                      <span>{opportunity.artistsNeeded || 1} Openings</span>
+                    </span>
+
+                    <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-800 text-[11px] font-medium flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-500" />
+                      <span>{opportunity.location || 'Mumbai, India'}</span>
+                    </span>
+
+                    <span className="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-800 text-[11px] font-medium flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-gray-500" />
+                      <span>Shoot: {opportunity.shootDate || 'Flexible'}</span>
                     </span>
                   </div>
 
-                  <div className="flex items-start justify-between pt-3 gap-2">
-                    <span className="text-gray-500">Category &amp; Type:</span>
-                    <span className="font-semibold text-gray-800 text-right">
-                      {opportunity.productionCategory || opportunity.category} •{' '}
-                      {opportunity.productionType || opportunity.type}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start justify-between pt-3 gap-2">
-                    <span className="text-gray-500">Talent Needed:</span>
-                    <span className="font-semibold text-gray-800 text-right">
-                      {Array.isArray(opportunity.talentNeeded)
-                        ? opportunity.talentNeeded.join(', ')
-                        : opportunity.talentNeeded}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3">
-                    <span className="text-gray-500 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Artists Needed:</span>
-                    </span>
-                    <span className="font-bold text-gray-900">
-                      {opportunity.artistsNeeded || 1} talent
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3">
-                    <span className="text-gray-500 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Location:</span>
-                    </span>
-                    <span className="font-medium text-gray-800">
-                      {opportunity.location || 'Open / Unspecified (Optional)'}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3">
-                    <span className="text-gray-500 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Shoot Date:</span>
-                    </span>
-                    <span className="font-medium text-gray-800">
-                      {opportunity.shootDate || 'Flexible / To be decided (Optional)'}
+                  {/* Compensation */}
+                  <div className="text-xs text-gray-600 pt-1">
+                    <span className="text-gray-400 text-[11px]">Compensation: </span>
+                    <span className="font-semibold text-gray-800">
+                      {opportunity.compensation || 'Paid'}
                     </span>
                   </div>
                 </div>
 
-                <div className="border-t border-gray-100" />
-
-                {/* Recruiter Privilege Notice */}
-                <div className="space-y-2.5 p-4 rounded-2xl bg-gray-50 border border-gray-200/80">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-brand-pink shrink-0" />
-                    <h3 className="text-xs font-bold text-gray-900">What Unlocks After Payment:</h3>
+                {/* Accurate Price Breakdown */}
+                <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-2.5 text-xs">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Base Listing Fee:</span>
+                    <span className="font-mono font-medium text-gray-900">
+                      {currencySymbol}
+                      {baseFee.toLocaleString()}
+                    </span>
                   </div>
-                  <ul className="text-[11px] text-gray-600 space-y-1.5 list-disc list-inside">
-                    <li>Immediate public broadcast in Casting Directory</li>
-                    <li>Full access to view and search candidate profiles</li>
-                    <li>Direct audition tapes and contact details</li>
-                    <li>Automated talent matching and ranking</li>
+
+                  {taxAmount > 0 && (
+                    <div className="flex justify-between text-gray-600">
+                      <span>Applicable GST (18%):</span>
+                      <span className="font-mono font-medium text-gray-900">
+                        {currencySymbol}
+                        {taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-700 font-semibold">
+                      <span>Promo Discount ({opportunity.promoCode || 'APPLIED'}):</span>
+                      <span className="font-mono">
+                        -{currencySymbol}
+                        {discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center text-gray-900 font-bold pt-2.5 border-t border-gray-200">
+                    <span className="text-sm">Final Payable Amount:</span>
+                    <span className="font-serif font-extrabold text-brand-pink text-lg sm:text-xl">
+                      {currencySymbol}
+                      {finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Edit Button */}
+                <button
+                  type="button"
+                  onClick={() => navigate('/post-job', { state: { opportunity } })}
+                  className="w-full py-2.5 px-4 bg-white border border-gray-300 hover:border-gray-900 text-gray-800 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <Edit className="w-3.5 h-3.5 text-gray-500" />
+                  <span>Edit Job Details</span>
+                </button>
+
+                {/* What Happens Next Card */}
+                <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-100 text-xs space-y-2">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
+                    <Sparkles className="w-3.5 h-3.5 text-brand-pink" />
+                    <span>What Happens After Payment:</span>
+                  </div>
+                  <ul className="text-[11px] text-gray-600 space-y-1.5">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-pink-100 text-brand-pink font-bold text-[10px] flex items-center justify-center shrink-0">1</span>
+                      <span>Listing published immediately on the public casting board</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-pink-100 text-brand-pink font-bold text-[10px] flex items-center justify-center shrink-0">2</span>
+                      <span>Verified performers start applying with self-tape reels</span>
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-pink-100 text-brand-pink font-bold text-[10px] flex items-center justify-center shrink-0">3</span>
+                      <span>AI candidate ranking &amp; audition invitations unlocked</span>
+                    </li>
                   </ul>
-                </div>
-
-                {/* Production Reference Footer */}
-                <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 text-[11px] space-y-0.5">
-                  <div className="font-semibold text-gray-900 truncate">
-                    {opportunity.title || 'Casting Requirement Announcement'}
-                  </div>
-                  <div className="text-gray-500">
-                    Draft Reference: <span className="font-mono">{opportunity.refId || 'PRD-NEW'}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -766,30 +776,34 @@ const PaymentPage = () => {
         ) : (
           /* PAYMENT SUCCESS & RECEIPT SCREEN */
           <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-gray-200 p-8 sm:p-10 shadow-xl text-center space-y-7 animate-in fade-in duration-300">
-            {/* Success Icon */}
-            <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
+            <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
               <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
             </div>
 
             <div className="space-y-2">
               <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest block">
-                Payment Authorized • Post Published Live
+                ✓ Payment Verified • Casting Call Published Live!
               </span>
               <h2 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900">
-                Casting Call is Live on StageLink!
+                Payment Confirmed &amp; Published Live!
               </h2>
               <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
                 Your payment of{' '}
                 <strong className="text-gray-900 font-bold">
                   {currencySymbol}
-                  {listingFee.toLocaleString()}
+                  {finalPayable.toLocaleString()}
                 </strong>{' '}
-                was successfully authorized via{' '}
+                was verified via{' '}
                 <strong className="text-brand-pink font-bold">
-                  {paymentResult?.paymentMethod || 'JuicePay / PayPal'}
+                  {paymentResult?.paymentMethod}
                 </strong>
-                . Your casting post is now live, and candidate profiles are fully unlocked!
+                . Your casting call is now <strong className="text-emerald-700 font-bold">published live inside Discover Talent</strong> and across StageLink!
               </p>
+              {paymentResult.isSimulation && (
+                <div className="inline-block mt-2 px-3 py-1 bg-neutral-100 border border-neutral-200 rounded-full text-[11px] text-gray-600 font-medium">
+                  Processed via Demo Test Checkout (No real card charges made)
+                </div>
+              )}
             </div>
 
             {/* Official Digital Receipt Box */}
@@ -798,6 +812,13 @@ const PaymentPage = () => {
                 <span className="text-gray-500 font-medium">Transaction ID:</span>
                 <span className="font-mono font-bold text-gray-900 bg-white px-2.5 py-1 rounded border border-gray-200">
                   {paymentResult?.txnId}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-500 font-medium">Listing Status:</span>
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 text-[11px]">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span>Published Live in Discover Talent</span>
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -819,48 +840,56 @@ const PaymentPage = () => {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 font-medium">Amount Paid:</span>
+                <span className="text-gray-500 font-medium">Amount Verified:</span>
                 <span className="font-bold text-emerald-700 text-sm font-mono">
                   {currencySymbol}
-                  {listingFee.toLocaleString()} INR
+                  {finalPayable.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-500 font-medium">Authorized At:</span>
+                <span className="text-gray-500 font-medium">Timestamp:</span>
                 <span className="font-medium text-gray-800">{paymentResult?.paidAt}</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-gray-200/80">
-                <span className="text-gray-500 font-medium">Candidate Profiles:</span>
-                <span className="inline-flex items-center gap-1 font-bold text-emerald-700">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span>Unlocked &amp; Viewable</span>
-                </span>
               </div>
             </div>
 
             {/* Navigation Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
-                to="/opportunities"
-                className="flex-1 py-4 px-5 bg-brand-pink hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                to="/discover-talent"
+                state={{
+                  newlyPublishedOpp: paymentResult?.opportunity || opportunity,
+                  activeTab: 'jobs',
+                }}
+                className="flex-1 py-3.5 px-5 bg-brand-pink hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>View Live Casting Post</span>
+                <Sparkles className="w-4 h-4" />
+                <span>View in Discover Talent →</span>
+              </Link>
+              <Link
+                to="/opportunities"
+                className="py-3.5 px-4 bg-white border border-gray-300 hover:border-gray-900 text-gray-800 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>Casting Calls</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </Link>
               <Link
-                to="/admin/candidates"
-                className="flex-1 py-4 px-5 bg-black hover:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                to="/admin/opportunities"
+                onClick={() => {
+                  authService.ensureRecruiterSession({
+                    companyName: paymentResult?.opportunity?.productionCompany || opportunity.productionCompany,
+                  });
+                }}
+                className="py-3.5 px-4 bg-gray-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Users className="w-3.5 h-3.5 text-yellow-400" />
-                <span>View Candidate Profiles</span>
+                <span>Recruiter Dashboard</span>
               </Link>
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="py-4 px-5 bg-white border border-gray-300 hover:border-gray-900 text-gray-900 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="py-3.5 px-3.5 bg-white border border-gray-300 hover:border-gray-900 text-gray-700 font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>Print Receipt</span>
+                <span>Print</span>
               </button>
             </div>
           </div>

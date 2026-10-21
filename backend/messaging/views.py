@@ -1,41 +1,28 @@
+"""
+Messaging Views — MongoDB Atlas Integration
+============================================
+Direct talent-recruiter messages stored in MongoDB Atlas 'messages' collection.
+"""
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 import datetime
 from .serializers import MessageSendSerializer
-
-SAMPLE_MESSAGES = [
-    {
-        "id": "msg-1",
-        "sender_id": "usr-2",
-        "sender_name": "Marcus Sterling (Casting Director)",
-        "recipient_id": "usr-1",
-        "recipient_name": "Elena Rostova",
-        "content": "Hi Elena, we reviewed your stunt reel and would love to schedule a chemistry read next Thursday.",
-        "timestamp": "2026-10-14T11:00:00Z",
-        "read": True
-    },
-    {
-        "id": "msg-2",
-        "sender_id": "usr-1",
-        "sender_name": "Elena Rostova",
-        "recipient_id": "usr-2",
-        "recipient_name": "Marcus Sterling",
-        "content": "Thank you Marcus! I am fully available and have prepared Scene 3.",
-        "timestamp": "2026-10-14T11:35:00Z",
-        "read": False
-    }
-]
+from starcast.db import get_collection
+from starcast.utils import handle_db_error, clean_doc
 
 class MessageListView(APIView):
-    """Retrieve message history between users or send a message."""
+    """Retrieve message history between users or send a message in MongoDB Atlas."""
     def get(self, request):
         user_id = request.query_params.get("user_id", "usr-1")
-        convo = [
-            m for m in SAMPLE_MESSAGES
-            if m["sender_id"] == user_id or m["recipient_id"] == user_id
-        ]
-        return Response({"count": len(convo), "results": convo}, status=status.HTTP_200_OK)
+        try:
+            col = get_collection('messages')
+            cursor = col.find({"$or": [{"sender_id": user_id}, {"recipient_id": user_id}]}).sort("timestamp", 1)
+            results = [clean_doc(doc) for doc in cursor]
+            return Response({"count": len(results), "results": results}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
 
     def post(self, request):
         serializer = MessageSendSerializer(data=request.data)
@@ -43,15 +30,23 @@ class MessageListView(APIView):
             return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
-        new_msg = {
-            "id": f"msg-{len(SAMPLE_MESSAGES) + 1}",
-            "sender_id": "usr-1",
-            "sender_name": "Current User",
-            "recipient_id": data["recipient_id"],
-            "recipient_name": "Recipient",
-            "content": data["content"],
-            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "read": False
-        }
-        SAMPLE_MESSAGES.append(new_msg)
-        return Response(new_msg, status=status.HTTP_201_CREATED)
+        sender_id = request.data.get("sender_id", "usr-1")
+        sender_name = request.data.get("sender_name", "Current User")
+        
+        try:
+            col = get_collection('messages')
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            new_msg = {
+                "id": f"msg-{int(datetime.datetime.now().timestamp() * 1000)}",
+                "sender_id": sender_id,
+                "sender_name": sender_name,
+                "recipient_id": data["recipient_id"],
+                "recipient_name": request.data.get("recipient_name", "Recipient"),
+                "content": data["content"],
+                "timestamp": now_iso,
+                "read": False
+            }
+            col.insert_one(new_msg)
+            return Response(clean_doc(new_msg), status=status.HTTP_201_CREATED)
+        except Exception as err:
+            return handle_db_error(err)

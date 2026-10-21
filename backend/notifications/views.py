@@ -1,38 +1,41 @@
+"""
+Notifications Views — MongoDB Atlas Integration
+================================================
+Database-backed user notifications with read status tracking in MongoDB Atlas.
+"""
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
-SAMPLE_NOTIFICATIONS = [
-    {
-        "id": "notif-1",
-        "title": "Application Shortlisted!",
-        "message": "Apex Vision Studios shortlisted your application for 'Major Anya Petrova' in Echoes of the Crown.",
-        "type": "shortlist",
-        "read": False,
-        "timestamp": "2026-10-14T09:12:00Z",
-        "link": "/candidate/applications/app-101"
-    },
-    {
-        "id": "notif-2",
-        "title": "Audition Callback Invited",
-        "message": "You have an audition invitation scheduled for Thursday at 14:00.",
-        "type": "audition",
-        "read": False,
-        "timestamp": "2026-10-14T11:05:00Z",
-        "link": "/candidate/applications/app-101"
-    }
-]
+from starcast.db import get_collection
+from starcast.utils import handle_db_error, clean_doc
 
 class NotificationListView(APIView):
-    """Retrieve notifications or mark all as read."""
+    """Retrieve notifications or mark all as read in MongoDB Atlas."""
     def get(self, request):
-        return Response({
-            "unread_count": sum(1 for n in SAMPLE_NOTIFICATIONS if not n["read"]),
-            "results": SAMPLE_NOTIFICATIONS
-        }, status=status.HTTP_200_OK)
+        user_id = request.query_params.get("user_id", "cand-aanya")
+        try:
+            col = get_collection('notifications')
+            # Fetch notifications for user, or general notifications
+            query = {"$or": [{"user_id": user_id}, {"user_id": {"$exists": False}}]}
+            cursor = col.find(query).sort("timestamp", -1)
+            results = [clean_doc(doc) for doc in cursor]
+
+            unread_count = sum(1 for n in results if not n.get("read", False))
+
+            return Response({
+                "unread_count": unread_count,
+                "results": results
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
 
     def post(self, request):
-        # Mark all read
-        for n in SAMPLE_NOTIFICATIONS:
-            n["read"] = True
-        return Response({"message": "All notifications marked as read"}, status=status.HTTP_200_OK)
+        user_id = request.data.get("user_id") or request.query_params.get("user_id")
+        try:
+            col = get_collection('notifications')
+            query = {"user_id": user_id} if user_id else {}
+            col.update_many(query, {"$set": {"read": True}})
+            return Response({"message": "All notifications marked as read in database."}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)

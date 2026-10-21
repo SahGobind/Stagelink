@@ -13,22 +13,29 @@ import {
   Award,
   AlertCircle,
   HelpCircle,
+  XCircle,
+  RotateCcw,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import Button from '../../components/common/Button';
+import Modal from '../../components/common/Modal';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
 import ApplicationTimeline from '../../components/applications/ApplicationTimeline';
 import { getApplicationById, getAllApplications } from '../../data/mockApplications';
 import { mockOpportunities } from '../../data/mockOpportunities';
 import { initialCandidateProfile } from '../../data/mockCandidates';
+import { applicationService } from '../../services/applicationService';
 import { calculateCandidateMatchScore } from '../../services/scoringEngine';
 
 const ApplicationDetailsPage = () => {
   const { id } = useParams();
   const [application, setApplication] = useState(null);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
   useEffect(() => {
-    const found = getApplicationById(id) || getAllApplications()[0];
+    const found = getApplicationById(id) || getAllApplications().find((a) => a.id === id) || getAllApplications()[0];
     setApplication(found);
   }, [id]);
 
@@ -43,6 +50,29 @@ const ApplicationDetailsPage = () => {
     return calculateCandidateMatchScore(initialCandidateProfile, opportunity);
   }, [opportunity]);
 
+  const handleWithdrawConfirm = async () => {
+    if (!application) return;
+    setIsWithdrawing(true);
+    try {
+      const res = await applicationService.withdrawApplication(application.id);
+      if (res.success) {
+        setApplication((prev) => ({
+          ...prev,
+          status: 'withdrawn',
+        }));
+        setWithdrawSuccess(true);
+        setTimeout(() => {
+          setIsWithdrawModalOpen(false);
+          setWithdrawSuccess(false);
+        }, 1500);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   if (!application) {
     return (
       <PageContainer maxWidth="lg" className="py-12 text-center">
@@ -51,17 +81,33 @@ const ApplicationDetailsPage = () => {
     );
   }
 
-  const interview = application.interviewDetails || null;
+  const interview = application.interviewDetails || application.audition_invitation || null;
+  const canWithdraw =
+    application.status !== 'withdrawn' &&
+    application.status !== 'rejected' &&
+    application.status !== 'selected';
 
   return (
     <PageContainer maxWidth="lg" className="space-y-6 text-left">
-      <Link
-        to="/candidate/applications"
-        className="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-brand-pink transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4 mr-1.5" />
-        <span>Back to My Applications</span>
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link
+          to="/candidate/applications"
+          className="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-brand-pink transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          <span>Back to My Applications</span>
+        </Link>
+
+        {canWithdraw && (
+          <button
+            type="button"
+            onClick={() => setIsWithdrawModalOpen(true)}
+            className="text-xs text-rose-600 hover:text-rose-800 font-semibold px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
+          >
+            Withdraw Application
+          </button>
+        )}
+      </div>
 
       {/* Main Info Card */}
       <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-card space-y-6">
@@ -76,14 +122,18 @@ const ApplicationDetailsPage = () => {
               {application.opportunityTitle}
             </h1>
             <p className="text-xs text-gray-500">
-              Applied for: <strong className="text-brand-pink font-semibold">{application.roleAppliedFor}</strong> in {application.productionCompany}
+              Applied for:{' '}
+              <strong className="text-brand-pink font-semibold">
+                {application.roleAppliedFor}
+              </strong>{' '}
+              in {application.productionCompany}
             </p>
           </div>
 
           <Link to={`/candidate/messages?opp=${application.opportunityId}`}>
             <Button variant="outline" size="sm" className="space-x-2 text-xs">
               <MessageSquare className="w-4 h-4 text-brand-pink" />
-              <span>Contact Casting Studio</span>
+              <span>Contact Operations Team</span>
             </Button>
           </Link>
         </div>
@@ -97,7 +147,7 @@ const ApplicationDetailsPage = () => {
         </div>
 
         {/* Scheduled Audition / Callback Invitation Card */}
-        {interview && (
+        {interview && application.status === 'audition_requested' && (
           <div className="p-5 bg-pink-50/50 border border-pink-200 rounded-2xl space-y-3">
             <div className="flex items-center gap-2 text-brand-pink font-bold text-xs uppercase tracking-wider">
               <Calendar className="w-4 h-4" />
@@ -105,16 +155,26 @@ const ApplicationDetailsPage = () => {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
               <div className="p-3 bg-white rounded-xl border border-pink-100">
-                <span className="text-[10px] uppercase font-bold text-gray-400 block">Date &amp; Time</span>
-                <span className="font-bold text-gray-900">{interview.date} at {interview.time}</span>
+                <span className="text-[10px] uppercase font-bold text-gray-400 block">
+                  Date &amp; Time
+                </span>
+                <span className="font-bold text-gray-900">
+                  {interview.date} at {interview.time} {interview.timezone || 'IST'}
+                </span>
               </div>
               <div className="p-3 bg-white rounded-xl border border-pink-100">
-                <span className="text-[10px] uppercase font-bold text-gray-400 block">Callback Mode</span>
+                <span className="text-[10px] uppercase font-bold text-gray-400 block">
+                  Callback Mode
+                </span>
                 <span className="font-bold text-gray-900">{interview.mode}</span>
               </div>
               <div className="p-3 bg-white rounded-xl border border-pink-100">
-                <span className="text-[10px] uppercase font-bold text-gray-400 block">Studio Location</span>
-                <span className="font-bold text-gray-900">{application.location || 'Mumbai, India'}</span>
+                <span className="text-[10px] uppercase font-bold text-gray-400 block">
+                  Submission Deadline
+                </span>
+                <span className="font-bold text-gray-900">
+                  {interview.deadline || interview.submission_deadline || 'Prior to callback call'}
+                </span>
               </div>
             </div>
             {interview.notes && (
@@ -182,27 +242,85 @@ const ApplicationDetailsPage = () => {
               {application.submittedMaterials.resume && (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
                   <FileText className="w-4 h-4 text-brand-pink" />
-                  <span className="font-medium text-gray-800">{application.submittedMaterials.resume.fileName}</span>
+                  <span className="font-medium text-gray-800">
+                    {application.submittedMaterials.resume.fileName || 'Elena_Rostova_Resume.pdf'}
+                  </span>
                 </div>
               )}
-              {application.submittedMaterials.videoAudition && (
+              {(application.submittedMaterials.videoAudition || application.submittedMaterials.portfolioUrl) && (
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-2">
                   <Video className="w-4 h-4 text-brand-pink" />
-                  <span className="font-medium text-gray-800">{application.submittedMaterials.videoAudition.title}</span>
+                  <span className="font-medium text-gray-800 truncate">
+                    {application.submittedMaterials.videoAudition?.title ||
+                      application.submittedMaterials.portfolioUrl ||
+                      'Verified Showreel Attached'}
+                  </span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Candidate Privacy Statement */}
+        {/* Candidate Privacy Statement - Note: Private recruiter notes are NEVER displayed here */}
         <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-150 text-[10.5px] text-neutral-500 flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
           <span>
-            Candidate Privacy Protected: Confidential casting reviews and internal ranking numbers are restricted to authorized casting directors.
+            Candidate Privacy Protected: Confidential recruiter evaluation notes and competitor applicant rosters are strictly restricted to verified production decision makers.
           </span>
         </div>
       </div>
+
+      {/* WITHDRAW APPLICATION CONFIRMATION MODAL */}
+      <Modal
+        isOpen={isWithdrawModalOpen}
+        onClose={() => setIsWithdrawModalOpen(false)}
+        title="Confirm Application Withdrawal"
+      >
+        <div className="space-y-4 text-left text-xs">
+          {withdrawSuccess ? (
+            <div className="p-6 text-center space-y-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+              <p className="font-bold text-sm text-gray-900">Application Withdrawn</p>
+              <p className="text-gray-500 text-xs">
+                Your application has been withdrawn from this casting call.
+              </p>
+            </div>
+          ) : (
+            <>
+              <p className="text-gray-700 leading-relaxed">
+                Are you sure you want to withdraw your audition application for{' '}
+                <strong className="text-gray-900 font-bold">{application.opportunityTitle}</strong>?
+              </p>
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 flex items-center gap-2 text-[11px]">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>
+                  The production company will be notified that you are no longer available for this role.
+                </span>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsWithdrawModalOpen(false)}
+                  disabled={isWithdrawing}
+                  className="text-xs"
+                >
+                  Keep Application
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={handleWithdrawConfirm}
+                  disabled={isWithdrawing}
+                  className="text-xs bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                >
+                  {isWithdrawing ? 'Withdrawing...' : 'Withdraw Application'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
     </PageContainer>
   );
 };

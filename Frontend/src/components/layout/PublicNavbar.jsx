@@ -22,7 +22,7 @@ const PublicNavbar = () => {
 
   const navLinks = [
     { label: 'Casting Calls', path: '/opportunities' },
-    { label: 'Discover Talent', path: '/talent/cand-1' },
+    { label: 'Discover Talent', path: '/talent' },
     { label: 'How It Works', path: '/how-it-works' },
     { label: 'About', path: '/about' },
   ];
@@ -64,7 +64,11 @@ const PublicNavbar = () => {
           <div className="hidden md:flex items-center space-x-4">
             {/* Announce Work Action */}
             <Link
-              to="/post-job"
+              to={
+                isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin')
+                  ? '/post-job'
+                  : '/signup?role=recruiter&redirect=/post-job'
+              }
               className="px-3.5 py-1.5 rounded-xl border border-pink-200 text-brand-pink hover:bg-pink-50 text-xs font-bold transition-colors inline-flex items-center gap-1.5"
             >
               <PlusCircle className="w-3.5 h-3.5" />
@@ -135,6 +139,13 @@ const PublicNavbar = () => {
                       <span>My Casting Posts</span>
                     </Link>
                     <Link
+                      to="/admin/saved-talent"
+                      className="flex items-center gap-2.5 px-4 py-2 hover:bg-gray-50 text-gray-700 font-semibold"
+                    >
+                      <Briefcase className="w-4 h-4 text-brand-pink" />
+                      <span>Saved Talent Roster</span>
+                    </Link>
+                    <Link
                       to="/post-job"
                       className="flex items-center gap-2.5 px-4 py-2 hover:bg-gray-50 text-brand-pink font-bold"
                     >
@@ -203,7 +214,11 @@ const PublicNavbar = () => {
               </Link>
             ))}
             <Link
-              to="/post-job"
+              to={
+                isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin')
+                  ? '/post-job'
+                  : '/signup?role=recruiter&redirect=/post-job'
+              }
               onClick={() => setMobileMenuOpen(false)}
               className="px-3 py-2.5 rounded-xl text-sm font-bold text-brand-pink bg-pink-50 flex items-center gap-2"
             >

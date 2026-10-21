@@ -8,7 +8,6 @@ import {
   Lock,
   Eye,
   EyeOff,
-  Check,
   ArrowRight,
   User,
   Shield,
@@ -20,7 +19,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
-import heroActressImg from '../../assets/images/auth_hero_actress.jpg';
 
 const loginSchema = z.object({
   email: z
@@ -48,6 +46,7 @@ const LoginPage = () => {
   const redirectParam = searchParams.get('redirect');
   const isRedirectToProfile = redirectParam === '/candidate/profile/setup' || fromPath === '/candidate/profile/setup';
   const isRedirectToAdmin = redirectParam === '/admin/dashboard' || fromPath === '/admin/dashboard';
+  const isRedirectToPostJob = redirectParam === '/post-job' || fromPath === '/post-job' || searchParams.get('role') === 'recruiter';
 
   const {
     register,
@@ -57,7 +56,11 @@ const LoginPage = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: isRedirectToAdmin ? 'admin@stagelink.com' : 'sarah@stagelink.com',
+      email: isRedirectToPostJob
+        ? 'recruiter@stagelink.com'
+        : isRedirectToAdmin
+        ? 'admin@stagelink.com'
+        : 'sarah@stagelink.com',
       password: 'password123',
       rememberMe: true,
     },
@@ -77,8 +80,11 @@ const LoginPage = () => {
         targetPath = typeof returnUrl === 'string' ? returnUrl : returnUrl.pathname;
       } else if (redirectQuery) {
         targetPath = redirectQuery;
+      } else if (loggedUser.role === 'operations') {
+        targetPath = '/admin/operations/support';
       } else {
-        targetPath = loggedUser.role === 'admin' ? '/admin/dashboard' : '/candidate/dashboard';
+        const isRecruiterOrAdmin = loggedUser.role === 'admin' || loggedUser.role === 'recruiter';
+        targetPath = isRecruiterOrAdmin ? '/admin/dashboard' : '/candidate/dashboard';
       }
 
       navigate(targetPath, { replace: true });
@@ -92,8 +98,14 @@ const LoginPage = () => {
   const registeredCandidates = authService.getRegisteredCandidates();
 
   const handleQuickFill = (target) => {
-    if (target === 'admin') {
+    if (target === 'operations') {
+      setValue('email', 'ops@stagelink.com', { shouldValidate: true });
+      setValue('password', 'password123', { shouldValidate: true });
+    } else if (target === 'admin') {
       setValue('email', 'admin@stagelink.com', { shouldValidate: true });
+      setValue('password', 'password123', { shouldValidate: true });
+    } else if (target === 'recruiter') {
+      setValue('email', 'recruiter@stagelink.com', { shouldValidate: true });
       setValue('password', 'password123', { shouldValidate: true });
     } else if (typeof target === 'object' && target.email) {
       setValue('email', target.email, { shouldValidate: true });
@@ -110,19 +122,7 @@ const LoginPage = () => {
     }
   };
 
-  const checklistItems = [
-    'Apply to latest casting calls',
-    'Manage your applications',
-    'Connect with production houses',
-    'Update your profile and portfolio',
-  ];
 
-  const stats = [
-    { value: '5,000+', label: 'Talented Artists' },
-    { value: '300+', label: 'Production Houses' },
-    { value: '1,000+', label: 'Casting Opportunities' },
-    { value: '95%', label: 'Success Stories' },
-  ];
 
   const features = [
     {
@@ -149,80 +149,8 @@ const LoginPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-      {/* Main Top Section: Hero Banner + Login Card */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-        
-        {/* Left Column: Glamour Actress Hero & Metrics */}
-        <div className="lg:col-span-7 flex flex-col justify-between rounded-3xl overflow-hidden shadow-2xl relative bg-black min-h-[560px] lg:min-h-[660px]">
-          {/* Background Actress Image in Cinematic Black and White */}
-          <img
-            src={heroActressImg}
-            alt="StageLink Glamour Artist"
-            className="absolute inset-0 w-full h-full object-cover object-top opacity-90 grayscale contrast-110"
-          />
-
-          {/* Cinematic Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/30 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent pointer-events-none" />
-
-          {/* Top/Middle Hero Content */}
-          <div className="relative z-10 p-8 sm:p-12 lg:p-14 space-y-6 max-w-xl text-left">
-            <div>
-              <span className="text-[11px] sm:text-xs font-bold tracking-[0.2em] uppercase text-gray-300">
-                WELCOME BACK TO
-              </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-serif text-white tracking-tight mt-1">
-                Stage<span className="text-gray-400 italic">Link</span>
-              </h1>
-              <h2 className="text-2xl sm:text-3xl font-serif text-white font-medium mt-1">
-                Your Next Opportunity <br className="hidden sm:inline" />
-                Is Here
-              </h2>
-            </div>
-
-            <p className="text-xs sm:text-sm text-gray-200/90 leading-relaxed max-w-md">
-              Log in to your StageLink account and continue your journey towards exciting casting opportunities, collaborations and success.
-            </p>
-
-            {/* Checklist with monochrome circular badges */}
-            <div className="space-y-3 pt-2">
-              {checklistItems.map((item, idx) => (
-                <div key={idx} className="flex items-center space-x-3">
-                  <span className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-black shrink-0 shadow-sm">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                  </span>
-                  <span className="text-xs sm:text-sm font-medium text-white/95">
-                    {item}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bottom Stats Counter Strip */}
-          <div className="relative z-10 bg-black/75 backdrop-blur-md border-t border-white/10 px-6 py-5 sm:px-8">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-left">
-              {stats.map((stat, idx) => (
-                <div
-                  key={idx}
-                  className={`${
-                    idx > 0 ? 'sm:border-l sm:border-white/10 sm:pl-4' : ''
-                  }`}
-                >
-                  <p className="text-lg sm:text-xl font-bold font-serif text-white tracking-tight">
-                    {stat.value}
-                  </p>
-                  <p className="text-[10px] sm:text-xs text-gray-300">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Clean White Login Card */}
-        <div className="lg:col-span-5 bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-gray-100 flex flex-col justify-center text-left">
+      {/* Centered Login Card */}
+      <div className="max-w-xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-gray-100 flex flex-col justify-center text-left">
           {/* Header */}
           <div className="space-y-1 mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
@@ -254,6 +182,26 @@ const LoginPage = () => {
               <p className="text-xs text-neutral-300">
                 Log in to access your <strong className="text-white">Studio & Production Dashboard</strong>, post casting calls, and review talent.
               </p>
+            </div>
+          )}
+
+          {/* Announce Work / Post Job Banner */}
+          {isRedirectToPostJob && (
+            <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-lg bg-brand-pink/20 text-brand-pink flex items-center justify-center font-bold text-xs shrink-0">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <p className="text-xs text-neutral-300">
+                  Sign in with your <strong className="text-white">Recruiter / Studio account</strong> to continue directly to Announce Work.
+                </p>
+              </div>
+              <Link
+                to="/signup?role=recruiter&redirect=/post-job"
+                className="text-[11px] font-bold text-brand-pink hover:underline shrink-0 whitespace-nowrap self-end sm:self-center"
+              >
+                Need an account? Register →
+              </Link>
             </div>
           )}
 
@@ -441,11 +389,11 @@ const LoginPage = () => {
               <span className="text-[10px] text-gray-500 font-medium">1-click fill</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-6">
               <button
                 type="button"
                 onClick={() => handleQuickFill('aanya')}
-                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center"
+                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center cursor-pointer"
                 title="Aanya Sharma (Mumbai - Actor & Model)"
               >
                 Aanya S.
@@ -453,7 +401,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => handleQuickFill('candidate')}
-                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center"
+                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center cursor-pointer"
                 title="Sophia Bennett (London - Dramatic Actor)"
               >
                 Sophia B.
@@ -461,22 +409,38 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => handleQuickFill('rohit')}
-                className="px-2.5 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center"
+                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center cursor-pointer"
                 title="Rohit Verma (Delhi - Action & Stunt)"
               >
                 Rohit V.
               </button>
               <button
                 type="button"
+                onClick={() => handleQuickFill('recruiter')}
+                className="px-2 py-1.5 rounded-xl border border-pink-200 bg-pink-50/70 hover:bg-pink-100 text-[11px] font-bold text-brand-pink transition-all text-center cursor-pointer"
+                title="Marcus Sterling (Apex Vision Studios Recruiter)"
+              >
+                Recruiter
+              </button>
+              <button
+                type="button"
                 onClick={() => handleQuickFill('admin')}
-                className="px-2.5 py-1.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100/80 text-[11px] font-bold text-purple-900 transition-all text-center"
+                className="px-2 py-1.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100/80 text-[11px] font-bold text-purple-900 transition-all text-center cursor-pointer"
                 title="Audrey Miller (Production Admin)"
               >
                 Admin
               </button>
+              <button
+                type="button"
+                onClick={() => handleQuickFill('operations')}
+                className="px-2 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-[11px] font-bold text-indigo-900 transition-all text-center cursor-pointer"
+                title="Sarah Jenkins (Operations Support Desk • ops@stagelink.com)"
+              >
+                Ops Desk
+              </button>
             </div>
             <p className="text-[10px] text-gray-500 leading-tight">
-              Only the profile for the logged-in candidate name is shown. Changing accounts displays that candidate's isolated profile.
+              Demo accounts: Candidate, Recruiter, Admin, and Operations Desk. Each account loads with appropriate role privileges.
             </p>
           </div>
 
@@ -491,7 +455,6 @@ const LoginPage = () => {
             </Link>
           </div>
         </div>
-      </div>
 
       {/* Bottom Section: Why Artists Choose StageLink */}
       <div className="pt-6 pb-4">

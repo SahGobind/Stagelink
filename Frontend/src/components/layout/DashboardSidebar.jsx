@@ -12,13 +12,40 @@ import {
   Settings,
   Users,
   LogOut,
+  LifeBuoy,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { getStoredSupportTickets } from '../../data/mockSupportTickets';
 
 const DashboardSidebar = ({ role = 'candidate' }) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+
+  // Support unread count state
+  const [supportUnread, setSupportUnread] = React.useState(0);
+  const [staffNewCount, setStaffNewCount] = React.useState(0);
+
+  React.useEffect(() => {
+    const updateCounts = () => {
+      const tickets = getStoredSupportTickets();
+      if (user?.id) {
+        const userUnread = tickets.filter(
+          (t) => t.userId === user.id && t.unreadForUser
+        ).length;
+        setSupportUnread(userUnread);
+      }
+      const staffCount = tickets.filter(
+        (t) => t.status === 'open' && t.unreadForStaff
+      ).length;
+      setStaffNewCount(staffCount);
+    };
+
+    updateCounts();
+    window.addEventListener('starcast_support_updated', updateCounts);
+    return () => window.removeEventListener('starcast_support_updated', updateCounts);
+  }, [user?.id]);
 
   const candidateLinks = [
     { label: 'Dashboard', path: '/candidate/dashboard', icon: LayoutDashboard },
@@ -28,20 +55,34 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
     { label: 'Saved Opportunities', path: '/candidate/saved-opportunities', icon: Bookmark },
     { label: 'Messages', path: '/candidate/messages', icon: MessageSquare },
     { label: 'Notifications', path: '/candidate/notifications', icon: Bell, badge: unreadCount },
+    { label: 'Help & Support', path: '/candidate/support', icon: LifeBuoy, badge: supportUnread || null },
     { label: 'Settings', path: '/candidate/settings', icon: Settings },
   ];
 
   const adminLinks = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Discover Talent', path: '/talent', icon: Sparkles },
+    { label: 'Saved Talent', path: '/admin/saved-talent', icon: Bookmark },
     { label: 'Candidates', path: '/admin/candidates', icon: Users },
     { label: 'Ranked Matching', path: '/admin/candidates/ranked', icon: Sparkles },
     { label: 'Opportunities', path: '/admin/opportunities', icon: Briefcase },
     { label: 'Applications', path: '/admin/applications', icon: FileCheck },
     { label: 'Messages', path: '/admin/messages', icon: MessageSquare },
+    { label: 'Help & Support', path: '/admin/support', icon: LifeBuoy, badge: supportUnread || null },
+    { label: 'Operations Desk', path: '/admin/operations/support', icon: ShieldCheck, badge: staffNewCount || null },
     { label: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 
-  const links = role === 'admin' ? adminLinks : candidateLinks;
+  const isOperationsUser = user?.role === 'operations';
+  const isAdminUser = role === 'admin' || user?.role === 'admin';
+  const isRecruiterUser = role === 'recruiter' || user?.role === 'recruiter';
+
+  let links = candidateLinks;
+  if (isOperationsUser || isAdminUser) {
+    links = adminLinks;
+  } else if (isRecruiterUser) {
+    links = adminLinks.filter((item) => item.path !== '/admin/operations/support');
+  }
 
   return (
     <aside className="w-64 bg-white border-r border-brand-border flex flex-col justify-between min-h-screen py-6 px-4 sticky top-0 h-screen overflow-y-auto">
@@ -54,7 +95,7 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
           <div className="flex flex-col">
             <span className="text-lg font-bold tracking-tight text-brand-navy font-serif">StageLink</span>
             <span className="text-[9px] uppercase tracking-widest text-brand-pink font-semibold -mt-1">
-              {role === 'admin' ? 'Studio Suite' : 'Performer Portal'}
+              {isOperationsUser ? 'Operations Desk' : (isAdminUser || isRecruiterUser) ? 'Studio Suite' : 'Performer Portal'}
             </span>
           </div>
         </Link>

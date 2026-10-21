@@ -68,7 +68,8 @@ const PRODUCTION_COMPANIES = [
 ];
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin');
   const steps = [
     {
       num: '01',
@@ -142,7 +143,7 @@ const HomePage = () => {
               </p>
             </div>
 
-            {/* Right Side: TEST YOUR TALENT & PRODUCTION Feature Cards */}
+            {/* Right Side: TEST YOUR TALENT Feature Card */}
             <div className="lg:col-span-6 space-y-5 text-left">
               {/* Feature 1: TEST YOUR TALENT */}
               <div className="bg-neutral-50 rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-3.5 relative overflow-hidden group">
@@ -210,81 +211,6 @@ const HomePage = () => {
                   )}
                 </div>
               </div>
-
-              {/* Feature 2: CAST YOUR PROJECT */}
-              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-3.5 relative overflow-hidden group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-11 h-11 rounded-2xl bg-neutral-100 text-black border border-neutral-200 flex items-center justify-center shadow-xs">
-                      <Building2 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block">
-                        For Casting Directors & Studios
-                      </span>
-                      <h2 className="text-xl font-bold font-serif text-black">
-                        Cast Your Project
-                      </h2>
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 bg-neutral-100 border border-neutral-200 rounded-full text-[10px] font-bold text-black uppercase tracking-wider">
-                    Studio Portal
-                  </span>
-                </div>
-
-                <p className="text-xs text-neutral-600 leading-relaxed">
-                  Post roles for films, web series, and commercials. Access 5,000+ verified actors with instant matching.
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 py-0.5 text-[11px] text-neutral-600 font-medium">
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>5,000+ Verified Actors</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>Instant Callbacks & Matching</span>
-                  </div>
-                </div>
-
-                <div className="pt-1.5 flex flex-col sm:flex-row sm:items-center gap-3">
-                  {isAuthenticated ? (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Link
-                        to="/admin/dashboard"
-                        className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
-                      >
-                        <Building2 className="w-4 h-4" />
-                        <span>Studio Dashboard</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        to="/post-job"
-                        className="text-xs font-medium text-neutral-600 hover:text-black underline underline-offset-4"
-                      >
-                        Post a Casting Call →
-                      </Link>
-                    </div>
-                  ) : (
-                    <>
-                      <Link
-                        to="/post-job"
-                        className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
-                      >
-                        <Building2 className="w-4 h-4" />
-                        <span>Post a Casting Call</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        to="/login?redirect=/admin/dashboard"
-                        className="text-xs font-medium text-neutral-600 hover:text-black underline underline-offset-4"
-                      >
-                        Studio Log In →
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
 
@@ -332,7 +258,7 @@ const HomePage = () => {
             </div>
             <div className="flex items-center gap-3">
               <Link
-                to="/post-job"
+                to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
                 className="inline-flex items-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
               >
                 <Briefcase className="w-4 h-4" />
@@ -405,7 +331,7 @@ const HomePage = () => {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 w-full lg:w-auto">
               <Link
-                to="/post-job"
+                to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
                 className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-neutral-100 text-black text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
               >
                 <span>List a Job / Casting Call</span>
@@ -646,7 +572,7 @@ const HomePage = () => {
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/post-job"
+                to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
                 className="inline-flex items-center justify-center px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 text-xs font-bold rounded-xl transition-all duration-200 gap-2"
               >
                 <Briefcase className="w-4 h-4" />

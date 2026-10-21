@@ -2,8 +2,8 @@
  * Centralized Mock Candidate Data for StageLink
  *
  * Provides realistic performer profiles with complete personal,
- * professional, skills, portfolio media, and privacy settings.
  */
+import { mockTalentProfiles } from './mockTalentDirectory';
 
 export const initialCandidateProfile = {
   id: 'cand-1',
@@ -212,7 +212,7 @@ export const mockCandidates = [
     contactEmail: 'alex.vance@example.com',
     phone: '+1 (212) 555-0198',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=1600&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1600&q=80',
     profileCompletion: 88,
     verificationStatus: 'verified',
     isReviewed: true,
@@ -284,7 +284,7 @@ export const mockCandidates = [
         url: 'https://vimeo.com/76979871',
         title: 'Action & Drama Showreel',
         duration: '2:15',
-        thumbnail: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
+        thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
       },
       resume: {
         fileName: 'Alexander_Vance_Resume_2026.pdf',
@@ -404,7 +404,7 @@ export const mockCandidates = [
     contactEmail: 'marcus.brody@example.com',
     phone: '+1 (416) 555-0812',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=1600&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1600&q=80',
     profileCompletion: 100,
     verificationStatus: 'verified',
     isReviewed: true,
@@ -464,7 +464,7 @@ export const mockCandidates = [
         url: 'https://vimeo.com/76979871',
         title: 'Marcus Brody - Action & Choreography Reel',
         duration: '3:00',
-        thumbnail: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
+        thumbnail: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=800&q=80',
       },
       resume: {
         fileName: 'Marcus_Brody_Stunt_CV_2026.pdf',
@@ -577,7 +577,7 @@ export const mockCandidates = [
     contactEmail: 'devansh.patel@example.com',
     phone: '+91 99111 88220',
     avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
-    coverImage: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=1600&q=80',
+    coverImage: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=1600&q=80',
     profileCompletion: 60,
     verificationStatus: 'unverified',
     isReviewed: false,
@@ -1168,7 +1168,46 @@ export const updateCandidateInList = (id, updates) => {
 
 export const getCandidateById = (id) => {
   const list = getCandidatesList();
-  return list.find((c) => c.id === id) || list[0];
+  const found = list.find((c) => c.id === id);
+  if (found) return found;
+
+  // Check mockTalentProfiles
+  const talent = mockTalentProfiles?.find((t) => t.id === id);
+  if (talent) {
+    return {
+      ...initialCandidateProfile,
+      ...talent,
+      fullName: talent.fullName,
+      headline: talent.headline,
+      bio: talent.bio,
+      location: talent.location,
+      city: talent.city,
+      country: talent.country,
+      avatar: talent.avatar,
+      coverImage: talent.coverImage || initialCandidateProfile.coverImage,
+      categories: talent.categories || [talent.category],
+      skills: talent.skills || initialCandidateProfile.skills,
+      languages: talent.languages || initialCandidateProfile.languages,
+      portfolio: {
+        headshots: [talent.avatar, initialCandidateProfile.avatar],
+        portfolioPhotos: [talent.avatar],
+        introVideo: {
+          url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+          title: `${talent.fullName} - Audition Reel`,
+          duration: '01:30',
+          thumbnail: talent.avatar,
+        },
+        actingReel: {
+          url: 'https://www.w3schools.com/html/mov_bbb.mp4',
+          title: `${talent.fullName} - Highlights Slate`,
+          duration: '02:00',
+          thumbnail: talent.avatar,
+        },
+      },
+    };
+  }
+
+  return list[0];
 };
 
 /**

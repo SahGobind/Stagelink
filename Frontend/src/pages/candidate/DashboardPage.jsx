@@ -17,17 +17,20 @@ import {
   Briefcase,
   ShieldCheck,
   Film,
+  LifeBuoy,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
 import EmptyState from '../../components/common/EmptyState';
+import CreateTicketModal from '../../components/support/CreateTicketModal';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
 import { getCandidateProfile, calculateProfileCompletion } from '../../data/mockCandidates';
 import { getCandidateApplications } from '../../data/mockApplications';
 import { mockOpportunities } from '../../data/mockOpportunities';
 import { mockMessages } from '../../data/mockMessages';
+import { getStoredSupportTickets } from '../../data/mockSupportTickets';
 import { formatDate } from '../../utils/formatters';
 
 const DashboardPage = () => {
@@ -37,6 +40,23 @@ const DashboardPage = () => {
   // Synchronize candidate profile & applications from storage
   const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
   const [applications, setApplications] = useState(() => getCandidateApplications());
+
+  // Support ticket state & modal
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportTickets, setSupportTickets] = useState(() => {
+    const all = getStoredSupportTickets();
+    return all.filter((t) => t.userId === user?.id && t.userRole === 'candidate');
+  });
+
+  useEffect(() => {
+    const handleSupportUpdate = () => {
+      const all = getStoredSupportTickets();
+      setSupportTickets(all.filter((t) => t.userId === user?.id && t.userRole === 'candidate'));
+    };
+    handleSupportUpdate();
+    window.addEventListener('starcast_support_updated', handleSupportUpdate);
+    return () => window.removeEventListener('starcast_support_updated', handleSupportUpdate);
+  }, [user?.id]);
 
   useEffect(() => {
     setCandidate(getCandidateProfile(user));
@@ -596,8 +616,76 @@ const DashboardPage = () => {
               </Link>
             </div>
           </div>
+
+          {/* Help & Support Card (Candidate Dashboard Requirement) */}
+          <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-pink-50 text-brand-pink flex items-center justify-center">
+                  <LifeBuoy className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold font-serif text-brand-navy">
+                    Help &amp; Support
+                  </h3>
+                  <p className="text-[10px] text-gray-400">Operation Team Desk</p>
+                </div>
+              </div>
+              {supportTickets.some((t) => t.unreadForUser) && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-brand-pink border border-pink-200">
+                  New Reply
+                </span>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Have a question about an audition callback, self-tape specifications, or composite card verification?
+            </p>
+
+            <div className="space-y-2 pt-1">
+              {/* Option 1: Contact Operation Team */}
+              <button
+                type="button"
+                onClick={() => setIsSupportModalOpen(true)}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-brand-pink hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <LifeBuoy className="w-4 h-4" />
+                  <span>Contact Operation Team</span>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/80" />
+              </button>
+
+              {/* Option 2: My Support Tickets */}
+              <Link
+                to="/candidate/support"
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-brand-navy font-bold text-xs transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 font-mono text-[11px]">#</span>
+                  <span>My Support Tickets</span>
+                  {supportTickets.length > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-gray-200 text-gray-700 font-bold ml-1">
+                      {supportTickets.length}
+                    </span>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-400" />
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Support Ticket Modal */}
+      <CreateTicketModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        onTicketCreated={() => {
+          const all = getStoredSupportTickets();
+          setSupportTickets(all.filter((t) => t.userId === user?.id && t.userRole === 'candidate'));
+        }}
+      />
     </PageContainer>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   MessageSquare,
@@ -11,10 +11,14 @@ import {
   Calendar,
   Check,
   ChevronRight,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
+import { talentService } from '../../services/talentService';
 
 const NotificationItem = ({ notification, onMarkRead }) => {
   const navigate = useNavigate();
+  const [responseStatus, setResponseStatus] = useState(notification?.responseStatus || null);
   if (!notification) return null;
 
   const getIconAndBadge = (type) => {
@@ -148,7 +152,58 @@ const NotificationItem = ({ notification, onMarkRead }) => {
       </div>
 
       {/* Action CTA & Mark as Read Button */}
-      <div className="flex items-center gap-2 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 w-full sm:w-auto justify-between sm:justify-end">
+      <div className="flex flex-wrap items-center gap-2 self-end sm:self-center shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 w-full sm:w-auto justify-between sm:justify-end">
+        {notification.type === 'interview_invitation' && (
+          <div className="flex items-center gap-1.5 mr-1" onClick={(e) => e.stopPropagation()}>
+            {responseStatus === 'accepted' ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Audition Accepted</span>
+              </span>
+            ) : responseStatus === 'declined' ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 text-gray-600 text-[11px] font-bold">
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Audition Declined</span>
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setResponseStatus('accepted');
+                    const invs = talentService.getCastingInvitations();
+                    const matched = invs.find(
+                      (i) => notification.title?.includes(i.opportunityTitle) || notification.message?.includes(i.role)
+                    );
+                    if (matched) talentService.respondToInvitation(matched.id, 'accepted');
+                    onMarkRead?.(notification.id);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition-colors shadow-2xs"
+                >
+                  Accept Audition
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setResponseStatus('declined');
+                    const invs = talentService.getCastingInvitations();
+                    const matched = invs.find(
+                      (i) => notification.title?.includes(i.opportunityTitle) || notification.message?.includes(i.role)
+                    );
+                    if (matched) talentService.respondToInvitation(matched.id, 'declined');
+                    onMarkRead?.(notification.id);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold transition-colors"
+                >
+                  Decline
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {notification.link && (
           <span className="px-3 py-1.5 bg-white border border-gray-200 group-hover:border-black group-hover:bg-black group-hover:text-white rounded-xl text-xs font-bold text-brand-navy shadow-2xs flex items-center gap-1 transition-all">
             <span>{notification.actionLabel || 'View Details'}</span>

@@ -14,8 +14,11 @@ import {
   Briefcase,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import { useAuth } from '../../context/AuthContext';
 
 const HowItWorksPage = () => {
+  const { isAuthenticated, user } = useAuth();
+  const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin');
   const [activeFaq, setActiveFaq] = useState(null);
 
   const candidateSteps = [
@@ -210,7 +213,7 @@ const HowItWorksPage = () => {
 
           <div className="mt-8 pt-4 flex flex-wrap items-center gap-4">
             <Link
-              to="/post-job"
+              to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
               className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
             >
               <Briefcase className="w-4 h-4" />
@@ -218,7 +221,7 @@ const HowItWorksPage = () => {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
-              to="/signup"
+              to="/signup?role=recruiter&redirect=/post-job"
               className="inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-neutral-100 text-black border border-neutral-300 text-xs font-bold rounded-xl transition-colors"
             >
               <span>Register as Casting Team</span>

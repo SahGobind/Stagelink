@@ -24,6 +24,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const setRecruiterSession = (companyData = {}) => {
+    const recUser = authService.ensureRecruiterSession(companyData);
+    setUser(recUser);
+    return recUser;
+  };
+
+  const setOperationsSession = () => {
+    const opsUser = authService.ensureOperationsSession();
+    setUser(opsUser);
+    return opsUser;
+  };
+
   const value = {
     user,
     loading,
@@ -32,6 +44,8 @@ export const AuthProvider = ({ children }) => {
     login,
     signUp,
     logout,
+    setRecruiterSession,
+    setOperationsSession,
   };
 
   return (
