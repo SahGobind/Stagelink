@@ -1,28 +1,34 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { hasCompletedPostingPayment, getAllCustomOpportunities } from '../utils/paymentAccess';
-import { authService } from '../services/authService';
 
 const RoleBasedRoute = ({ allowedRoles = [], children }) => {
-  const { role, loading, isAuthenticated } = useAuth();
+  const { user, role, loading, isAuthenticated } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return <LoadingSpinner message="Checking permissions..." className="min-h-screen" />;
   }
 
-  // Development demo mode: If accessing operations area, auto-switch to operations session so developer is never blocked
-  if (allowedRoles.includes('operations') && role !== 'admin' && role !== 'operations') {
-    authService.ensureOperationsSession();
-    return children;
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  const currentRole = user?.role || role || 'guest';
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
+  // Role validation
+  if (allowedRoles.length > 0 && !allowedRoles.includes(currentRole)) {
+    // Role-isolated redirects
+    if (currentRole === 'candidate') {
+      return <Navigate to="/candidate/dashboard" replace />;
+    }
+    if (currentRole === 'recruiter') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    if (currentRole === 'operations') {
+      return <Navigate to="/admin/operations/support" replace />;
+    }
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -30,4 +36,5 @@ const RoleBasedRoute = ({ allowedRoles = [], children }) => {
 };
 
 export default RoleBasedRoute;
+
 

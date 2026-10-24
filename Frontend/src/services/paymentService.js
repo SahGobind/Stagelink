@@ -4,6 +4,8 @@
  * Supports Juspay integration and secure server-side verification.
  */
 
+import { apiRequest } from './api';
+
 // Configuration detection (Environment variables should be defined in .env / Vite)
 const JUSPAY_MERCHANT_ID = import.meta.env.VITE_JUSPAY_MERCHANT_ID || '';
 const JUSPAY_ENV = import.meta.env.VITE_JUSPAY_ENV || 'sandbox'; // 'sandbox' | 'production'
@@ -39,7 +41,7 @@ export const paymentService = {
    */
   fetchAuthoritativePricing: async (currency = 'INR', promoCode = '') => {
     try {
-      const res = await fetch(`/api/opportunities/pricing/?currency=${currency}&promo=${encodeURIComponent(promoCode)}`);
+      const res = await apiRequest(`/api/opportunities/pricing/?currency=${currency}&promo=${encodeURIComponent(promoCode)}`);
       if (res.ok) {
         return await res.json();
       }
@@ -109,9 +111,8 @@ export const paymentService = {
 
     try {
       // 1. Call backend order endpoint
-      const response = await fetch('/api/opportunities/create-order/', {
+      const response = await apiRequest('/api/opportunities/create-order/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderPayload),
       });
 
@@ -178,9 +179,8 @@ export const paymentService = {
 
     try {
       // Confirm with backend API
-      const res = await fetch('/api/opportunities/confirm-payment/', {
+      const res = await apiRequest('/api/opportunities/confirm-payment/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId,
           opportunityId,

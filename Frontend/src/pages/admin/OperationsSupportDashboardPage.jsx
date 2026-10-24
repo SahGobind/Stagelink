@@ -40,22 +40,12 @@ const STAFF_MEMBERS = [
 ];
 
 const OperationsSupportDashboardPage = () => {
-  const { user, role, setOperationsSession } = useAuth();
+  const { user, role } = useAuth();
   const isAuthorized =
     role === 'operations' ||
     role === 'admin' ||
     user?.role === 'operations' ||
     user?.role === 'admin';
-
-  useEffect(() => {
-    if (!isAuthorized) {
-      if (typeof setOperationsSession === 'function') {
-        setOperationsSession();
-      } else {
-        authService.ensureOperationsSession();
-      }
-    }
-  }, [isAuthorized, setOperationsSession]);
 
   const [tickets, setTickets] = useState([]);
   const [metrics, setMetrics] = useState({
@@ -215,45 +205,6 @@ const OperationsSupportDashboardPage = () => {
       setIsUpdatingProps(false);
     }
   };
-
-  if (!isAuthorized) {
-    return (
-      <PageContainer maxWidth="4xl" className="py-16 text-center">
-        <div className="bg-white rounded-3xl p-10 border border-gray-200 shadow-sm max-w-md mx-auto space-y-4">
-          <div className="w-14 h-14 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-bold font-serif text-brand-navy">Access Restricted</h2>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            The Operation Team Support Dashboard is accessible only to authorized StageLink Operations and Admin personnel.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof setOperationsSession === 'function') {
-                  setOperationsSession();
-                } else {
-                  authService.ensureOperationsSession();
-                  window.location.reload();
-                }
-              }}
-              className="px-4 py-2 rounded-xl bg-indigo-950 hover:bg-neutral-800 text-white text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
-              <span>Authorize as Operations Staff (1-Click Demo)</span>
-            </button>
-            <Link
-              to="/admin/dashboard"
-              className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold transition-colors"
-            >
-              Return to Dashboard
-            </Link>
-          </div>
-        </div>
-      </PageContainer>
-    );
-  }
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-8 text-left pb-16">

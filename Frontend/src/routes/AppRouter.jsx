@@ -33,6 +33,8 @@ const OpportunityDetailsPage = lazy(() => import('../pages/opportunities/Opportu
 // Lazy-Loaded Auth Pages
 const SignUpPage = lazy(() => import('../pages/auth/SignUpPage'));
 const LoginPage = lazy(() => import('../pages/auth/LoginPage'));
+const AdminLoginPage = lazy(() => import('../pages/auth/AdminLoginPage'));
+const OperationsLoginPage = lazy(() => import('../pages/auth/OperationsLoginPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage'));
 const EmailVerificationPage = lazy(() => import('../pages/auth/EmailVerificationPage'));
@@ -107,6 +109,9 @@ const AppRouter = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recruiter/register" element={<SignUpPage />} />
           <Route path="/recruiter/login" element={<LoginPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/operations/login" element={<OperationsLoginPage />} />
+          <Route path="/admin/operations/login" element={<Navigate to="/operations/login" replace />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -115,6 +120,10 @@ const AppRouter = () => {
         {/* Recruiter Route Aliases */}
         <Route path="/recruiter" element={<Navigate to="/admin/dashboard" replace />} />
         <Route path="/recruiter/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/recruiter/opportunities" element={<Navigate to="/admin/opportunities" replace />} />
+        <Route path="/recruiter/applications" element={<Navigate to="/admin/applications" replace />} />
+        <Route path="/recruiter/post-job" element={<Navigate to="/post-job" replace />} />
+        <Route path="/recruiter/talent" element={<Navigate to="/talent" replace />} />
 
         {/* Operations Route Aliases */}
         <Route path="/operations" element={<Navigate to="/admin/operations/support" replace />} />

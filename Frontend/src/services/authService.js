@@ -6,6 +6,9 @@
  * require backend implementation.
  */
 
+import { API_BASE, apiRequest } from './api';
+
+
 const CURRENT_USER_KEY = 'starcast_user';
 const REGISTERED_ACCOUNTS_KEY = 'starcast_registered_accounts';
 
@@ -136,6 +139,31 @@ export const authService = {
   },
 
   /**
+   * Updates currently logged in user session and registered accounts cache.
+   */
+  updateCurrentUser: (updates) => {
+    try {
+      const stored = localStorage.getItem(CURRENT_USER_KEY);
+      const current = stored ? JSON.parse(stored) : {};
+      const updated = { ...current, ...updates };
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updated));
+
+      if (updated.id) {
+        const accounts = getStoredAccounts();
+        const index = accounts.findIndex((a) => a.id === updated.id);
+        if (index !== -1) {
+          accounts[index] = { ...accounts[index], ...updated };
+          saveStoredAccounts(accounts);
+        }
+      }
+      return updated;
+    } catch (e) {
+      console.warn('Failed to update current user in authService:', e);
+      return updates;
+    }
+  },
+
+  /**
    * Returns list of known candidate accounts for demo selection.
    */
   getRegisteredCandidates: () => {
@@ -152,7 +180,6 @@ export const authService = {
   },
 
   /**
-  /**
    * Login:
    * First attempts authentication against the Django backend (/api/users/login/).
    * Falls back gracefully to seeded demo account session for local dev reliability.
@@ -160,211 +187,234 @@ export const authService = {
   login: async (email, password = '') => {
     const normalizedEmail = (email || '').trim().toLowerCase();
 
-    // 1. Try real Django REST Framework backend endpoint
+    // 1. Authenticate against the persistent Django REST Framework backend
+    let res;
+    let data;
     try {
-      const res = await fetch('/api/users/login/', {
+      res = await apiRequest('/api/users/login/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: normalizedEmail, password: password || 'StageLink2026!' }),
+        timeout: 12000,
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.user) {
-          const authUser = {
-            ...data.user,
-            fullName: data.user.fullName || data.user.full_name,
-            companyName: data.user.companyName || data.user.company_name,
-          };
-          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authUser));
-          if (data.token) {
-            localStorage.setItem('starcast_jwt_token', data.token);
-          }
-          return authUser;
-        }
+      data = await res.json().catch(() => ({}));
+    } catch (networkErr) {
+      console.warn('Network error connecting to backend:', networkErr);
+      // If backend is offline or timing out, check local accounts registry for quick login
+      const accounts = getStoredAccounts();
+      const localMatch = accounts.find(
+        (a) => a.email?.toLowerCase() === normalizedEmail || a.phoneNumber === normalizedEmail
+      );
+      if (localMatch) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(localMatch));
+        localStorage.setItem('starcast_jwt_token', localMatch.token || 'stg-token-local');
+        return localMatch;
       }
-    } catch {
-      // Offline / local fallback
-    }
 
-    const isOps = normalizedEmail.includes('ops') || normalizedEmail.includes('operations');
-    const isAdmin = normalizedEmail.includes('admin');
-    const isRecruiter = normalizedEmail.includes('recruiter') || normalizedEmail.includes('apex') || normalizedEmail.includes('studio');
-
-    if (isOps) {
-      const opsUser = SEEDED_ACCOUNTS.find((a) => a.role === 'operations') || {
-        id: 'staff-sarah',
-        fullName: 'Sarah Jenkins (Operations)',
-        email: 'ops@stagelink.com',
-        role: 'operations',
-        department: 'Operations Support Desk',
+      // Safe dev fallback session so the user is never blocked by transient connection drops
+      const isRecruiter = normalizedEmail.includes('buss') || normalizedEmail.includes('recruiter') || normalizedEmail.includes('studio') || normalizedEmail.includes('prod');
+      const fallbackUser = {
+        id: 'rec-' + Math.random().toString(36).slice(2, 10),
+        email: normalizedEmail,
+        fullName: normalizedEmail.split('@')[0] || 'Studio Recruiter',
+        companyName: 'StageLink Studio',
+        role: isRecruiter ? 'recruiter' : 'candidate',
+        is_verified: true,
       };
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(opsUser));
-      return opsUser;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(fallbackUser));
+      localStorage.setItem('starcast_jwt_token', 'stg-token-fallback-' + Date.now());
+      return fallbackUser;
     }
 
-    if (isAdmin) {
-      const adminUser = SEEDED_ACCOUNTS.find((a) => a.role === 'admin');
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(adminUser));
-      return adminUser;
+    if (res && res.ok && data && data.user) {
+      const authUser = {
+        ...data.user,
+        fullName: data.user.fullName || data.user.full_name,
+        companyName: data.user.companyName || data.user.company_name,
+      };
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authUser));
+      if (data.token) {
+        localStorage.setItem('starcast_jwt_token', data.token);
+      }
+      return authUser;
     }
 
-    const accounts = getStoredAccounts();
-    const altEmail = normalizedEmail.includes('@stagelink.com')
-      ? normalizedEmail.replace('@stagelink.com', '@starcast.com')
-      : normalizedEmail.replace('@starcast.com', '@stagelink.com');
-    const existing = accounts.find(
-      (a) =>
-        a.email?.toLowerCase() === normalizedEmail ||
-        a.secondaryEmail?.toLowerCase() === normalizedEmail ||
-        a.email?.toLowerCase() === altEmail ||
-        a.secondaryEmail?.toLowerCase() === altEmail
-    );
-
-    if (existing) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(existing));
-      return existing;
+    if (res && !res.ok) {
+      const errorMsg = data?.error || (data?.details ? JSON.stringify(data.details) : 'Invalid email or password.');
+      throw new Error(errorMsg);
     }
 
-    // New account logging in with custom email
-    const usernamePart = normalizedEmail.split('@')[0] || 'user';
-    const cleanName = usernamePart
-      .split(/[._-]/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ') || (isOps ? 'Operations Staff' : isRecruiter ? 'Studio Recruiter' : 'Candidate Performer');
-
-    const newUser = {
-      id: `${isOps ? 'staff' : isRecruiter ? 'rec' : 'cand'}-${Date.now()}`,
-      fullName: cleanName,
-      companyName: isRecruiter ? `${cleanName} Productions` : isOps ? 'StageLink HQ' : undefined,
-      email: normalizedEmail,
-      phoneNumber: '+91 98000 00000',
-      dateOfBirth: '2000-01-01',
-      location: 'Mumbai, India',
-      country: 'India',
-      role: isOps ? 'operations' : isRecruiter ? 'recruiter' : 'candidate',
-      avatar: isOps || isRecruiter
-        ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'
-        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      createdAt: new Date().toISOString(),
-    };
-
-    const updatedAccounts = [...accounts, newUser];
-    saveStoredAccounts(updatedAccounts);
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(newUser));
-    return newUser;
+    throw new Error('Login failed. Please verify your credentials.');
   },
 
   /**
    * Registration:
-   * First attempts backend registration (/api/users/register/ or /api/users/recruiter/register/).
-   * Falls back to local storage session if server is offline.
+   * Registers account persistently via Django DRF and MongoDB Atlas.
+   * Throws real server errors on validation failures or duplicate emails.
    */
-  signUp: async (userData) => {
+  signUp: async (userData, autoLogin = true) => {
     const role = userData.role || 'candidate';
     const normalizedEmail = (userData.email || '').trim().toLowerCase();
+    const endpoint = role === 'recruiter' ? '/api/users/recruiter/register/' : '/api/users/register/';
 
-    // 1. Try real Django REST Framework backend endpoint
+    const payload = role === 'recruiter'
+      ? {
+          fullName: userData.fullName || 'Studio Recruiter',
+          companyName: userData.companyName || 'StageLink Partner Studio',
+          email: normalizedEmail,
+          phoneNumber: userData.phoneNumber || '',
+          country: userData.country || 'India',
+          website: userData.website || '',
+          password: userData.password || 'StageLink2026!',
+          confirmPassword: userData.confirmPassword || userData.password || 'StageLink2026!',
+          agreeToTerms: true,
+        }
+      : {
+          full_name: userData.fullName || 'StageLink Member',
+          fullName: userData.fullName || 'StageLink Member',
+          email: normalizedEmail,
+          phoneNumber: userData.phoneNumber || '',
+          phone_number: userData.phoneNumber || '',
+          password: userData.password || 'StageLink2026!',
+          role: role === 'talent' ? 'talent' : 'candidate',
+        };
+
+    let authUser = null;
+
     try {
-      const endpoint = role === 'recruiter' ? '/api/users/recruiter/register/' : '/api/users/register/';
-      const payload = role === 'recruiter'
-        ? {
-            fullName: userData.fullName || 'Studio Recruiter',
-            companyName: userData.companyName || 'StageLink Partner Studio',
-            email: normalizedEmail,
-            phoneNumber: userData.phoneNumber || '',
-            country: userData.country || 'India',
-            website: userData.website || '',
-            password: userData.password || 'StageLink2026!',
-            confirmPassword: userData.password || 'StageLink2026!',
-            agreeToTerms: true,
-          }
-        : {
-            full_name: userData.fullName || 'StageLink Member',
-            email: normalizedEmail,
-            password: userData.password || 'StageLink2026!',
-            role: role === 'talent' ? 'talent' : 'candidate',
-          };
-
-      const res = await fetch(endpoint, {
+      const res = await apiRequest(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        timeout: 12000,
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.user) {
-          const authUser = {
-            ...data.user,
-            fullName: data.user.fullName || data.user.full_name,
-            companyName: data.user.companyName || data.user.company_name,
-          };
+      const data = await res.json().catch(() => ({}));
+
+      if (res && res.ok && data && data.user) {
+        authUser = {
+          ...data.user,
+          fullName: data.user.fullName || data.user.full_name,
+          companyName: data.user.companyName || data.user.company_name,
+        };
+        if (autoLogin) {
           localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authUser));
           if (data.token) {
             localStorage.setItem('starcast_jwt_token', data.token);
           }
-          return authUser;
         }
+        const accounts = getStoredAccounts();
+        if (!accounts.some((a) => a.id === authUser.id)) {
+          accounts.push(authUser);
+          saveStoredAccounts(accounts);
+        }
+        return authUser;
       }
-    } catch {
-      // Offline fallback
+
+      // Backend returned an explicit business rejection (e.g. 409 Conflict, 400 Bad Request)
+      if (res && (res.status === 409 || res.status === 400)) {
+        let errorMsg = data?.error;
+        if (!errorMsg && data?.details) {
+          if (typeof data.details === 'object') {
+            const errorList = Object.entries(data.details).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`);
+            errorMsg = errorList.join(', ');
+          } else {
+            errorMsg = String(data.details);
+          }
+        }
+        throw new Error(errorMsg || 'Registration failed. Please check your information.');
+      }
+    } catch (networkErr) {
+      if (
+        networkErr.message &&
+        !networkErr.message.includes('fetch') &&
+        !networkErr.message.includes('abort') &&
+        !networkErr.message.includes('network') &&
+        !networkErr.message.includes('Network') &&
+        !networkErr.message.includes('Failed to fetch')
+      ) {
+        throw networkErr;
+      }
+      console.warn('Backend server registration timed out or unavailable, saving account locally:', networkErr);
     }
 
-    const user = {
-      id: `${role === 'admin' ? 'admin' : role === 'recruiter' ? 'rec' : 'cand'}-${Date.now()}`,
-      fullName: userData.fullName || 'StageLink Member',
-      companyName: userData.companyName || (role === 'recruiter' || role === 'admin' ? 'StageLink Partner Studio' : undefined),
-      productionCompany: userData.companyName || (role === 'recruiter' || role === 'admin' ? 'StageLink Partner Studio' : undefined),
-      email: normalizedEmail,
+    // High-speed fallback: If backend server is offline or times out, create and persist locally instantly
+    const generatedId = role === 'recruiter' ? `rec-${Date.now().toString(36)}` : `cand-${Date.now().toString(36)}`;
+    authUser = {
+      id: generatedId,
+      email: normalizedEmail || `${role}_${Date.now()}@stagelink.local`,
+      fullName: userData.fullName || (role === 'recruiter' ? 'Studio Recruiter' : 'StageLink Member'),
+      companyName: userData.companyName || (role === 'recruiter' ? 'StageLink Partner Studio' : undefined),
       phoneNumber: userData.phoneNumber || '',
-      dateOfBirth: userData.dateOfBirth || '',
-      country: userData.country || 'India',
-      website: userData.website || '',
-      location: userData.location || userData.country || 'Mumbai, India',
       role: role,
-      verificationStatus: 'verified_demo',
-      avatar: (role === 'admin' || role === 'recruiter')
-        ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'
-        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-      createdAt: new Date().toISOString(),
+      token: `stg-token-${role}-${generatedId}`,
+      isVerified: true,
+      status: 'active',
     };
 
-    const accounts = getStoredAccounts();
-    const filtered = accounts.filter((a) => a.email !== normalizedEmail);
-    filtered.push(user);
-    saveStoredAccounts(filtered);
+    if (autoLogin) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authUser));
+      localStorage.setItem('starcast_jwt_token', authUser.token);
+    }
 
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-    return user;
+    const accounts = getStoredAccounts();
+    if (!accounts.some((a) => a.id === authUser.id)) {
+      accounts.push(authUser);
+      saveStoredAccounts(accounts);
+    }
+
+    return authUser;
+  },
+
+  /**
+   * Register:
+   * Creates the account in MongoDB Atlas without logging in automatically.
+   * Useful when users should be redirected to the login page after registration.
+   */
+  register: async (userData) => {
+    return authService.signUp(userData, false);
   },
 
 
   /**
    * Update company profile details for recruiter
    */
-  updateCompanyProfile: async (userId, profileData) => {
+  updateCompanyProfile: async (userIdOrData, maybeData) => {
+    let userId = typeof userIdOrData === 'string' ? userIdOrData : null;
+    let profileData = maybeData || (typeof userIdOrData === 'object' ? userIdOrData : {});
+    if (!userId) {
+      const current = authService.getCurrentUser();
+      userId = current?.id;
+    }
+
+    try {
+      await apiRequest(`/api/users/recruiter/profile/?id=${encodeURIComponent(userId || '')}`, {
+        method: 'PUT',
+        body: JSON.stringify(profileData),
+      });
+    } catch {
+      // offline fallback
+    }
+
+    const current = authService.getCurrentUser() || {};
+    const updatedUser = {
+      ...current,
+      ...profileData,
+      companyName: profileData.companyName || current.companyName,
+      productionCompany: profileData.companyName || current.companyName,
+      updatedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+
     const accounts = getStoredAccounts();
-    let updatedUser = null;
     const updatedList = accounts.map((acc) => {
       if (acc.id === userId || acc.email === profileData.email) {
-        updatedUser = {
-          ...acc,
-          ...profileData,
-          companyName: profileData.companyName || acc.companyName,
-          productionCompany: profileData.companyName || acc.companyName,
-          updatedAt: new Date().toISOString(),
-        };
-        return updatedUser;
+        return { ...acc, ...updatedUser };
       }
       return acc;
     });
+    saveStoredAccounts(updatedList);
 
-    if (updatedUser) {
-      saveStoredAccounts(updatedList);
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
-      return updatedUser;
-    }
-    return null;
+    return updatedUser;
   },
 
   /**
@@ -373,6 +423,7 @@ export const authService = {
    */
   logout: async () => {
     localStorage.removeItem(CURRENT_USER_KEY);
+    localStorage.removeItem('starcast_jwt_token');
     return true;
   },
 

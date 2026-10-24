@@ -14,9 +14,12 @@ import {
   Info,
   ShieldCheck,
   User,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
+import { apiRequest } from '../../services/api';
 import Input from '../../components/common/Input';
 import Checkbox from '../../components/common/Checkbox';
 
@@ -37,22 +40,6 @@ const candidateSignUpSchema = z
       .trim()
       .min(10, { message: 'Please enter a valid phone number (at least 10 digits)' })
       .regex(/^[0-9+\s\-()]{10,18}$/, { message: 'Phone number format is invalid' }),
-    dateOfBirth: z
-      .string()
-      .min(1, { message: 'Date of birth is required' })
-      .refine(
-        (val) => {
-          const birthDate = new Date(val);
-          const now = new Date();
-          const age = now.getFullYear() - birthDate.getFullYear();
-          return age >= 16;
-        },
-        { message: 'Performers must be at least 16 years of age' }
-      ),
-    location: z
-      .string()
-      .trim()
-      .min(2, { message: 'Location/city is required' }),
     password: z
       .string()
       .min(8, { message: 'Password must be at least 8 characters long' }),
@@ -85,6 +72,7 @@ const recruiterSignUpSchema = z
     email: z
       .string()
       .trim()
+      .min(1, { message: 'Business email address is required' })
       .email({ message: 'Please enter a valid business email address' }),
     phoneNumber: z
       .string()
@@ -93,18 +81,6 @@ const recruiterSignUpSchema = z
       .refine(
         (val) => !val || /^[0-9+\s\-()]{10,20}$/.test(val),
         { message: 'Phone number format is invalid (include country code)' }
-      ),
-    country: z
-      .string()
-      .trim()
-      .min(2, { message: 'Country is required' }),
-    website: z
-      .string()
-      .trim()
-      .optional()
-      .refine(
-        (val) => !val || /^https?:\/\/.+/.test(val) || /^www\..+/.test(val),
-        { message: 'Website must start with https://, http://, or www.' }
       ),
     password: z
       .string()
@@ -126,7 +102,7 @@ const recruiterSignUpSchema = z
 const SignUpPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { register: registerAccount } = useAuth();
 
   const isRoleRecruiterParam =
     searchParams.get('role') === 'recruiter' ||
@@ -140,6 +116,7 @@ const SignUpPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(null);
 
   // Form for candidate
   const candidateForm = useForm({
@@ -148,8 +125,6 @@ const SignUpPage = () => {
       fullName: '',
       email: '',
       phoneNumber: '',
-      dateOfBirth: '',
-      location: 'Mumbai, India',
       password: '',
       confirmPassword: '',
       agreeToTerms: false,
@@ -164,8 +139,6 @@ const SignUpPage = () => {
       companyName: '',
       email: '',
       phoneNumber: '',
-      country: 'India',
-      website: '',
       password: '',
       confirmPassword: '',
       agreeToTerms: false,
@@ -176,17 +149,22 @@ const SignUpPage = () => {
     setServerError('');
     setIsSubmitting(true);
     try {
-      await signUp({
+      await registerAccount({
         fullName: data.fullName,
         email: data.email,
+        password: data.password,
         phoneNumber: data.phoneNumber,
-        dateOfBirth: data.dateOfBirth,
-        location: data.location,
         role: 'candidate',
       });
-      navigate(redirectParam || '/candidate/profile/setup');
-    } catch {
-      setServerError('Failed to create performer account. Please try again.');
+      // Redirect to login page and preserve forward destination
+      navigate(
+        `/login?role=candidate&email=${encodeURIComponent(data.email)}&registered=true${
+          redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '&redirect=/candidate/profile/setup'
+        }`,
+        { replace: true }
+      );
+    } catch (err) {
+      setServerError(err.message || 'Failed to create performer account. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -197,90 +175,100 @@ const SignUpPage = () => {
     setIsSubmitting(true);
 
     try {
-      // 1. Prepare backend payload
-      const payload = {
-        fullName: data.fullName,
-        companyName: data.companyName,
-        email: data.email,
-        phoneNumber: data.phoneNumber || '',
-        country: data.country,
-        website: data.website || '',
+      await registerAccount({
+        fullName: data.fullName.trim(),
+        companyName: data.companyName.trim(),
+        email: data.email.trim().toLowerCase(),
+        phoneNumber: data.phoneNumber ? data.phoneNumber.trim() : '',
+        country: 'India',
+        website: '',
         password: data.password,
         confirmPassword: data.confirmPassword,
         agreeToTerms: true,
-      };
-
-      // 2. Call backend recruiter register endpoint
-      try {
-        await fetch('/api/users/recruiter/register/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      } catch {
-        // client-side fallback
-      }
-
-      // 3. Register user locally in authService
-      await authService.signUp({
-        fullName: data.fullName,
-        companyName: data.companyName,
-        email: data.email,
-        phoneNumber: data.phoneNumber,
-        country: data.country,
-        website: data.website,
         role: 'recruiter',
       });
 
-      // 4. Navigate to Email Verification UI showing pending verification state
-      const redirectQuery = redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '';
+      // Redirect to login page and preserve forward destination
       navigate(
-        `/verify-email?email=${encodeURIComponent(data.email)}&name=${encodeURIComponent(
-          data.fullName
-        )}&company=${encodeURIComponent(data.companyName)}${redirectQuery}`
+        `/login?role=recruiter&email=${encodeURIComponent(data.email.trim().toLowerCase())}&registered=true${
+          redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : '&redirect=/admin/dashboard'
+        }`,
+        { replace: true }
       );
-    } catch {
-      setServerError('Failed to create recruiter profile. Please try again.');
+    } catch (err) {
+      setServerError(err.message || 'Failed to create recruiter profile. Please try again.');
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handleInstantDemoRecruiter = async () => {
-    try {
-      authService.ensureRecruiterSession({
-        fullName: 'Marcus Sterling',
-        companyName: 'Apex Vision Studios',
-        email: 'recruiter@stagelink.com',
-      });
-      await authService.login('recruiter@stagelink.com', 'password123');
-      navigate(redirectParam || '/post-job');
-    } catch {
-      // fallback
-      navigate(redirectParam || '/post-job');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 text-left">
       <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-gray-100 space-y-6">
-        {/* Role Switcher Tabs */}
-        <div className="flex p-1 bg-gray-100 rounded-2xl">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('recruiter');
-              setServerError('');
-            }}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'recruiter'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            <Building2 className={`w-4 h-4 ${activeTab === 'recruiter' ? 'text-brand-pink' : ''}`} />
-            <span>Recruiter / Production Studio</span>
-          </button>
+        {registrationSuccess ? (
+          <div className="text-center py-4 space-y-6">
+            <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border-4 border-emerald-100 shadow-sm">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                Registration Complete
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
+                Account Created Successfully!
+              </h2>
+              <p className="text-xs sm:text-sm text-brand-text-secondary max-w-md mx-auto">
+                Your Production Company account for <strong className="text-gray-900 font-semibold">{registrationSuccess.companyName}</strong> has been registered in StageLink.
+              </p>
+            </div>
+
+            <div className="bg-gray-50 rounded-2xl p-4 sm:p-5 text-left border border-gray-200 space-y-2 max-w-md mx-auto text-xs">
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500">Company Name</span>
+                <span className="font-semibold text-gray-900">{registrationSuccess.companyName}</span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-gray-200/60">
+                <span className="text-gray-500">Contact Person</span>
+                <span className="font-semibold text-gray-900">{registrationSuccess.fullName}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span className="text-gray-500">Login Email</span>
+                <span className="font-semibold text-gray-900">{registrationSuccess.email}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 space-y-3 max-w-md mx-auto">
+              <Link
+                to={`/login?role=recruiter&email=${encodeURIComponent(registrationSuccess.email)}`}
+                className="w-full py-3.5 px-6 bg-brand-pink hover:bg-pink-600 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <span>Go to Recruiter Login</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <div className="flex items-center justify-center gap-4 text-xs text-gray-500 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRegistrationSuccess(null);
+                    recruiterForm.reset();
+                  }}
+                  className="hover:underline text-gray-600 font-medium cursor-pointer"
+                >
+                  Register another account
+                </button>
+                <span>•</span>
+                <Link to="/" className="hover:underline text-gray-600 font-medium">
+                  Back to Home
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Role Switcher Tabs */}
+            <div className="flex p-1 bg-gray-100 rounded-2xl">
           <button
             type="button"
             onClick={() => {
@@ -294,7 +282,22 @@ const SignUpPage = () => {
             }`}
           >
             <User className={`w-4 h-4 ${activeTab === 'candidate' ? 'text-brand-pink' : ''}`} />
-            <span>Performer / Talent</span>
+            <span>Candidate / Artist</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('recruiter');
+              setServerError('');
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'recruiter'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <Building2 className={`w-4 h-4 ${activeTab === 'recruiter' ? 'text-brand-pink' : ''}`} />
+            <span>Recruiter / Production Company</span>
           </button>
         </div>
 
@@ -316,32 +319,6 @@ const SignUpPage = () => {
           </p>
         </div>
 
-        {/* Job Posting Recruiter Notice */}
-        {activeTab === 'recruiter' && redirectParam === '/post-job' && (
-          <div className="p-4 bg-gradient-to-r from-pink-50 via-rose-50/70 to-purple-50 border border-pink-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-neutral-800">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-xl bg-brand-pink text-white flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-900">
-                  Register Your Studio to Announce Work
-                </h4>
-                <p className="text-[11px] text-gray-600 mt-0.5 leading-relaxed">
-                  Only registered production companies and recruiters can post jobs on StageLink. Complete your setup below to immediately publish your casting call.
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleInstantDemoRecruiter}
-              className="px-3.5 py-2 bg-neutral-900 hover:bg-black text-white text-[11px] font-bold rounded-xl shadow-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer whitespace-nowrap self-end sm:self-center"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>1-Click Demo Recruiter</span>
-            </button>
-          </div>
-        )}
 
         {/* Server Error Message */}
         {serverError && (
@@ -379,7 +356,7 @@ const SignUpPage = () => {
             {/* Business Email & Phone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
-                label="Business Email"
+                label="Business Email Address"
                 type="email"
                 placeholder="recruiter@production.com"
                 required
@@ -393,25 +370,6 @@ const SignUpPage = () => {
                 placeholder="+91 98765 43210 or +44 20 7946 0912"
                 error={recruiterForm.formState.errors.phoneNumber?.message}
                 {...recruiterForm.register('phoneNumber')}
-              />
-            </div>
-
-            {/* Country & Company Website */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input
-                label="Country"
-                placeholder="e.g. India, United Kingdom, USA"
-                required
-                error={recruiterForm.formState.errors.country?.message}
-                {...recruiterForm.register('country')}
-              />
-
-              <Input
-                label="Company Website (Optional)"
-                type="url"
-                placeholder="https://apexvisionstudios.com"
-                error={recruiterForm.formState.errors.website?.message}
-                {...recruiterForm.register('website')}
               />
             </div>
 
@@ -490,7 +448,7 @@ const SignUpPage = () => {
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Create Recruiter Profile &amp; Verify Email</span>
+                  <span>Register Production Account</span>
                 </>
               )}
             </button>
@@ -529,24 +487,6 @@ const SignUpPage = () => {
                 required
                 error={candidateForm.formState.errors.phoneNumber?.message}
                 {...candidateForm.register('phoneNumber')}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Input
-                label="Date of Birth"
-                type="date"
-                required
-                error={candidateForm.formState.errors.dateOfBirth?.message}
-                {...candidateForm.register('dateOfBirth')}
-              />
-
-              <Input
-                label="Location / City"
-                placeholder="e.g. Mumbai, India"
-                required
-                error={candidateForm.formState.errors.location?.message}
-                {...candidateForm.register('location')}
               />
             </div>
 
@@ -624,6 +564,8 @@ const SignUpPage = () => {
             </button>
           </form>
         )}
+        </>
+      )}
 
         {/* Sign In Link */}
         <div className="text-center text-xs text-brand-text-secondary pt-2 border-t border-gray-100">

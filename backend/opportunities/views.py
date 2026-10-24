@@ -14,7 +14,7 @@ from rest_framework import status
 from .serializers import CastingOpportunitySerializer
 from . import repository
 from starcast.db import get_collection
-from starcast.utils import handle_db_error, clean_doc
+from starcast.utils import handle_db_error, clean_doc, get_auth_user_from_request
 
 # Backend authoritative pricing configuration
 PRICING_CONFIG = {
@@ -52,6 +52,7 @@ class OpportunityListView(APIView):
         category = request.query_params.get("category")
         location = request.query_params.get("location")
         search = request.query_params.get("search", "").lower()
+        group_by = request.query_params.get("group_by", "").lower()
 
         try:
             results = repository.list_public_opportunities(
@@ -59,6 +60,17 @@ class OpportunityListView(APIView):
                 location=location,
                 search=search
             )
+            if group_by == 'category':
+                category_wise = {}
+                for opp in results:
+                    cat = opp.get("category") or opp.get("productionCategory") or "Other"
+                    category_wise.setdefault(cat, []).append(opp)
+                return Response({
+                    "count": len(results),
+                    "categories": category_wise,
+                    "results": results
+                }, status=status.HTTP_200_OK)
+
             return Response({
                 "count": len(results),
                 "results": results
@@ -75,9 +87,16 @@ class OpportunityListView(APIView):
         opp_id = f"opp-{int(datetime.datetime.now().timestamp() * 1000)}"
         ref_id = f"PRD-{uuid.uuid4().hex[:6].upper()}"
 
+        auth_user = get_auth_user_from_request(request)
+        recruiter_id = auth_user.get("id") if auth_user else None
+        recruiter_email = auth_user.get("email") if auth_user else ""
+
         new_opp = {
             "id": opp_id,
             "refId": ref_id,
+            "recruiterId": recruiter_id,
+            "recruiter_id": recruiter_id,
+            "recruiterEmail": recruiter_email,
             **data,
             "status": "draft",
             "listingStatus": "draft",
@@ -121,12 +140,55 @@ class OpportunityDetailView(APIView):
         except Exception as err:
             return handle_db_error(err)
 
+    def delete(self, request, pk):
+        try:
+            opp = repository.find_opportunity_by_id(pk)
+            if not opp:
+                return Response({"error": "Casting opportunity not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            repository.delete_opportunity(pk)
+            return Response({
+                "success": True,
+                "message": "Opportunity deleted successfully",
+                "id": pk
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
 
 class RecruiterOpportunitiesView(APIView):
     """List opportunities managed by production recruiters, including drafts and pending review."""
     def get(self, request):
         try:
+            auth_user = get_auth_user_from_request(request)
             all_opps = repository.list_all_opportunities()
+
+            if auth_user and auth_user.get("role") == "recruiter":
+                uid = auth_user.get("id")
+                company = (auth_user.get("companyName") or auth_user.get("company_name") or "").strip().lower()
+                user_email = (auth_user.get("email") or "").strip().lower()
+
+                filtered = [
+                    o for o in all_opps
+                    if (o.get("recruiterId") and o.get("recruiterId") == uid) or
+                       (o.get("recruiter_id") and o.get("recruiter_id") == uid) or
+                       (user_email and (o.get("recruiterEmail") or "").strip().lower() == user_email) or
+                       (company and (o.get("productionCompany") or o.get("production_company") or "").strip().lower() == company)
+                ]
+                return Response({
+                    "recruiter": auth_user.get("companyName") or auth_user.get("fullName", "Production Recruiter"),
+                    "count": len(filtered),
+                    "opportunities": filtered
+                }, status=status.HTTP_200_OK)
+
+            if auth_user and auth_user.get("role") in ["candidate", "talent"]:
+                return Response({
+                    "recruiter": "Candidate",
+                    "count": 0,
+                    "opportunities": []
+                }, status=status.HTTP_200_OK)
+
             return Response({
                 "recruiter": "Production Company / Studio Recruiter",
                 "count": len(all_opps),
@@ -244,12 +306,17 @@ class CreateOrderView(APIView):
             }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
             
         data = request.data
-        prod_company = data.get("productionCompany", "Production Studio").strip()
-        prod_cat = data.get("productionCategory", "Film & TV")
-        prod_type = data.get("productionType", "Feature Film")
-        talents = data.get("talentNeeded", ["Actors"])
-        shoot_date = data.get("shootDate", "")
-        deadline = data.get("applicationDeadline", "")
+        auth_user = get_auth_user_from_request(request)
+        recruiter_id = auth_user.get("id") if auth_user else data.get("companyId", "rec-marcus")
+        recruiter_email = auth_user.get("email") if auth_user else data.get("customerEmail", "")
+        prod_company = data.get("productionCompany") or data.get("companyName") or (auth_user.get("companyName") if auth_user else "Production Studio")
+        prod_company = str(prod_company).strip()
+        prod_cat = data.get("productionCategory") or data.get("category", "Film & TV")
+        prod_type = data.get("productionType") or data.get("jobType") or data.get("type", "Feature Film")
+        talents = data.get("talentNeeded") or data.get("talents", ["Actors"])
+        talents_list = talents if isinstance(talents, list) else [talents]
+        shoot_date = data.get("shootDate") or data.get("shootDates", "")
+        deadline = data.get("applicationDeadline") or data.get("deadline", "")
         location = data.get("location", "")
         artists_needed = data.get("artistsNeeded", 1)
         requirements = data.get("requirements", "")
@@ -269,7 +336,7 @@ class CreateOrderView(APIView):
                 discount_amount = min(float(disc["value"]), base_fee)
                 
         final_amount = round(max(0.0, (base_fee - discount_amount) + tax_amount), 2)
-        opp_id = data.get("opportunityId") or f"opp-{int(datetime.datetime.now().timestamp() * 1000)}"
+        opp_id = data.get("opportunityId") or data.get("id") or f"opp-{int(datetime.datetime.now().timestamp() * 1000)}"
 
         try:
             existing = repository.find_opportunity_by_id(opp_id)
@@ -278,24 +345,112 @@ class CreateOrderView(APIView):
             else:
                 order_id = f"ORD-JSP-{uuid.uuid4().hex[:8].upper()}"
                 
-            ref_id = existing.get("refId") if existing else f"PRD-{uuid.uuid4().hex[:6].upper()}"
+            ref_id = existing.get("refId") if existing else (data.get("refId") or f"PRD-{uuid.uuid4().hex[:6].upper()}")
+
+            # Determine published status based on explicit payment or publish flags
+            is_already_paid = (
+                data.get("paymentStatus") == "paid" or 
+                data.get("status") in ["published", "active", "open"] or 
+                data.get("listingStatus") in ["published", "open"] or
+                data.get("isPublished") is True
+            )
+            opportunity_status = "published" if is_already_paid else "pending_payment"
+            listing_status = "published" if is_already_paid else "pending_payment"
+            payment_status = "paid" if is_already_paid else "pending"
+
+            # Build structured category-wise details
+            cat_slug = prod_cat.lower().replace("&", "").replace("/", "").replace(" ", "-").strip("-")
+            while "--" in cat_slug:
+                cat_slug = cat_slug.replace("--", "-")
+
+            category_wise = data.get("categoryWise") or data.get("category_wise") or {
+                "primaryCategory": prod_cat,
+                "categorySlug": cat_slug,
+                "productionType": prod_type,
+                "jobType": prod_type,
+                "talentCategory": talents_list,
+                "artistsNeeded": int(artists_needed) if str(artists_needed).isdigit() else 1,
+                "compensationType": "Paid" if float(data.get("budget", 0) or data.get("amount", 0) or 1) > 0 else "Unpaid",
+                "compensationPerTalent": data.get("compensationPerTalent") or data.get("compensation", ""),
+                "currency": currency,
+                "locationCategory": location or "Open",
+                "tags": list(set([prod_cat, prod_type] + talents_list))
+            }
+
+            category_breakdown = data.get("category_breakdown") or {
+                "production": {
+                    "category": prod_cat,
+                    "type": prod_type,
+                    "company": prod_company
+                },
+                "talent": {
+                    "categories": talents_list,
+                    "totalCount": int(artists_needed) if str(artists_needed).isdigit() else 1
+                },
+                "compensation": {
+                    "rate": data.get("compensationPerTalent") or data.get("compensation", ""),
+                    "currency": currency,
+                    "totalBudget": data.get("budget", final_amount),
+                    "type": "Paid" if float(data.get("budget", 0) or data.get("amount", 0) or 1) > 0 else "Unpaid"
+                },
+                "logistics": {
+                    "location": location or "Open",
+                    "shootDate": shoot_date or "Flexible"
+                }
+            }
+
+            category_tags = data.get("categoryTags") or list(set([prod_cat, prod_type] + talents_list))
             
             opportunity = {
                 "id": opp_id,
                 "refId": ref_id,
+                "recruiterId": recruiter_id,
+                "recruiter_id": recruiter_id,
+                "recruiterEmail": recruiter_email,
                 "title": data.get("title") or data.get("castingTitle") or f"{prod_company} — {prod_type}",
                 "production_company": prod_company,
                 "productionCompany": prod_company,
                 "category": prod_cat,
                 "productionCategory": prod_cat,
+                "categorySlug": cat_slug,
                 "type": prod_type,
                 "productionType": prod_type,
-                "talentNeeded": talents,
+                "jobType": prod_type,
+                "job_type": prod_type,
+                "talentNeeded": talents_list,
+                "talents": talents_list,
+                "categoryWise": category_wise,
+                "category_wise": category_wise,
+                "category_breakdown": category_breakdown,
+                "categoryTags": category_tags,
+                "roles": data.get("roles") or [{
+                    "roleName": t,
+                    "characterName": t,
+                    "category": t,
+                    "spots": 1,
+                    "pay": data.get("compensationPerTalent") or data.get("compensation", ""),
+                    "description": requirements or "Refer to requirements"
+                } for t in talents_list],
                 "shootDate": shoot_date or "Flexible / TBD",
+                "shootDates": shoot_date or "Flexible / TBD",
+                "shooting_dates": shoot_date or "Flexible / TBD",
+                "shootStartDate": data.get("shootStartDate") or shoot_date,
+                "shootEndDate": data.get("shootEndDate", ""),
+                "openingStartDate": data.get("openingStartDate", ""),
+                "openingEndDate": data.get("openingEndDate", "") or deadline,
+                "jobOpeningRange": data.get("jobOpeningRange") or (f"{data.get('openingStartDate')} to {data.get('openingEndDate')}" if data.get("openingStartDate") and data.get("openingEndDate") else "Open for submissions"),
                 "applicationDeadline": deadline or "Open",
+                "application_deadline": deadline or "Open",
                 "location": location or "Open / Unspecified",
-                "artistsNeeded": artists_needed,
+                "artistsNeeded": int(artists_needed) if str(artists_needed).isdigit() else 1,
                 "requirements": requirements,
+                "description": data.get("description") or requirements or f"Production requirement announced by {prod_company} for {prod_type}.",
+                "coverImage": data.get("coverImage") or data.get("coverPosterUrl") or "",
+                "coverPosterUrl": data.get("coverPosterUrl") or data.get("coverImage") or "",
+                "budget": data.get("budget", final_amount),
+                "compensation": data.get("compensation", f"{currency} {final_amount}"),
+                "compensationPerTalent": data.get("compensationPerTalent", ""),
+                "currencySymbol": data.get("currencySymbol", plan["symbol"]),
                 "listingFee": base_fee,
                 "taxAmount": tax_amount,
                 "discountAmount": discount_amount,
@@ -303,10 +458,18 @@ class CreateOrderView(APIView):
                 "finalPayableAmount": final_amount,
                 "currency": currency,
                 "paymentOrderId": order_id,
-                "paymentStatus": "pending",
-                "listingStatus": "pending_payment",
-                "status": "pending_payment",
+                "paymentStatus": payment_status,
+                "listingStatus": listing_status,
+                "status": opportunity_status,
+                "isOpen": bool(opportunity_status in ["published", "active", "open"]),
+                "isPublished": bool(opportunity_status in ["published", "active", "open"]),
+                "postedTime": data.get("postedTime", "Just now"),
             }
+
+            # Preserve extra incoming custom fields
+            for key, val in data.items():
+                if key not in opportunity and val is not None:
+                    opportunity[key] = val
             
             if existing:
                 existing.update(opportunity)
@@ -386,9 +549,24 @@ class ConfirmPaymentView(APIView):
             opp["listingStatus"] = "published"
             opp["status"] = "published"
             opp["isOpen"] = True
+            opp["isPublished"] = True
             opp["paymentMethod"] = method
             opp["txnId"] = txn_id
             opp["paymentVerifiedAt"] = now_iso
+            
+            # Ensure category-wise fields are populated
+            cat_name = opp.get("category") or opp.get("productionCategory") or data.get("category") or "Film & TV"
+            p_type = opp.get("productionType") or opp.get("jobType") or opp.get("type") or data.get("productionType") or "Feature Film"
+            opp["category"] = cat_name
+            opp["productionCategory"] = cat_name
+            opp["productionType"] = p_type
+            opp["jobType"] = p_type
+            if "categoryWise" in data:
+                opp["categoryWise"] = data["categoryWise"]
+            if "category_breakdown" in data:
+                opp["category_breakdown"] = data["category_breakdown"]
+            if "categoryTags" in data:
+                opp["categoryTags"] = data["categoryTags"]
 
             saved = repository.save_opportunity(opp)
 
@@ -429,13 +607,32 @@ class RecruiterDashboardDataView(APIView):
     """Returns aggregated recruiter dashboard metrics from MongoDB."""
     def get(self, request):
         try:
+            auth_user = get_auth_user_from_request(request)
             all_opps = repository.list_all_opportunities()
-            total_jobs = len(all_opps)
-            published_jobs = len([o for o in all_opps if o.get("status") in ["published", "open"]])
-            drafts = len([o for o in all_opps if o.get("status") == "draft"])
-            pending_payments = len([o for o in all_opps if o.get("status") == "pending_payment"])
-            pending_review = len([o for o in all_opps if o.get("status") == "pending_review"])
-            total_applications = sum(o.get("applicant_count", 0) for o in all_opps)
+
+            if not auth_user or auth_user.get("role") in ["candidate", "talent"]:
+                opps = []
+            elif auth_user.get("role") == "recruiter":
+                uid = auth_user.get("id")
+                company = (auth_user.get("companyName") or auth_user.get("company_name") or "").strip().lower()
+                user_email = (auth_user.get("email") or "").strip().lower()
+
+                opps = [
+                    o for o in all_opps
+                    if (o.get("recruiterId") and o.get("recruiterId") == uid) or
+                       (o.get("recruiter_id") and o.get("recruiter_id") == uid) or
+                       (user_email and (o.get("recruiterEmail") or "").strip().lower() == user_email) or
+                       (company and (o.get("productionCompany") or o.get("production_company") or "").strip().lower() == company)
+                ]
+            else:
+                opps = all_opps
+
+            total_jobs = len(opps)
+            published_jobs = len([o for o in opps if o.get("status") in ["published", "open"]])
+            drafts = len([o for o in opps if o.get("status") == "draft"])
+            pending_payments = len([o for o in opps if o.get("status") == "pending_payment"])
+            pending_review = len([o for o in opps if o.get("status") == "pending_review"])
+            total_applications = sum(o.get("applicant_count", 0) for o in opps)
 
             return Response({
                 "metrics": {
@@ -446,7 +643,7 @@ class RecruiterDashboardDataView(APIView):
                     "pending_review": pending_review,
                     "total_applications": total_applications,
                 },
-                "opportunities": all_opps
+                "opportunities": opps
             }, status=status.HTTP_200_OK)
         except Exception as err:
             return handle_db_error(err)

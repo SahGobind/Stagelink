@@ -9,6 +9,7 @@ import {
   ExternalLink,
   MessageSquare,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import MessageBubble from './MessageBubble';
 import MessageComposer from './MessageComposer';
 
@@ -20,6 +21,9 @@ const ChatWindow = ({
   isSidebarOpen,
   onOpenReport,
 }) => {
+  const { user, role } = useAuth();
+  const isCandidate = (role === 'candidate' || user?.role === 'candidate');
+  const isStaff = !isCandidate;
   const messagesEndRef = useRef(null);
 
   // Auto scroll to bottom when conversation or messages change
@@ -131,7 +135,7 @@ const ChatWindow = ({
       </div>
 
       {/* 2. RELATED OPPORTUNITY QUICK BANNER OR OPERATIONS DESK BANNER */}
-      {conversation.isOperationsTeam || conversation.id === 'conv-ops' ? (
+      {isCandidate && (conversation.isOperationsTeam || conversation.id === 'conv-ops') ? (
         <div className="px-4 py-2 bg-gradient-to-r from-neutral-900 via-neutral-800 to-emerald-950 text-white flex items-center justify-between gap-3 text-xs shrink-0 border-b border-emerald-900/40">
           <div className="flex items-center gap-2 truncate">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
@@ -200,6 +204,8 @@ const ChatWindow = ({
         <MessageComposer
           onSendMessage={onSendMessage}
           isOperationsTeam={Boolean(conversation.isOperationsTeam || conversation.id === 'conv-ops')}
+          isStaff={isStaff}
+          participantName={participant?.name}
         />
       </div>
     </div>

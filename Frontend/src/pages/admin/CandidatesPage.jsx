@@ -19,6 +19,7 @@ import Avatar from '../../components/common/Avatar';
 import CandidateAccessLock from '../../components/common/CandidateAccessLock';
 import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 import { getCandidatesList } from '../../data/mockCandidates';
+import { candidateService } from '../../services/candidateService';
 
 const PAGE_SIZE = 5;
 
@@ -79,7 +80,20 @@ const CandidatesPage = () => {
     };
   }, []);
 
-  const [candidates] = useState(() => getCandidatesList());
+  const [candidates, setCandidates] = useState(() => getCandidatesList());
+
+  useEffect(() => {
+    let isMounted = true;
+    candidateService.getAll().then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setCandidates(data);
+      }
+    }).catch((err) => console.warn('Failed to fetch candidate list:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   const [search, setSearch] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [selectedExperience, setSelectedExperience] = useState('all');
@@ -190,25 +204,6 @@ const CandidatesPage = () => {
         );
     }
   };
-
-  if (!hasPaid) {
-    return (
-      <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">
-        <div className="space-y-1 pb-2 border-b border-neutral-200/80">
-          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
-            Candidate &amp; Talent Directory
-          </h1>
-          <p className="text-xs text-neutral-500">
-            Browse, search, and discover verified performer profiles across StageLink.
-          </p>
-        </div>
-        <CandidateAccessLock
-          title="Candidate Profiles are Locked"
-          subtitle="You must announce work and complete the posting payment via JuicePay Credit Card or PayPal to view performer profiles and contact details."
-        />
-      </PageContainer>
-    );
-  }
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">

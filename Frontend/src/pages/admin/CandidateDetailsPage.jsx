@@ -46,6 +46,8 @@ import {
   saveCandidateApplication,
 } from '../../data/mockApplications';
 import { mockOpportunities } from '../../data/mockOpportunities';
+import { candidateService } from '../../services/candidateService';
+import { applicationService } from '../../services/applicationService';
 
 const CandidateDetailsPage = () => {
   const { id } = useParams();
@@ -85,15 +87,39 @@ const CandidateDetailsPage = () => {
   const [shortlistNotes, setShortlistNotes] = useState('');
   const [targetStatus, setTargetStatus] = useState('');
 
-  // Load candidate and applications
+  // Load candidate and applications dynamically from MongoDB Atlas backend
   useEffect(() => {
-    const data = getCandidateById(id);
-    if (data) {
-      setCandidate(data);
-      const apps = getApplicationsByCandidateId(data.id);
-      setApplications(apps);
+    let isMounted = true;
+    const initial = getCandidateById(id);
+    if (initial) {
+      setCandidate(initial);
+      setApplications(getApplicationsByCandidateId(initial.id));
     }
-    setLoading(false);
+
+    candidateService
+      .getById(id)
+      .then((data) => {
+        if (isMounted && data) {
+          setCandidate(data);
+        }
+      })
+      .catch((err) => console.warn('Candidate detail fetch fallback:', err));
+
+    applicationService
+      .getByCandidate(id)
+      .then((apps) => {
+        if (isMounted && Array.isArray(apps) && apps.length > 0) {
+          setApplications(apps);
+        }
+      })
+      .catch((err) => console.warn('Candidate applications fetch fallback:', err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const showToast = (message, type = 'success') => {
@@ -216,26 +242,6 @@ const CandidateDetailsPage = () => {
     return (
       <PageContainer className="py-12 text-center">
         <p className="text-gray-500">Loading candidate profile...</p>
-      </PageContainer>
-    );
-  }
-
-  if (!hasPaid) {
-    return (
-      <PageContainer className="space-y-6 pb-16 py-8 text-left">
-        <div>
-          <Link
-            to="/admin/candidates"
-            className="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-black transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            <span>Back to Candidates</span>
-          </Link>
-        </div>
-        <CandidateAccessLock
-          title="Candidate Profile Details are Locked"
-          subtitle="You must announce work and complete the posting payment via JuicePay Credit Card or PayPal to view performer profiles, audition reels, and contact info."
-        />
       </PageContainer>
     );
   }

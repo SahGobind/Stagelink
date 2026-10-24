@@ -31,7 +31,7 @@ import Modal from '../../components/common/Modal';
 import OpportunityPreviewModal from '../../components/opportunities/OpportunityPreviewModal';
 import { mockOpportunities } from '../../data/mockOpportunities';
 import { getAllApplications } from '../../data/mockApplications';
-import { getCustomOpportunities } from '../../utils/paymentAccess';
+import { getCustomOpportunities, getDeletedOpportunityIds } from '../../utils/paymentAccess';
 import { castingService } from '../../services/castingService';
 
 const AdminOpportunitiesPage = () => {
@@ -39,8 +39,11 @@ const AdminOpportunitiesPage = () => {
   const [opportunities, setOpportunities] = useState(() => {
     const custom = getCustomOpportunities();
     const drafts = castingService.getDrafts();
+    const deletedIds = getDeletedOpportunityIds();
     const ids = new Set([...custom.map((c) => c.id), ...drafts.map((d) => d.id)]);
-    return [...custom, ...drafts, ...mockOpportunities.filter((m) => !ids.has(m.id))];
+    return [...custom, ...drafts, ...mockOpportunities.filter((m) => !ids.has(m.id))].filter(
+      (o) => !deletedIds.has(String(o?.id)) && !deletedIds.has(String(o?.refId))
+    );
   });
 
   const [search, setSearch] = useState('');
@@ -188,17 +191,42 @@ const AdminOpportunitiesPage = () => {
     showToast(`Opportunity "${opp.title}" moved to archive.`);
   };
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const handleDeleteClick = (opp) => {
     setDeleteTarget(opp);
     setIsDeleteModalOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
-    setOpportunities((prev) => prev.filter((o) => o.id !== deleteTarget.id));
-    setIsDeleteModalOpen(false);
-    showToast(`Casting call "${deleteTarget.title}" deleted.`);
-    setDeleteTarget(null);
+    setIsDeleting(true);
+
+    const targetId = deleteTarget.id || deleteTarget._id || deleteTarget.refId;
+    const targetRefId = deleteTarget.refId || null;
+
+    // 1. Immediately remove from local state so UI updates instantaneously
+    setOpportunities((prev) =>
+      prev.filter(
+        (o) =>
+          o.id !== targetId &&
+          o.refId !== targetId &&
+          (targetRefId ? o.refId !== targetRefId : true) &&
+          (deleteTarget.id ? o.id !== deleteTarget.id : true)
+      )
+    );
+
+    // 2. Persistently delete from backend and local caches
+    try {
+      await castingService.deleteOpportunity(targetId, targetRefId);
+    } catch (err) {
+      console.warn('Error deleting opportunity:', err);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      showToast(`Casting call "${deleteTarget.title}" deleted.`);
+      setDeleteTarget(null);
+    }
   };
 
   // Status Badge Helper
@@ -427,22 +455,14 @@ const AdminOpportunitiesPage = () => {
                         </Link>
                       </td>
                       <td className="px-4 py-3.5 text-gray-600 font-mono text-[11px]">
-                        {opp.applicationDeadline || opp.deadline || opp.shootDate || 'Open'}
+                        {opp.jobOpeningRange ||
+                          (opp.openingStartDate && opp.openingEndDate
+                            ? `${opp.openingStartDate} to ${opp.openingEndDate}`
+                            : (opp.applicationDeadline || opp.deadline || opp.shootDate || 'Open'))}
                       </td>
                       <td className="px-4 py-3.5">{renderStatusBadge(opp)}</td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Resume Payment if pending */}
-                          {isPendingPay && (
-                            <Link
-                              to={`/payment`}
-                              state={{ opportunity: opp }}
-                              className="px-2 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-brand-pink text-[11px] font-bold border border-pink-200 transition-colors"
-                              title="Pay listing fee with Juspay / Simulator"
-                            >
-                              Pay Fee
-                            </Link>
-                          )}
 
                           {/* Preview Action */}
                           <button
@@ -559,7 +579,7 @@ const AdminOpportunitiesPage = () => {
         onClose={() => setIsCloseModalOpen(false)}
         title="Confirm Closing Casting Opportunity"
       >
-        <div className="space-y-4 text-left text-xs">
+        <div className="p-6 space-y-4 text-left text-xs">
           <p className="text-gray-600">
             Are you sure you want to close submissions for{' '}
             <strong className="text-gray-900 font-semibold">{closeTarget?.title}</strong>?
@@ -594,34 +614,38 @@ const AdminOpportunitiesPage = () => {
       {/* Confirmation Dialog: Delete Opportunity */}
       <Modal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={() => {
+          if (!isDeleting) setIsDeleteModalOpen(false);
+        }}
         title="Confirm Casting Call Removal"
       >
-        <div className="space-y-4 text-left text-xs">
-          <p className="text-gray-600">
+        <div className="p-6 space-y-4 text-left text-xs">
+          <p className="text-gray-700 text-sm">
             Are you sure you want to remove the listing{' '}
-            <strong className="text-gray-900 font-semibold">{deleteTarget?.title}</strong>?
+            <strong className="text-gray-900 font-bold">{deleteTarget?.title}</strong>?
           </p>
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-700">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+          <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 font-medium">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
             <span>This action cannot be undone.</span>
           </div>
-          <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+          <div className="flex justify-end gap-2.5 pt-3 border-t border-gray-100">
             <Button
               variant="outline"
               size="sm"
+              disabled={isDeleting}
               onClick={() => setIsDeleteModalOpen(false)}
-              className="text-xs"
+              className="text-xs px-4"
             >
               Cancel
             </Button>
             <Button
               variant="danger"
               size="sm"
+              loading={isDeleting}
               onClick={handleConfirmDelete}
-              className="text-xs bg-red-600 hover:bg-red-700 text-white font-bold"
+              className="text-xs bg-red-600 hover:bg-red-700 text-white font-bold px-4"
             >
-              Delete Listing
+              {isDeleting ? 'Deleting...' : 'Delete Listing'}
             </Button>
           </div>
         </div>

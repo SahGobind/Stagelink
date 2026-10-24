@@ -9,6 +9,7 @@
 import { mockTalentProfiles } from '../data/mockTalentDirectory';
 import { getCandidateById } from '../data/mockCandidates';
 import { addStoredNotification } from '../data/mockNotifications';
+import { apiRequest } from './api';
 
 export const STORAGE_KEY_SAVED_TALENT = 'starcast_saved_talent';
 export const STORAGE_KEY_INVITATIONS = 'starcast_talent_invitations';
@@ -59,46 +60,62 @@ export const talentService = {
     let talentList = [...mockTalentProfiles];
 
     try {
-      // Optional backend query
       const queryParams = new URLSearchParams();
       queryParams.append('role', 'talent');
+      queryParams.append('published_only', 'true');
       if (filters.search) queryParams.append('search', filters.search);
+      if (filters.category && filters.category !== 'All Categories') queryParams.append('category', filters.category);
+      if (filters.location && filters.location !== 'All Locations') queryParams.append('location', filters.location);
 
-      const res = await fetch(`/api/users/?${queryParams.toString()}`);
+      const res = await apiRequest(`/api/users/?${queryParams.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          // Merge backend users if any
-          const ids = new Set(talentList.map((t) => t.id));
-          const formattedBackend = data
-            .filter((u) => !ids.has(u.id))
-            .map((u) => ({
+          const formattedBackend = data.map((u) => {
+            const loc = u.location || 'Mumbai, India';
+            const city = u.city || (loc.includes(',') ? loc.split(',')[0].trim() : loc);
+            const country = u.country || (loc.includes(',') ? loc.split(',')[1].trim() : 'India');
+            const categories = u.categories && u.categories.length > 0 ? u.categories : [u.category || 'Actor'];
+            const avatar = u.avatar || u.profile_photo || (u.portfolio?.headshots?.[0]) || mockTalentProfiles[0].avatar;
+            const years = u.years_of_experience || u.yearsOfExperience || 2;
+
+            return {
               id: u.id,
-              fullName: u.full_name || u.fullName,
-              category: 'Actors',
-              categories: ['Actors'],
-              headline: u.headline || 'Stage & Screen Performer',
-              location: u.location || 'Mumbai, India',
-              city: u.location ? u.location.split(',')[0].trim() : 'Mumbai',
-              country: u.location && u.location.includes(',') ? u.location.split(',')[1].trim() : 'India',
-              avatar: u.avatar || mockTalentProfiles[0].avatar,
-              gender: 'Other',
-              age: 26,
-              experienceLevel: '2-5 Years',
-              yearsOfExperience: u.years_of_experience || 3,
-              experienceYears: `${u.years_of_experience || 3}+`,
-              availabilityStatus: u.availability_status || 'Available for Projects',
-              bio: u.bio || `${u.full_name || 'Talent'} is an accomplished performer registered on StageLink.`,
-              skills: u.skills || ['Screen Acting', 'Dialogue Delivery'],
-              languages: u.languages || ['English', 'Hindi'],
-              verificationStatus: 'verified',
-            }));
-          talentList = [...talentList, ...formattedBackend];
+              fullName: u.fullName || u.full_name || 'Candidate Artist',
+              category: u.category || categories[0],
+              categories: categories,
+              headline: u.headline || `${categories.join(' • ')}`,
+              location: loc,
+              city,
+              country,
+              avatar: avatar,
+              gender: u.gender || 'Not specified',
+              age: u.age || 26,
+              experienceLevel: u.experience_level || `${years}+ Years`,
+              yearsOfExperience: years,
+              experienceYears: u.experience_years || `${years}+`,
+              availabilityStatus: u.availability_status || u.availability || 'Available for Projects',
+              bio: u.bio || `${u.fullName || 'Talent'} is an accomplished performer registered on StageLink.`,
+              skills: u.skills && u.skills.length > 0 ? u.skills : ['Screen Acting', 'Dialogue Delivery'],
+              languages: u.languages && u.languages.length > 0 ? u.languages : ['English', 'Hindi'],
+              verificationStatus: u.is_verified ? 'verified' : (u.review_status || 'verified'),
+              isPublished: Boolean(u.is_published),
+              portfolio: u.portfolio || { headshots: [avatar] },
+              isBackendUser: true,
+            };
+          });
+
+          // Place real database candidates first, supplemented by mock profiles not matching any backend ID or email
+          const backendIds = new Set(formattedBackend.map((b) => b.id));
+          const supplementaryMocks = mockTalentProfiles.filter((m) => !backendIds.has(m.id));
+
+          talentList = [...formattedBackend, ...supplementaryMocks];
         }
       }
     } catch {
       // fallback to mock data
     }
+
 
     // Apply Client-Side Filters
     let results = talentList;
@@ -187,13 +204,64 @@ export const talentService = {
   },
 
   /**
-   * Get talent profile by ID
+   * Get talent profile by ID (asynchronous with backend support)
+   */
+  fetchTalentById: async (id) => {
+    if (!id) return null;
+    const fromDirectory = mockTalentProfiles.find((t) => t.id === id);
+    if (fromDirectory) return fromDirectory;
+
+    try {
+      const res = await apiRequest(`/api/users/profile/?id=${encodeURIComponent(id)}`);
+      if (res.ok) {
+        const u = await res.json();
+        if (u && u.id) {
+          const loc = u.location || 'Mumbai, India';
+          const city = u.city || (loc.includes(',') ? loc.split(',')[0].trim() : loc);
+          const country = u.country || (loc.includes(',') ? loc.split(',')[1].trim() : 'India');
+          const categories = u.categories && u.categories.length > 0 ? u.categories : [u.category || 'Actor'];
+          const avatar = u.avatar || u.profile_photo || (u.portfolio?.headshots?.[0]) || mockTalentProfiles[0].avatar;
+          const years = u.years_of_experience || u.yearsOfExperience || 2;
+
+          return {
+            ...u,
+            id: u.id,
+            fullName: u.fullName || u.full_name || 'Candidate Artist',
+            category: u.category || categories[0],
+            categories: categories,
+            headline: u.headline || categories.join(' • '),
+            location: loc,
+            city,
+            country,
+            avatar,
+            bio: u.bio || '',
+            skills: u.skills || [],
+            languages: u.languages || ['English'],
+            yearsOfExperience: years,
+            experienceYears: u.experience_years || `${years}+`,
+            availabilityStatus: u.availability_status || u.availability || 'Available for Projects',
+            verificationStatus: u.is_verified ? 'verified' : (u.review_status || 'verified'),
+            isPublished: Boolean(u.is_published),
+            portfolio: u.portfolio || { headshots: [avatar] },
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch talent by ID from backend:', e);
+    }
+
+    return getCandidateById(id);
+  },
+
+  /**
+   * Synchronous get talent profile by ID fallback
    */
   getTalentById: (id) => {
     const fromDirectory = mockTalentProfiles.find((t) => t.id === id);
     if (fromDirectory) return fromDirectory;
     return getCandidateById(id);
   },
+
 
   /**
    * Saved Talent (Recruiter Roster)

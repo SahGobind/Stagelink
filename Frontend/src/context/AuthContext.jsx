@@ -19,6 +19,10 @@ export const AuthProvider = ({ children }) => {
     return newUser;
   };
 
+  const register = async (userData) => {
+    return await authService.register(userData);
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -36,6 +40,14 @@ export const AuthProvider = ({ children }) => {
     return opsUser;
   };
 
+  const updateUser = (updates) => {
+    const updated = authService.updateCurrentUser(updates);
+    if (updated) {
+      setUser((prev) => ({ ...prev, ...updated }));
+    }
+    return updated;
+  };
+
   const value = {
     user,
     loading,
@@ -43,7 +55,9 @@ export const AuthProvider = ({ children }) => {
     role: user?.role || 'guest',
     login,
     signUp,
+    register,
     logout,
+    updateUser,
     setRecruiterSession,
     setOperationsSession,
   };
@@ -62,4 +76,3 @@ export const useAuth = () => {
   }
   return context;
 };
-export { AuthContext };

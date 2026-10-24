@@ -70,10 +70,18 @@ const PublicFooter = () => {
         {/* Bottom copyright row */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-4">
           <p>© 2026 StageLink. All rights reserved.</p>
-          <div className="flex items-center space-x-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
             <a href="#" className="hover:text-gray-400 transition-colors">Terms & Conditions</a>
-            <span>•</span>
+            <span className="text-gray-700">•</span>
             <a href="#" className="hover:text-gray-400 transition-colors">Privacy Policy</a>
+            <span className="text-gray-700">•</span>
+            <Link to="/admin/login" className="text-gray-400 hover:text-white transition-colors font-medium">
+              Admin Login
+            </Link>
+            <span className="text-gray-700">•</span>
+            <Link to="/operations/login" className="text-gray-400 hover:text-white transition-colors font-medium">
+              Operation Team Login
+            </Link>
           </div>
         </div>
       </div>

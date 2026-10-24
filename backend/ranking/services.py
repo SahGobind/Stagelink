@@ -96,7 +96,14 @@ def calculate_role_match_score(candidate_profile, role_requirements, opportunity
     evidence_parts = []
     missing_parts = []
 
-    if portfolio.get('video_reel') or portfolio.get('video_audition_url') or candidate_profile.get('video_audition_url'):
+    has_reel = (
+        portfolio.get('video_reel')
+        or portfolio.get('video_audition_url')
+        or candidate_profile.get('video_audition_url')
+        or (isinstance(portfolio.get('showreel'), dict) and portfolio['showreel'].get('url'))
+        or (isinstance(portfolio.get('showreel'), str) and portfolio['showreel'])
+    )
+    if has_reel:
         pts += max_pts * 0.50
         evidence_parts.append("Verified video showreel / audition tape")
     else:

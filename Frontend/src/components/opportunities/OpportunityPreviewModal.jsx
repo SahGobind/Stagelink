@@ -105,6 +105,21 @@ const OpportunityPreviewModal = ({ isOpen, onClose, opportunity, onProceedToPaym
                 {opportunity.artistsNeeded || 1} Openings
               </span>
             </div>
+
+            {/* Job Opening Period Window */}
+            {(opportunity.jobOpeningRange || (opportunity.openingStartDate && opportunity.openingEndDate)) && (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs text-emerald-950 font-medium">
+                <span className="flex items-center gap-1.5 font-bold text-emerald-900">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Job Opening Window:
+                </span>
+                <span className="font-bold text-emerald-900">
+                  {opportunity.openingStartDate && opportunity.openingEndDate
+                    ? `${opportunity.openingStartDate} se lekar ${opportunity.openingEndDate} tak`
+                    : opportunity.jobOpeningRange}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Talent Needed Badges */}
@@ -186,7 +201,7 @@ const OpportunityPreviewModal = ({ isOpen, onClose, opportunity, onProceedToPaym
               onClick={onProceedToPayment}
               className="flex items-center gap-2 bg-black hover:bg-neutral-800 text-white"
             >
-              <span>Continue to Publish &amp; Payment</span>
+              <span>Publish Casting Call Now</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
           </div>

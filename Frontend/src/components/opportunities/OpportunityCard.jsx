@@ -189,6 +189,18 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
               </span>
             </div>
 
+            {/* Job Opening Period Window */}
+            {(opportunity.jobOpeningRange || (opportunity.openingStartDate && opportunity.openingEndDate)) && (
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                <span className="truncate">
+                  Opening: {opportunity.openingStartDate && opportunity.openingEndDate
+                    ? `${opportunity.openingStartDate} – ${opportunity.openingEndDate}`
+                    : opportunity.jobOpeningRange}
+                </span>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-gray-400" />

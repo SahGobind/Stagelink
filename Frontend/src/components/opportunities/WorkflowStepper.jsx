@@ -2,11 +2,9 @@ import React from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 
 const STEPS = [
-  { id: 1, label: 'Register / Sign In' },
-  { id: 2, label: 'Create Job' },
-  { id: 3, label: 'Review Fees' },
-  { id: 4, label: 'Pay Securely' },
-  { id: 5, label: 'Publish / Await Review' },
+  { id: 1, label: 'Recruiter Studio' },
+  { id: 2, label: 'Create Casting Call' },
+  { id: 3, label: 'Publish Live' },
 ];
 
 const WorkflowStepper = ({ currentStep = 2, className = '' }) => {

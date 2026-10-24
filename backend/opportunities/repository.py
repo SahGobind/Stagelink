@@ -37,7 +37,19 @@ def list_public_opportunities(category=None, location=None, search=None):
 
     if category and category != 'all':
         cat_regex = re.compile(re.escape(category), re.IGNORECASE)
-        query["$and"].append({"$or": [{"category": cat_regex}, {"productionCategory": cat_regex}]})
+        query["$and"].append({
+            "$or": [
+                {"category": cat_regex},
+                {"productionCategory": cat_regex},
+                {"productionType": cat_regex},
+                {"jobType": cat_regex},
+                {"type": cat_regex},
+                {"categorySlug": cat_regex},
+                {"categoryWise.primaryCategory": cat_regex},
+                {"categoryWise.productionType": cat_regex},
+                {"categoryTags": cat_regex}
+            ]
+        })
     
     if location and location != 'all':
         loc_regex = re.compile(re.escape(location), re.IGNORECASE)
@@ -98,3 +110,12 @@ def update_opportunity_status(pk: str, new_status: str, extra_fields: dict = Non
     col.update_one(query, {"$set": updates})
     doc = col.find_one(query)
     return clean_doc(doc)
+
+def delete_opportunity(pk: str) -> bool:
+    col = get_opps_col()
+    query = {"$or": [{"id": pk}, {"refId": pk}]}
+    if ObjectId.is_valid(pk):
+        query["$or"].append({"_id": ObjectId(pk)})
+    res = col.delete_one(query)
+    return bool(res and getattr(res, 'deleted_count', 0) > 0)
+

@@ -39,6 +39,7 @@ import { mockOpportunities } from '../../data/mockOpportunities';
 import { getCustomOpportunities } from '../../utils/paymentAccess';
 import { initialCandidateProfile } from '../../data/mockCandidates';
 import { resolveOpportunityImage, getCategoryFallbackImage } from '../../utils/opportunityImageHelper';
+import { castingService } from '../../services/castingService';
 import { applicationService } from '../../services/applicationService';
 import { rankingService } from '../../services/rankingService';
 import { calculateCandidateMatchScore } from '../../services/scoringEngine';
@@ -52,9 +53,22 @@ const OpportunityDetailsPage = () => {
   const { isOpportunitySaved, toggleSaveOpportunity } = useApp();
   const { isAuthenticated, user } = useAuth();
 
-  const opportunity = useMemo(() => {
+  const [opportunity, setOpportunity] = useState(() => {
     const allOpps = [...getCustomOpportunities(), ...mockOpportunities];
     return allOpps.find((o) => o.id === id || o.refId === id) || null;
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    castingService.getById(id).then((opp) => {
+      if (isMounted && opp) {
+        setOpportunity(opp);
+      }
+    }).catch((err) => console.warn('Failed to load opportunity dynamically:', err));
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const [activeImage, setActiveImage] = useState(0);
@@ -80,8 +94,36 @@ const OpportunityDetailsPage = () => {
   const [reportDetails, setReportDetails] = useState('');
   const [reportSubmitted, setReportSubmitted] = useState(false);
 
-  // Check if candidate already applied
+  const [selectedBreakdownApp, setSelectedBreakdownApp] = useState(null);
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
+
   const candidateId = user?.id || 'cand-1';
+
+  // Available roles dropdown list
+  const availableRoles = useMemo(() => {
+    if (!opportunity) return [];
+    if (opportunity.roles && opportunity.roles.length > 0) {
+      return opportunity.roles.map((r) => r.name || r.title || r);
+    }
+    if (Array.isArray(opportunity.talentNeeded)) {
+      return opportunity.talentNeeded;
+    }
+    return opportunity.title ? [opportunity.title] : [];
+  }, [opportunity]);
+
+  useEffect(() => {
+    if (availableRoles.length > 0 && !selectedRole) {
+      setSelectedRole(availableRoles[0]);
+    }
+  }, [availableRoles, selectedRole]);
+
+  // Evaluate candidate's match score against this opportunity
+  const candidateMatchScore = useMemo(() => {
+    if (!opportunity) return { overallScore: 0, breakdowns: [], calculationSummary: '' };
+    return calculateCandidateMatchScore(initialCandidateProfile, opportunity);
+  }, [opportunity]);
+
+  // Check if candidate already applied
   useEffect(() => {
     if (opportunity) {
       const prevApp = applicationService.hasAlreadyApplied(candidateId, opportunity.id);
@@ -91,6 +133,30 @@ const OpportunityDetailsPage = () => {
       }
     }
   }, [opportunity, candidateId]);
+
+  const isClosed =
+    !opportunity ||
+    opportunity.status === 'closed' ||
+    opportunity.status === 'expired' ||
+    (opportunity.deadline && new Date(opportunity.deadline).getTime() < Date.now());
+
+  // Handle Apply Now click
+  const handleApplyClick = () => {
+    if (isClosed || !opportunity) return;
+
+    if (!isAuthenticated) {
+      navigate('/login', {
+        state: { from: `/opportunities/${opportunity.id}` },
+      });
+      return;
+    }
+
+    if (existingApplication) {
+      return;
+    }
+
+    setApplyModalOpen(true);
+  };
 
   // Open apply modal if query param ?apply=true is in URL
   useEffect(() => {
@@ -130,30 +196,8 @@ const OpportunityDetailsPage = () => {
   }
 
   const isSaved = isOpportunitySaved(opportunity.id);
-  const isClosed =
-    opportunity.status === 'closed' ||
-    opportunity.status === 'expired' ||
-    (opportunity.deadline && new Date(opportunity.deadline).getTime() < Date.now());
-
   const safePrimaryImage = resolveOpportunityImage(opportunity);
   const gallery = opportunity.gallery?.length ? opportunity.gallery : [safePrimaryImage];
-
-  // Available roles dropdown list
-  const availableRoles = useMemo(() => {
-    if (opportunity.roles && opportunity.roles.length > 0) {
-      return opportunity.roles.map((r) => r.name || r.title || r);
-    }
-    if (Array.isArray(opportunity.talentNeeded)) {
-      return opportunity.talentNeeded;
-    }
-    return [opportunity.title];
-  }, [opportunity]);
-
-  useEffect(() => {
-    if (availableRoles.length > 0 && !selectedRole) {
-      setSelectedRole(availableRoles[0]);
-    }
-  }, [availableRoles, selectedRole]);
 
   // Similar opportunities
   const similarOpportunities = mockOpportunities
@@ -165,42 +209,6 @@ const OpportunityDetailsPage = () => {
           opp.location === opportunity.location)
     )
     .slice(0, 3);
-
-  const [rankedApplications, setRankedApplications] = useState([]);
-  const [selectedBreakdownApp, setSelectedBreakdownApp] = useState(null);
-  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
-
-  // Evaluate candidate's match score against this opportunity
-  const candidateMatchScore = useMemo(() => {
-    return calculateCandidateMatchScore(initialCandidateProfile, opportunity);
-  }, [opportunity]);
-
-  // Load ranked candidates preview
-  useEffect(() => {
-    if (opportunity) {
-      rankingService.getRankedCandidates(opportunity.id, { pageSize: 3 }).then((res) => {
-        if (res?.applications) setRankedApplications(res.applications.slice(0, 3));
-      });
-    }
-  }, [opportunity]);
-
-  // Handle Apply Now click
-  const handleApplyClick = () => {
-    if (isClosed) return;
-
-    if (!isAuthenticated) {
-      navigate('/login', {
-        state: { from: `/opportunities/${opportunity.id}` },
-      });
-      return;
-    }
-
-    if (existingApplication) {
-      return;
-    }
-
-    setApplyModalOpen(true);
-  };
 
   // Handle Application Submission in modal
   const handleConfirmApplication = async (e) => {
@@ -524,6 +532,29 @@ const OpportunityDetailsPage = () => {
                   {opportunity.artistsNeeded || 1} Opening{opportunity.artistsNeeded > 1 ? 's' : ''}
                 </p>
               </div>
+            </div>
+
+            {/* Job Opening Period Banner ("Is date se lekar is date tak job opening hai") */}
+            <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-white rounded-2xl border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-800 block">
+                    Job Opening Period
+                  </span>
+                  <p className="text-xs sm:text-sm font-bold text-emerald-950">
+                    {opportunity.openingStartDate && opportunity.openingEndDate
+                      ? `${opportunity.openingStartDate} se lekar ${opportunity.openingEndDate} tak`
+                      : (opportunity.jobOpeningRange || 'Open for candidate submissions')}
+                  </p>
+                  <p className="text-[11px] text-emerald-700 font-medium">
+                    📌 Is date se lekar is date tak job opening active hai — candidates can submit applications.
+                  </p>
+                </div>
+              </div>
+              <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-full shrink-0 self-start sm:self-auto">
+                Accepting Submissions
+              </span>
             </div>
           </div>
         </div>

@@ -2,8 +2,7 @@ import { mockApplications, getAllApplications, updateApplicationStatus } from '.
 import { mockOpportunities } from '../data/mockOpportunities';
 import { mockCandidates } from '../data/mockCandidates';
 import { calculateCandidateMatchScore } from './scoringEngine';
-
-const API_BASE = '/api';
+import { API_BASE, apiRequest } from './api';
 
 // Local storage key for shortlists
 const SHORTLIST_STORAGE_KEY = 'starcast_shortlisted_apps';
@@ -43,7 +42,7 @@ export const rankingService = {
     if (params.pageSize) query.set('page_size', params.pageSize);
 
     try {
-      const res = await fetch(`${API_BASE}/opportunities/${opportunityId}/ranked-candidates/?${query.toString()}`);
+      const res = await apiRequest(`/api/ranking/opportunities/${opportunityId}/?${query.toString()}`);
       if (res.ok) {
         const data = await res.json();
         if (data.results && data.results.applications) {
@@ -244,9 +243,8 @@ export const rankingService = {
    */
   recalculateScore: async (applicationId, triggerReason = 'Manual recalculation') => {
     try {
-      const res = await fetch(`${API_BASE}/applications/${applicationId}/recalculate/`, {
+      const res = await apiRequest(`/api/ranking/applications/${applicationId}/recalculate/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: triggerReason, trigger_event: 'manual_recalculate' }),
       });
       if (res.ok) {
@@ -321,9 +319,8 @@ export const rankingService = {
    */
   bulkShortlist: async (applicationIds = [], notes = 'Bulk shortlisted by casting team.') => {
     try {
-      const res = await fetch(`${API_BASE}/applications/bulk-shortlist/`, {
+      const res = await apiRequest('/api/ranking/bulk-shortlist/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ application_ids: applicationIds, notes }),
       });
       if (res.ok) {
@@ -350,9 +347,8 @@ export const rankingService = {
    */
   inviteAudition: async (applicationId, auditionData = {}) => {
     try {
-      const res = await fetch(`${API_BASE}/applications/${applicationId}/invite-audition/`, {
+      const res = await apiRequest(`/api/applications/${applicationId}/invite-audition/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(auditionData),
       });
       if (res.ok) {
@@ -379,10 +375,9 @@ export const rankingService = {
    */
   rejectApplication: async (applicationId, reason = 'Role filled by alternate candidate profile.') => {
     try {
-      const res = await fetch(`${API_BASE}/applications/${applicationId}/reject/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
+      const res = await apiRequest(`/api/applications/${applicationId}/status/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'rejected', note: reason }),
       });
       if (res.ok) {
         return await res.json();
@@ -404,7 +399,7 @@ export const rankingService = {
   compareCandidates: async (applicationIds = []) => {
     const idsParam = applicationIds.join(',');
     try {
-      const res = await fetch(`${API_BASE}/candidates/compare/?app_ids=${encodeURIComponent(idsParam)}`);
+      const res = await apiRequest(`/api/ranking/compare/?app_ids=${encodeURIComponent(idsParam)}`);
       if (res.ok) {
         return await res.json();
       }
@@ -467,10 +462,12 @@ export const rankingService = {
    */
   getTalentApplications: async (candidateId = 'cand-1') => {
     try {
-      const res = await fetch(`${API_BASE}/candidate/my-applications/?candidate_id=${encodeURIComponent(candidateId)}`);
+      const res = await apiRequest(`/api/applications/my/?candidate_id=${encodeURIComponent(candidateId)}`);
       if (res.ok) {
         const data = await res.json();
-        return data.applications;
+        if (data.applications && Array.isArray(data.applications)) {
+          return data.applications;
+        }
       }
     } catch (e) {
       console.warn('Backend talent applications fallback:', e);

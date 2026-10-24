@@ -4,6 +4,8 @@ import DashboardSidebar from '../components/layout/DashboardSidebar';
 import DashboardHeader from '../components/layout/DashboardHeader';
 import MobileBottomNav from '../components/layout/MobileBottomNav';
 
+import ErrorBoundary from '../components/common/ErrorBoundary';
+
 const CandidateLayout = () => {
   return (
     <div className="flex min-h-screen bg-gray-50/50">
@@ -16,7 +18,9 @@ const CandidateLayout = () => {
       <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
         <DashboardHeader title="Candidate Portal" subtitle="Manage your casting applications, auditions & profile" />
         <main className="flex-1">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
 

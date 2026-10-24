@@ -5,6 +5,7 @@ import ApplicationCard from '../../components/applications/ApplicationCard';
 import EmptyState from '../../components/common/EmptyState';
 import { getAllApplications } from '../../data/mockApplications';
 import { rankingService } from '../../services/rankingService';
+import { applicationService } from '../../services/applicationService';
 import { useAuth } from '../../context/AuthContext';
 
 const STATUS_TABS = [
@@ -25,25 +26,42 @@ const MyApplicationsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const candidateId = user?.id || 'cand-1';
-    rankingService
-      .getTalentApplications(candidateId)
+    let isMounted = true;
+    const candidateId = user?.id || 'cand-aanya';
+
+    applicationService
+      .getByCandidate(candidateId)
       .then((res) => {
-        if (res && res.length > 0) {
+        if (isMounted && res && res.length > 0) {
           setApplications(res);
-        } else {
+          setIsLoading(false);
+          return;
+        }
+        return rankingService.getTalentApplications(candidateId);
+      })
+      .then((rankApps) => {
+        if (isMounted && rankApps && rankApps.length > 0) {
+          setApplications(rankApps);
+        } else if (isMounted) {
           const all = getAllApplications();
-          const candidateApps = all.filter((a) => a.candidateId === candidateId);
+          const candidateApps = all.filter((a) => a.candidateId === candidateId || a.candidate_id === candidateId);
           setApplications(candidateApps.length > 0 ? candidateApps : all);
         }
-        setIsLoading(false);
       })
       .catch(() => {
-        const all = getAllApplications();
-        const candidateApps = all.filter((a) => a.candidateId === candidateId);
-        setApplications(candidateApps.length > 0 ? candidateApps : all);
-        setIsLoading(false);
+        if (isMounted) {
+          const all = getAllApplications();
+          const candidateApps = all.filter((a) => a.candidateId === candidateId || a.candidate_id === candidateId);
+          setApplications(candidateApps.length > 0 ? candidateApps : all);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
       });
+
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   const filteredApplications = useMemo(() => {

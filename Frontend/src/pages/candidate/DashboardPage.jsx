@@ -32,14 +32,42 @@ import { mockOpportunities } from '../../data/mockOpportunities';
 import { mockMessages } from '../../data/mockMessages';
 import { getStoredSupportTickets } from '../../data/mockSupportTickets';
 import { formatDate } from '../../utils/formatters';
+import { candidateService } from '../../services/candidateService';
+import { applicationService } from '../../services/applicationService';
+import { castingService } from '../../services/castingService';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   const { notifications } = useNotifications();
 
-  // Synchronize candidate profile & applications from storage
+  // Synchronize candidate profile & applications from storage & MongoDB Atlas
   const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
   const [applications, setApplications] = useState(() => getCandidateApplications());
+  const [recommendedOpportunities, setRecommendedOpportunities] = useState(() => mockOpportunities.slice(0, 3));
+
+  // Dynamic fetch from MongoDB Atlas backend
+  useEffect(() => {
+    let isMounted = true;
+    const candidateId = user?.id || 'cand-aanya';
+
+    candidateService.getById(candidateId).then((data) => {
+      if (isMounted && data) setCandidate(data);
+    }).catch((err) => console.warn('Candidate profile fetch fallback:', err));
+
+    applicationService.getByCandidate(candidateId).then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) setApplications(data);
+    }).catch((err) => console.warn('Candidate applications fetch fallback:', err));
+
+    castingService.getPublicOpportunities().then((data) => {
+      if (isMounted && Array.isArray(data) && data.length > 0) {
+        setRecommendedOpportunities(data.slice(0, 3));
+      }
+    }).catch((err) => console.warn('Recommended opportunities fetch fallback:', err));
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   // Support ticket state & modal
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
@@ -97,7 +125,6 @@ const DashboardPage = () => {
   const recentApplications = applications.slice(0, 3);
   const recentMessages = mockMessages.slice(0, 3);
   const recentNotifications = (notifications || []).slice(0, 4);
-  const recommendedOpportunities = mockOpportunities.slice(0, 3);
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-8 text-left pb-12">

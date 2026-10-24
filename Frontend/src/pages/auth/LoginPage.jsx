@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,11 +14,10 @@ import {
   Briefcase,
   TrendingUp,
   AlertCircle,
-  Sparkles,
   Building2,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { authService } from '../../services/authService';
 
 const loginSchema = z.object({
   email: z
@@ -44,9 +43,20 @@ const LoginPage = () => {
   const fromState = location.state?.from;
   const fromPath = typeof fromState === 'string' ? fromState : fromState?.pathname;
   const redirectParam = searchParams.get('redirect');
+  const roleParam = searchParams.get('role');
+  const isRegistered = searchParams.get('registered') === 'true';
+  const registeredEmail = searchParams.get('email') || '';
   const isRedirectToProfile = redirectParam === '/candidate/profile/setup' || fromPath === '/candidate/profile/setup';
   const isRedirectToAdmin = redirectParam === '/admin/dashboard' || fromPath === '/admin/dashboard';
-  const isRedirectToPostJob = redirectParam === '/post-job' || fromPath === '/post-job' || searchParams.get('role') === 'recruiter';
+  const isRedirectToPostJob = redirectParam === '/post-job' || fromPath === '/post-job' || roleParam === 'recruiter';
+
+  // Requirement 1: Only two user types on public login: Candidate / Artist & Recruiter / Production Company
+  const [userType, setUserType] = useState(() => {
+    if (roleParam === 'recruiter' || isRedirectToPostJob || isRedirectToAdmin) {
+      return 'recruiter';
+    }
+    return 'candidate';
+  });
 
   const {
     register,
@@ -56,15 +66,24 @@ const LoginPage = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: isRedirectToPostJob
-        ? 'recruiter@stagelink.com'
-        : isRedirectToAdmin
-        ? 'admin@stagelink.com'
-        : 'sarah@stagelink.com',
-      password: 'password123',
-      rememberMe: true,
+      email: searchParams.get('email') || '',
+      password: '',
+      rememberMe: false,
     },
   });
+
+  useEffect(() => {
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setValue('email', emailParam);
+    }
+    const role = searchParams.get('role');
+    if (role === 'recruiter') {
+      setUserType('recruiter');
+    } else if (role === 'candidate') {
+      setUserType('candidate');
+    }
+  }, [location.search, setValue]);
 
   const onSubmit = async (data) => {
     setServerError('');
@@ -73,56 +92,37 @@ const LoginPage = () => {
       const loggedUser = await login(data.email, data.password);
 
       const returnUrl = location.state?.from;
-      const searchParams = new URLSearchParams(location.search);
       const redirectQuery = searchParams.get('redirect');
       let targetPath;
+
       if (returnUrl) {
-        targetPath = typeof returnUrl === 'string' ? returnUrl : returnUrl.pathname;
+        const potentialPath = typeof returnUrl === 'string' ? returnUrl : returnUrl.pathname;
+        if (potentialPath && potentialPath.startsWith('/admin') && loggedUser?.role === 'candidate') {
+          targetPath = '/candidate/dashboard';
+        } else if (potentialPath && potentialPath.startsWith('/candidate') && (loggedUser?.role === 'recruiter' || loggedUser?.role === 'admin')) {
+          targetPath = '/admin/dashboard';
+        } else {
+          targetPath = potentialPath;
+        }
       } else if (redirectQuery) {
         targetPath = redirectQuery;
-      } else if (loggedUser.role === 'operations') {
+      } else if (loggedUser?.role === 'operations') {
         targetPath = '/admin/operations/support';
+      } else if (loggedUser?.role === 'admin' || loggedUser?.role === 'recruiter') {
+        targetPath = '/admin/dashboard';
+      } else if (isRegistered && loggedUser?.role === 'candidate') {
+        targetPath = '/candidate/profile/setup';
       } else {
-        const isRecruiterOrAdmin = loggedUser.role === 'admin' || loggedUser.role === 'recruiter';
-        targetPath = isRecruiterOrAdmin ? '/admin/dashboard' : '/candidate/dashboard';
+        targetPath = '/candidate/dashboard';
       }
 
       navigate(targetPath, { replace: true });
-    } catch {
-      setServerError('Invalid email or password. Please verify your credentials or use the demo buttons.');
+    } catch (err) {
+      setServerError(err.message || 'Invalid email or password. Please verify your credentials.');
     } finally {
       setLoading(false);
     }
   };
-
-  const registeredCandidates = authService.getRegisteredCandidates();
-
-  const handleQuickFill = (target) => {
-    if (target === 'operations') {
-      setValue('email', 'ops@stagelink.com', { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    } else if (target === 'admin') {
-      setValue('email', 'admin@stagelink.com', { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    } else if (target === 'recruiter') {
-      setValue('email', 'recruiter@stagelink.com', { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    } else if (typeof target === 'object' && target.email) {
-      setValue('email', target.email, { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    } else if (target === 'aanya') {
-      setValue('email', 'aanya@stagelink.com', { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    } else if (target === 'rohit') {
-      setValue('email', 'rohit@stagelink.com', { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    } else {
-      setValue('email', 'sarah@stagelink.com', { shouldValidate: true });
-      setValue('password', 'password123', { shouldValidate: true });
-    }
-  };
-
-
 
   const features = [
     {
@@ -151,315 +151,224 @@ const LoginPage = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
       {/* Centered Login Card */}
       <div className="max-w-xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-gray-100 flex flex-col justify-center text-left">
-          {/* Header */}
-          <div className="space-y-1 mb-6">
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
-              Welcome Back
-            </h2>
-            <p className="text-xs sm:text-sm text-brand-text-secondary leading-relaxed">
-              Log in to your StageLink account and continue your acting journey.
+        {/* User Type Switcher: Only Candidate / Artist & Recruiter / Production Company */}
+        <div className="flex p-1 bg-gray-100 rounded-2xl mb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setUserType('candidate');
+              setServerError('');
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              userType === 'candidate'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <User className={`w-4 h-4 ${userType === 'candidate' ? 'text-brand-pink' : ''}`} />
+            <span>Candidate / Artist</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUserType('recruiter');
+              setServerError('');
+            }}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              userType === 'recruiter'
+                ? 'bg-white text-gray-900 shadow-xs'
+                : 'text-gray-500 hover:text-gray-900'
+            }`}
+          >
+            <Building2 className={`w-4 h-4 ${userType === 'recruiter' ? 'text-brand-pink' : ''}`} />
+            <span>Recruiter / Production Company</span>
+          </button>
+        </div>
+
+        {/* Header */}
+        <div className="space-y-1 mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
+            {userType === 'recruiter' ? 'Welcome Back, Studio' : 'Welcome Back'}
+          </h2>
+          <p className="text-xs sm:text-sm text-brand-text-secondary leading-relaxed">
+            {userType === 'recruiter'
+              ? 'Log in to your Studio / Production account to announce casting calls and review talent.'
+              : 'Log in to your Candidate account to explore casting calls and track applications.'}
+          </p>
+        </div>
+
+        {/* Test Your Talent Returning Performer Banner */}
+        {isRedirectToProfile && userType === 'candidate' && (
+          <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex items-center gap-3 shadow-xs">
+            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs shrink-0">
+              ★
+            </div>
+            <p className="text-xs text-neutral-300">
+              Log in to continue directly to <strong className="text-white">Create / Complete Your Performer Profile</strong>.
             </p>
           </div>
+        )}
 
-          {/* Test Your Talent Returning Performer Banner */}
-          {isRedirectToProfile && (
-            <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex items-center gap-3 shadow-xs">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs shrink-0">
-                ★
-              </div>
-              <p className="text-xs text-neutral-300">
-                Log in to continue directly to <strong className="text-white">Create / Complete Your Performer Profile</strong> and submit auditions.
-              </p>
+        {/* Production Returning Studio Banner */}
+        {(isRedirectToAdmin || isRedirectToPostJob) && userType === 'recruiter' && (
+          <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex items-center gap-3 shadow-xs">
+            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs shrink-0">
+              <Building2 className="w-4 h-4 text-white" />
             </div>
-          )}
-
-          {/* Production Returning Studio Banner */}
-          {isRedirectToAdmin && (
-            <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex items-center gap-3 shadow-xs">
-              <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs shrink-0">
-                <Building2 className="w-4 h-4 text-white" />
-              </div>
-              <p className="text-xs text-neutral-300">
-                Log in to access your <strong className="text-white">Studio & Production Dashboard</strong>, post casting calls, and review talent.
-              </p>
-            </div>
-          )}
-
-          {/* Announce Work / Post Job Banner */}
-          {isRedirectToPostJob && (
-            <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-lg bg-brand-pink/20 text-brand-pink flex items-center justify-center font-bold text-xs shrink-0">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <p className="text-xs text-neutral-300">
-                  Sign in with your <strong className="text-white">Recruiter / Studio account</strong> to continue directly to Announce Work.
-                </p>
-              </div>
-              <Link
-                to="/signup?role=recruiter&redirect=/post-job"
-                className="text-[11px] font-bold text-brand-pink hover:underline shrink-0 whitespace-nowrap self-end sm:self-center"
-              >
-                Need an account? Register →
-              </Link>
-            </div>
-          )}
-
-          {/* Server / Validation Error */}
-
-          {/* Server / Validation Error */}
-          {serverError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-brand-error rounded-xl text-xs font-medium flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{serverError}</span>
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-            {/* Email Address */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="login-email"
-                className="block text-xs font-semibold text-brand-navy"
-              >
-                Email Address <span className="text-black font-bold">*</span>
-              </label>
-              <div className="relative rounded-xl">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  id="login-email"
-                  type="email"
-                  placeholder="Enter your email address"
-                  className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm text-brand-navy placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.email
-                      ? 'border-brand-error focus:ring-brand-error/20 bg-red-50/10'
-                      : 'border-brand-border hover:border-gray-300 focus:border-black focus:ring-black/20'
-                  }`}
-                  {...register('email')}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-xs text-brand-error font-medium">• {errors.email.message}</p>
-              )}
-            </div>
-
-            {/* Password */}
-            <div className="space-y-1.5">
-              <label
-                htmlFor="login-password"
-                className="block text-xs font-semibold text-brand-navy"
-              >
-                Password <span className="text-black font-bold">*</span>
-              </label>
-              <div className="relative rounded-xl">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  id="login-password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  className={`w-full pl-10 pr-11 py-2.5 bg-white border rounded-xl text-sm text-brand-navy placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
-                    errors.password
-                      ? 'border-brand-error focus:ring-brand-error/20 bg-red-50/10'
-                      : 'border-brand-border hover:border-gray-300 focus:border-black focus:ring-black/20'
-                  }`}
-                  {...register('password')}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-brand-navy focus:outline-none"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-xs text-brand-error font-medium">• {errors.password.message}</p>
-              )}
-            </div>
-
-            {/* Keep me signed in & Forgot Password Row */}
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center space-x-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black accent-black cursor-pointer"
-                  {...register('rememberMe')}
-                />
-                <span className="text-xs text-gray-600">Keep me signed in</span>
-              </label>
-
-              <Link
-                to="/forgot-password"
-                className="text-xs font-medium text-black hover:underline"
-              >
-                Forgot Password?
-              </Link>
-            </div>
-
-            {/* Login Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-black hover:bg-neutral-800 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-2"
-            >
-              <span>{loading ? 'Logging in...' : 'Login'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Social Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs">
-              <span className="bg-white px-3 text-gray-500 font-medium">
-                or continue with
-              </span>
-            </div>
-          </div>
-
-          {/* Social Login Buttons */}
-          <div className="space-y-2.5">
-            {/* Google */}
-            <button
-              type="button"
-              onClick={() => handleQuickFill('candidate')}
-              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-xl text-xs font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            {/* Apple */}
-            <button
-              type="button"
-              onClick={() => handleQuickFill('admin')}
-              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-xl text-xs font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.84c.62-.75 1.04-1.8 1.01-2.84-.89.04-2 .6-2.64 1.34-.56.65-1.06 1.7-0.93 2.73.99.08 2-.48 2.56-1.23z" />
-              </svg>
-              <span>Continue with Apple</span>
-            </button>
-
-            {/* Facebook */}
-            <button
-              type="button"
-              onClick={() => handleQuickFill('candidate')}
-              className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-xl text-xs font-semibold text-brand-navy hover:bg-gray-50 transition-colors"
-            >
-              <svg className="w-4 h-4 fill-[#1877F2]" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span>Continue with Facebook</span>
-            </button>
-          </div>
-
-          {/* Quick Candidate Switcher (Profile Isolation Demo) */}
-          <div className="mt-5 pt-4 border-t border-dashed border-gray-200 text-left space-y-2.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="flex items-center gap-1 font-bold text-gray-900">
-                <Sparkles className="w-3.5 h-3.5 text-brand-pink fill-brand-pink" />
-                <span>Switch Candidate to Test Profile:</span>
-              </span>
-              <span className="text-[10px] text-gray-500 font-medium">1-click fill</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-6">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('aanya')}
-                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center cursor-pointer"
-                title="Aanya Sharma (Mumbai - Actor & Model)"
-              >
-                Aanya S.
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('candidate')}
-                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center cursor-pointer"
-                title="Sophia Bennett (London - Dramatic Actor)"
-              >
-                Sophia B.
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('rohit')}
-                className="px-2 py-1.5 rounded-xl border border-gray-200 bg-white hover:border-black hover:bg-neutral-50 text-[11px] font-bold text-gray-800 transition-all text-center cursor-pointer"
-                title="Rohit Verma (Delhi - Action & Stunt)"
-              >
-                Rohit V.
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('recruiter')}
-                className="px-2 py-1.5 rounded-xl border border-pink-200 bg-pink-50/70 hover:bg-pink-100 text-[11px] font-bold text-brand-pink transition-all text-center cursor-pointer"
-                title="Marcus Sterling (Apex Vision Studios Recruiter)"
-              >
-                Recruiter
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin')}
-                className="px-2 py-1.5 rounded-xl border border-purple-200 bg-purple-50/60 hover:bg-purple-100/80 text-[11px] font-bold text-purple-900 transition-all text-center cursor-pointer"
-                title="Audrey Miller (Production Admin)"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('operations')}
-                className="px-2 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-[11px] font-bold text-indigo-900 transition-all text-center cursor-pointer"
-                title="Sarah Jenkins (Operations Support Desk • ops@stagelink.com)"
-              >
-                Ops Desk
-              </button>
-            </div>
-            <p className="text-[10px] text-gray-500 leading-tight">
-              Demo accounts: Candidate, Recruiter, Admin, and Operations Desk. Each account loads with appropriate role privileges.
+            <p className="text-xs text-neutral-300">
+              Log in to access your <strong className="text-white">Studio & Production Dashboard</strong>.
             </p>
           </div>
+        )}
 
-          {/* Bottom Sign Up Link */}
-          <div className="text-center text-xs text-brand-text-secondary mt-5">
-            Don't have an account?{' '}
+        {/* Registration Success Notification Banner */}
+        {isRegistered && (
+          <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-2xl flex items-start gap-3 shadow-xs animate-fadeIn">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-sm text-emerald-900">
+                Account Registered Successfully!
+              </p>
+              <p className="text-emerald-800 leading-relaxed">
+                Your account for <strong className="text-emerald-950 font-semibold">{registeredEmail || 'your email'}</strong> has been created and securely saved in the database.
+              </p>
+              <p className="text-emerald-700 font-medium pt-0.5">
+                Please enter your password below to log in and proceed.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Server / Validation Error */}
+        {serverError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-brand-error rounded-xl text-xs font-medium flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{serverError}</span>
+          </div>
+        )}
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+          {/* Email Address */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="login-email"
+              className="block text-xs font-semibold text-brand-navy"
+            >
+              Email Address <span className="text-black font-bold">*</span>
+            </label>
+            <div className="relative rounded-xl">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                <Mail className="w-4 h-4" />
+              </div>
+              <input
+                id="login-email"
+                type="email"
+                autoComplete="email"
+                placeholder={
+                  userType === 'recruiter'
+                    ? 'e.g. casting@production.com'
+                    : 'e.g. performer@example.com'
+                }
+                className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm text-brand-navy placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
+                  errors.email
+                    ? 'border-brand-error focus:ring-brand-error/20 bg-red-50/10'
+                    : 'border-brand-border hover:border-gray-300 focus:border-black focus:ring-black/20'
+                }`}
+                {...register('email')}
+              />
+            </div>
+            {errors.email && (
+              <p className="text-xs text-brand-error font-medium">• {errors.email.message}</p>
+            )}
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="login-password"
+              className="block text-xs font-semibold text-brand-navy"
+            >
+              Password <span className="text-black font-bold">*</span>
+            </label>
+            <div className="relative rounded-xl">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                <Lock className="w-4 h-4" />
+              </div>
+              <input
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="Enter your password"
+                className={`w-full pl-10 pr-11 py-2.5 bg-white border rounded-xl text-sm text-brand-navy placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${
+                  errors.password
+                    ? 'border-brand-error focus:ring-brand-error/20 bg-red-50/10'
+                    : 'border-brand-border hover:border-gray-300 focus:border-black focus:ring-black/20'
+                }`}
+                {...register('password')}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-brand-navy focus:outline-none"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="text-xs text-brand-error font-medium">• {errors.password.message}</p>
+            )}
+          </div>
+
+          {/* Keep me signed in & Forgot Password Row */}
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center space-x-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300 text-black focus:ring-black accent-black cursor-pointer"
+                {...register('rememberMe')}
+              />
+              <span className="text-xs text-gray-600">Keep me signed in</span>
+            </label>
+
             <Link
-              to={`/signup${isRedirectToProfile ? '?redirect=/candidate/profile/setup' : ''}`}
-              className="font-bold text-black hover:underline"
+              to="/forgot-password"
+              className="text-xs font-medium text-black hover:underline"
             >
-              Sign Up
+              Forgot Password?
             </Link>
           </div>
+
+          {/* Login Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-black hover:bg-neutral-800 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
+          >
+            <span>{loading ? 'Signing in...' : userType === 'recruiter' ? 'Sign In as Recruiter' : 'Sign In as Candidate'}</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </form>
+
+        {/* Bottom Sign Up Link */}
+        <div className="text-center text-xs text-brand-text-secondary mt-6 pt-4 border-t border-gray-100">
+          Don't have an account?{' '}
+          <Link
+            to={`/signup?role=${userType}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`}
+            className="font-bold text-brand-pink hover:underline"
+          >
+            Sign Up as {userType === 'recruiter' ? 'Recruiter' : 'Candidate'}
+          </Link>
         </div>
+      </div>
 
       {/* Bottom Section: Why Artists Choose StageLink */}
       <div className="pt-6 pb-4">
         <h3 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy text-center mb-10">
-          Why Artists Choose StageLink
+          Why Artists & Studios Choose StageLink
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-center">

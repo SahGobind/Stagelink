@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "allowJs": true,
+    "checkJs": false,
+    "forceConsistentCasingInFileNames": false
+  },
+  "include": ["src/**/*"]
+}

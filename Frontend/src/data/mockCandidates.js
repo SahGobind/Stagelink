@@ -188,7 +188,9 @@ export const initialCandidateProfile = {
       isLocalDemo: true,
       summary: 'Acting & Modeling portfolio resume highlighting commercial, OTT and fashion credits.',
     },
+    instagram: '@aanyasharma',
   },
+  instagram: '@aanyasharma',
   privacySettings: {
     showEmailPublicly: false,
     showPhonePublicly: false,

@@ -7,6 +7,7 @@ Uses PBKDF2 SHA-256 password hashing.
 
 import uuid
 import datetime
+import re
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -26,15 +27,55 @@ def generate_session_token(user_id: str, role: str) -> str:
     return f"stg-token-{role}-{user_id}-{uuid.uuid4().hex[:12]}"
 
 
+def get_auth_user_from_request(request):
+    """
+    Extracts authenticated user from Authorization header or session token.
+    Token format: stg-token-{role}-{user_id}-{hash} or Bearer {token}
+    """
+    auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    else:
+        token = auth_header.strip()
+
+    if not token or not token.startswith("stg-token-"):
+        return None
+
+    try:
+        body = token[len("stg-token-"):]
+        role, rest = body.split("-", 1)
+        user_id, _ = rest.rsplit("-", 1)
+        if user_id:
+            user = repository.find_user_by_id(user_id)
+            if user:
+                return user
+    except Exception:
+        pass
+    return None
+
+
 class UserListView(APIView):
     """List all registered users / talent & recruiter directory from MongoDB."""
     def get(self, request):
         role = request.query_params.get("role")
+        published_only = request.query_params.get("published_only", "").lower() in ("true", "1")
+        search = request.query_params.get("search")
+        category = request.query_params.get("category")
+        location = request.query_params.get("location")
         try:
-            users = repository.list_users(role=role)
+            if role in ("candidate", "talent"):
+                users = repository.list_talent(
+                    is_published_only=published_only,
+                    search=search,
+                    category=category,
+                    location=location
+                )
+            else:
+                users = repository.list_users(role=role, is_published_only=published_only)
             return Response(users, status=status.HTTP_200_OK)
         except Exception as err:
             return handle_db_error(err)
+
 
 
 class UserRegisterView(APIView):
@@ -71,11 +112,14 @@ class UserRegisterView(APIView):
             password_hash = make_password(data["password"])
             user_id = f"usr-{uuid.uuid4().hex[:8]}"
 
+            phone = data.get("phone_number") or data.get("phoneNumber") or ""
             user_doc = {
                 "id": user_id,
                 "email": email,
                 "full_name": data["full_name"],
                 "fullName": data["full_name"],
+                "phone_number": phone,
+                "phoneNumber": phone,
                 "role": role,
                 "password_hash": password_hash,
                 "headline": f"Professional {role.capitalize()}",
@@ -111,11 +155,11 @@ class UserLoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        email = serializer.validated_data["email"].lower().strip()
+        login_input = serializer.validated_data["email"].lower().strip()
         raw_password = serializer.validated_data["password"]
         
         try:
-            user = repository.find_user_by_email(email)
+            user = repository.find_user_by_email_or_phone(login_input)
             if not user:
                 return Response(
                     {"error": "Invalid email or password.", "code": "INVALID_CREDENTIALS"},
@@ -152,8 +196,12 @@ class UserLoginView(APIView):
 class UserProfileView(APIView):
     """Get or update current candidate/recruiter profile in MongoDB."""
     def get(self, request):
-        user_id = request.query_params.get("id", "cand-aanya")
+        auth_user = get_auth_user_from_request(request)
+        user_id = request.query_params.get("id") or (auth_user["id"] if auth_user else None) or "cand-aanya"
+        if user_id == "me" and auth_user:
+            user_id = auth_user.get("id") or str(auth_user.get("_id"))
         email = request.query_params.get("email")
+
         try:
             user = None
             if email:
@@ -166,52 +214,135 @@ class UserProfileView(APIView):
 
             # If candidate or talent, merge profile details if present
             if user.get("role") in ("candidate", "talent"):
-                profile = repository.get_talent_profile(user["id"])
-                if profile:
-                    for k, v in profile.items():
-                        if k not in user or not user[k]:
-                            user[k] = v
+                merged = repository.get_merged_candidate(user["id"])
+                return Response(clean_doc(merged or user, drop_password=True), status=status.HTTP_200_OK)
 
             return Response(clean_doc(user, drop_password=True), status=status.HTTP_200_OK)
         except Exception as err:
             return handle_db_error(err)
 
     def put(self, request):
-        user_id = request.query_params.get("id") or request.data.get("id")
+        auth_user = get_auth_user_from_request(request)
+        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None)
         if not user_id:
             return Response({"error": "User ID is required to update profile."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Enforce security: Candidates cannot edit another candidate's profile
+        if auth_user and auth_user.get("role") not in ("admin", "operations"):
+            auth_ids = {str(auth_user.get("id")), str(auth_user.get("_id", ""))}
+            if user_id not in ("me", auth_user.get("id")) and str(user_id) not in auth_ids:
+                return Response({"error": "You are not authorized to edit another user's profile.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        if user_id == "me" and auth_user:
+            user_id = auth_user.get("id") or str(auth_user.get("_id"))
 
         try:
             user = repository.find_user_by_id(user_id)
             if not user:
                 return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = UserProfileSerializer(data=request.data, partial=True)
-            if not serializer.is_valid():
-                return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-            updates = serializer.validated_data
-            # Prevent altering role or id
-            updates.pop("id", None)
-            updates.pop("role", None)
-
-            updated_user = repository.update_user(user["id"], updates)
-
-            # Also update talent_profiles if applicable
             if user.get("role") in ("candidate", "talent"):
-                profile_fields = {
-                    k: v for k, v in updates.items()
-                    if k in ("headline", "skills", "languages", "years_of_experience", "availability_status", "location")
-                }
-                if profile_fields:
-                    repository.update_talent_profile(user["id"], profile_fields)
+                # Candidate profile update
+                updated_user = repository.update_candidate_full_profile(user["id"], request.data)
+                return Response({
+                    "message": "Profile updated successfully",
+                    "user": updated_user
+                }, status=status.HTTP_200_OK)
+            else:
+                serializer = UserProfileSerializer(data=request.data, partial=True)
+                if not serializer.is_valid():
+                    return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+                updates = serializer.validated_data
+                updates.pop("id", None)
+                updates.pop("role", None)
+
+                updated_user = repository.update_user(user["id"], updates)
+
+                return Response({
+                    "message": "Profile updated successfully",
+                    "user": updated_user
+                }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class UserProfilePublishView(APIView):
+    """
+    Validates candidate required fields and publishes the profile to MongoDB Atlas.
+    Once published, the profile becomes available in Discover Talent and for casting call matching.
+    """
+    def post(self, request):
+        auth_user = get_auth_user_from_request(request)
+        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None)
+        if not user_id:
+            return Response({"error": "User ID is required to publish profile.", "code": "USER_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Enforce security: Candidates cannot publish another candidate's profile
+        if auth_user and auth_user.get("role") not in ("admin", "operations"):
+            auth_ids = {str(auth_user.get("id")), str(auth_user.get("_id", ""))}
+            if user_id not in ("me", auth_user.get("id")) and str(user_id) not in auth_ids:
+                return Response({"error": "You are not authorized to publish another user's profile.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        if user_id == "me" and auth_user:
+            user_id = auth_user.get("id") or str(auth_user.get("_id"))
+
+        try:
+            user = repository.find_user_by_id(user_id)
+            if not user:
+                return Response({"error": "Candidate not found.", "code": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+            existing = repository.get_merged_candidate(user["id"]) or user
+            payload = request.data if isinstance(request.data, dict) else {}
+            combined = {**existing, **payload}
+
+            # Validate required fields for StageLink profile publication
+            is_valid, missing_keys, missing_labels = repository.validate_profile_completion(combined)
+            if not is_valid:
+                return Response({
+                    "error": f"Profile cannot be published until all required fields are completed: {', '.join(missing_labels)}.",
+                    "code": "MISSING_REQUIRED_FIELDS",
+                    "missing_fields": missing_keys,
+                    "missing_labels": missing_labels
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Persist and publish in MongoDB Atlas
+            published = repository.update_candidate_full_profile(user["id"], combined, publish=True)
             return Response({
-                "message": "Profile updated successfully",
-                "user": updated_user
+                "message": "Candidate profile published successfully! Your talent card is now live on Discover Talent.",
+                "user": published,
+                "is_published": True
             }, status=status.HTTP_200_OK)
         except Exception as err:
             return handle_db_error(err)
+
+
+class UserProfileUnpublishView(APIView):
+    """Unpublish candidate profile so it is hidden from public Discover Talent."""
+    def post(self, request):
+        auth_user = get_auth_user_from_request(request)
+        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None)
+        if not user_id:
+            return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user_id == "me" and auth_user:
+            user_id = auth_user.get("id") or str(auth_user.get("_id"))
+
+        if auth_user and auth_user.get("role") not in ("admin", "operations"):
+            auth_ids = {str(auth_user.get("id")), str(auth_user.get("_id", ""))}
+            if user_id not in ("me", auth_user.get("id")) and str(user_id) not in auth_ids:
+                return Response({"error": "Not authorized.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            updated = repository.update_candidate_full_profile(user_id, {}, publish=False)
+            return Response({
+                "message": "Candidate profile unpublished.",
+                "user": updated,
+                "is_published": False
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
 
 
 class RecruiterRegisterView(APIView):
@@ -222,13 +353,23 @@ class RecruiterRegisterView(APIView):
             return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
-        email = data["email"].lower().strip()
+        raw_email = (data.get("email") or "").lower().strip()
+        phone = (data.get("phoneNumber") or "").strip()
         
         try:
-            existing = repository.find_user_by_email(email)
-            if existing:
-                return Response({"error": "A recruiter account with this email already exists."}, status=status.HTTP_409_CONFLICT)
+            if raw_email:
+                existing = repository.find_user_by_email(raw_email)
+                if existing:
+                    return Response({"error": "A recruiter account with this email already exists."}, status=status.HTTP_409_CONFLICT)
+                email = raw_email
+            else:
+                phone_digits = re.sub(r'[^0-9]', '', phone)
+                base_ident = f"recruiter_{phone_digits}" if phone_digits else f"recruiter_{uuid.uuid4().hex[:8]}"
+                email = f"{base_ident}@stagelink.local"
+                if repository.find_user_by_email(email):
+                    email = f"{base_ident}_{uuid.uuid4().hex[:4]}@stagelink.local"
             
+            country_val = data.get("country") or "India"
             password_hash = make_password(data["password"])
             recruiter_id = f"rec-{uuid.uuid4().hex[:8]}"
             
@@ -240,14 +381,14 @@ class RecruiterRegisterView(APIView):
                 "company_name": data["companyName"],
                 "companyName": data["companyName"],
                 "productionCompany": data["companyName"],
-                "country": data["country"],
+                "country": country_val,
                 "website": data.get("website", ""),
-                "phone_number": data.get("phoneNumber", ""),
-                "phoneNumber": data.get("phoneNumber", ""),
+                "phone_number": phone,
+                "phoneNumber": phone,
                 "role": "recruiter",
                 "password_hash": password_hash,
                 "headline": f"Casting Director at {data['companyName']}",
-                "location": data["country"],
+                "location": country_val,
                 "verification_status": "verified",
                 "is_verified": True,
                 "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -306,7 +447,8 @@ class RecruiterLoginView(APIView):
 class RecruiterProfileView(APIView):
     """Get or update recruiter company profile in MongoDB."""
     def get(self, request):
-        user_id = request.query_params.get("id", "rec-marcus")
+        auth_user = get_auth_user_from_request(request)
+        user_id = request.query_params.get("id") or (auth_user["id"] if auth_user else None) or "rec-marcus"
         try:
             user = repository.find_user_by_id(user_id)
             if not user:
@@ -316,7 +458,8 @@ class RecruiterProfileView(APIView):
             return handle_db_error(err)
 
     def put(self, request):
-        user_id = request.query_params.get("id", "rec-marcus")
+        auth_user = get_auth_user_from_request(request)
+        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None) or "rec-marcus"
         try:
             user = repository.find_user_by_id(user_id)
             if not user:

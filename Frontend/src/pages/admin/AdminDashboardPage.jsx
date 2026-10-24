@@ -30,12 +30,10 @@ import {
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import Button from '../../components/common/Button';
-import Avatar from '../../components/common/Avatar';
 import Modal from '../../components/common/Modal';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
 import OpportunityPreviewModal from '../../components/opportunities/OpportunityPreviewModal';
 import CreateTicketModal from '../../components/support/CreateTicketModal';
-import { getCandidatesList } from '../../data/mockCandidates';
 import { getAllApplications } from '../../data/mockApplications';
 import { mockOpportunities } from '../../data/mockOpportunities';
 import { getStoredSupportTickets } from '../../data/mockSupportTickets';
@@ -51,13 +49,14 @@ const AdminDashboardPage = () => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(() => authService.getCurrentUser());
   const [toastMessage, setToastMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
-  // Opportunities state (merging custom opportunities, drafts, and mock data)
+  // Opportunities state (scoped strictly to recruiter's real custom opportunities and drafts)
   const [opportunities, setOpportunities] = useState(() => {
     const custom = getAllCustomOpportunities();
     const drafts = castingService.getDrafts();
-    const ids = new Set([...custom.map((c) => c.id), ...drafts.map((d) => d.id)]);
-    return [...custom, ...drafts, ...mockOpportunities.filter((m) => !ids.has(m.id))];
+    return [...custom, ...drafts];
   });
 
   // Preview Modal
@@ -71,12 +70,12 @@ const AdminDashboardPage = () => {
   // Edit Company Profile Modal
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileForm, setProfileForm] = useState({
-    companyName: currentUser?.companyName || 'Apex Vision Studios',
-    fullName: currentUser?.fullName || 'Marcus Sterling',
-    email: currentUser?.email || 'marcus@apexvisionstudios.com',
-    phoneNumber: currentUser?.phoneNumber || '+1 (555) 349-8201',
-    country: currentUser?.country || 'United States',
-    website: currentUser?.website || 'https://apexvisionstudios.com',
+    companyName: currentUser?.companyName || '',
+    fullName: currentUser?.fullName || '',
+    email: currentUser?.email || '',
+    phoneNumber: currentUser?.phoneNumber || '',
+    country: currentUser?.country || 'India',
+    website: currentUser?.website || '',
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -96,8 +95,40 @@ const AdminDashboardPage = () => {
     return () => window.removeEventListener('starcast_support_updated', handleSupportUpdate);
   }, []);
 
-  const candidates = useMemo(() => getCandidatesList(), []);
   const applications = useMemo(() => getAllApplications(), []);
+
+  // Fetch dynamic recruiter data from MongoDB Atlas backend
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setLoadError('');
+
+    Promise.all([
+      castingService.getRecruiterDashboardData(),
+      castingService.getRecruiterOpportunities(),
+    ])
+      .then(([dashData, opps]) => {
+        if (!isMounted) return;
+        if (dashData && Array.isArray(dashData.opportunities)) {
+          setOpportunities(dashData.opportunities);
+        } else if (Array.isArray(opps)) {
+          setOpportunities(opps);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.warn('Failed to load recruiter data:', err);
+          setLoadError('Unable to load live casting calls from server. Showing local records.');
+        }
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -110,15 +141,29 @@ const AdminDashboardPage = () => {
     if (u) {
       setCurrentUser(u);
       setProfileForm({
-        companyName: u.companyName || 'Apex Vision Studios',
-        fullName: u.fullName || 'Marcus Sterling',
-        email: u.email || 'marcus@apexvisionstudios.com',
-        phoneNumber: u.phoneNumber || '+1 (555) 349-8201',
-        country: u.country || 'United States',
-        website: u.website || 'https://apexvisionstudios.com',
+        companyName: u.companyName || '',
+        fullName: u.fullName || '',
+        email: u.email || '',
+        phoneNumber: u.phoneNumber || '',
+        country: u.country || 'India',
+        website: u.website || '',
       });
     }
   }, []);
+
+  // Profile completion calculation
+  const profileCompletion = useMemo(() => {
+    const fields = [
+      profileForm.companyName,
+      profileForm.fullName,
+      profileForm.email,
+      profileForm.phoneNumber,
+      profileForm.website,
+      profileForm.country,
+    ];
+    const filled = fields.filter((f) => f && String(f).trim().length > 0).length;
+    return Math.round((filled / fields.length) * 100);
+  }, [profileForm]);
 
   // 6 REQUIRED RECRUITER METRIC CARDS
   const recruiterStats = useMemo(() => {
@@ -179,17 +224,22 @@ const AdminDashboardPage = () => {
   };
 
   // Handle Save Company Profile
-  const handleSaveCompanyProfile = (e) => {
+  const handleSaveCompanyProfile = async (e) => {
     e.preventDefault();
     setIsSavingProfile(true);
 
-    const updated = authService.updateCompanyProfile(profileForm);
-    if (updated) {
-      setCurrentUser(updated);
+    try {
+      const updated = await authService.updateCompanyProfile(currentUser?.id, profileForm);
+      if (updated) {
+        setCurrentUser(updated);
+      }
+      setIsProfileModalOpen(false);
+      showToast('Company profile details saved successfully.');
+    } catch (err) {
+      showToast(err.message || 'Failed to update company profile.');
+    } finally {
+      setIsSavingProfile(false);
     }
-    setIsSavingProfile(false);
-    setIsProfileModalOpen(false);
-    showToast('Company profile details saved successfully.');
   };
 
   // Status Badge Helper
@@ -256,19 +306,7 @@ const AdminDashboardPage = () => {
     }
   };
 
-  // Recent applications (sorted by appliedDate desc)
-  const recentApplications = useMemo(() => {
-    return [...applications]
-      .sort((a, b) => new Date(b.appliedDate || 0) - new Date(a.appliedDate || 0))
-      .slice(0, 5);
-  }, [applications]);
 
-  // Recent candidates
-  const recentCandidates = useMemo(() => {
-    return [...candidates]
-      .sort((a, b) => new Date(b.registeredDate || 0) - new Date(a.registeredDate || 0))
-      .slice(0, 5);
-  }, [candidates]);
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-16">
@@ -286,20 +324,33 @@ const AdminDashboardPage = () => {
 
       {/* Header & Quick Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-md bg-neutral-100 text-brand-navy text-[11px] font-bold uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-pink" />
-            <span>Recruiter &amp; Production Control Center</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-neutral-100 text-brand-navy text-[11px] font-bold uppercase tracking-wider">
+              <Building2 className="w-3.5 h-3.5 text-brand-pink" />
+              <span>{profileForm.companyName || 'Production Recruiter'}</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Verified
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsProfileModalOpen(true)}
+              className="text-[11px] font-bold text-gray-500 hover:text-brand-pink underline flex items-center gap-1 cursor-pointer"
+            >
+              <Edit className="w-3 h-3" />
+              <span>Edit Profile</span>
+            </button>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900 tracking-tight">
-            Recruiter Dashboard &amp; Talent Pipeline
+            Recruiter Dashboard
           </h1>
           <p className="text-xs text-gray-500">
-            Manage casting announcements, track server-side Juspay verifications, review candidates, and hire talent.
+            Overview of your active casting calls, applicant pipeline, and opportunities.
           </p>
         </div>
 
-        {/* 8 Actions: Action 1 - Create Job */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
           {(currentUser?.role === 'admin' || currentUser?.role === 'operations') && (
             <Link to="/admin/operations/support">
@@ -333,56 +384,64 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* Recruiter Studio Profile Details Card */}
-      <div className="bg-white rounded-3xl border border-gray-200 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-5">
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-pink-50 border border-pink-200 text-brand-pink flex items-center justify-center font-serif font-bold text-xl shrink-0 shadow-2xs">
-            {profileForm.companyName.charAt(0) || 'P'}
+      {/* Recruiter Welcome & Company Profile Completion Section */}
+      <div className="bg-gradient-to-r from-gray-950 via-neutral-900 to-gray-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="space-y-3 max-w-2xl">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-pink/20 text-pink-300 border border-brand-pink/30 px-3 py-0.5 rounded-full">
+              Production Workspace
+            </span>
+            <span className="text-xs font-semibold text-gray-400">
+              Profile: {profileCompletion}% Completed
+            </span>
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <h2 className="text-lg font-bold font-serif text-gray-900">
-                {profileForm.companyName}
-              </h2>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Verified Recruiter
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-mono bg-neutral-100 text-gray-600 border border-gray-200">
-                Mock Dev Persistence
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
-              <span>Recruiter: <strong className="text-gray-800">{profileForm.fullName}</strong></span>
-              <span className="text-gray-300">•</span>
-              <span className="flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5 text-gray-400" />
-                {profileForm.email}
-              </span>
-              <span className="text-gray-300">•</span>
-              <span className="flex items-center gap-1">
-                <Globe className="w-3.5 h-3.5 text-gray-400" />
-                {profileForm.country}
-              </span>
+
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-white tracking-tight">
+              Welcome back, {currentUser?.fullName || 'Production Partner'}!
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-300 mt-1 leading-relaxed">
+              {profileForm.companyName
+                ? `Managing productions and auditions for ${profileForm.companyName}.`
+                : 'Manage your production house, announce casting calls, and discover vetted talent.'}
             </p>
-            {profileForm.website && (
-              <p className="text-xs text-brand-pink font-medium flex items-center gap-1">
-                <Globe className="w-3.5 h-3.5" />
-                <a href={profileForm.website} target="_blank" rel="noreferrer" className="hover:underline">
-                  {profileForm.website}
-                </a>
-              </p>
-            )}
+          </div>
+
+          <div className="space-y-1.5 pt-1">
+            <div className="flex justify-between text-[11px] text-gray-400">
+              <span>Studio Verification &amp; Profile Setup</span>
+              <span>{profileCompletion}%</span>
+            </div>
+            <div className="w-full bg-neutral-800 rounded-full h-2 max-w-md overflow-hidden border border-white/10">
+              <div
+                className="bg-brand-pink h-2 rounded-full transition-all duration-500"
+                style={{ width: `${profileCompletion}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 min-w-[200px]">
+          <Link to="/post-job" className="w-full">
+            <Button size="sm" variant="primary" className="w-full py-2.5 bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold shadow-md space-x-1.5 flex items-center justify-center">
+              <PlusCircle className="w-4 h-4" />
+              <span>Post a Casting Call</span>
+            </Button>
+          </Link>
+
+          <Link to="/admin/talent" className="w-full">
+            <Button size="sm" variant="secondary" className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 space-x-1.5 flex items-center justify-center">
+              <Search className="w-4 h-4 text-pink-300" />
+              <span>Discover Talent</span>
+            </Button>
+          </Link>
+
           <button
             type="button"
             onClick={() => setIsProfileModalOpen(true)}
-            className="px-4 py-2 rounded-xl border border-gray-300 hover:border-gray-900 text-gray-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="w-full py-2 px-3 text-center text-xs font-semibold text-gray-300 hover:text-white transition-colors cursor-pointer"
           >
-            <Edit className="w-3.5 h-3.5 text-gray-600" />
-            <span>Complete / Edit Profile</span>
+            Edit Company Details →
           </button>
         </div>
       </div>
@@ -488,7 +547,47 @@ const AdminDashboardPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {opportunities.slice(0, 6).map((opp) => {
+              {isLoading ? (
+                <tr>
+                  <td colSpan="5" className="py-12 px-6 text-center text-gray-500 font-medium">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <div className="w-6 h-6 border-2 border-brand-pink border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs">Loading your casting calls...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : opportunities.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="py-12 px-6 text-center">
+                    <div className="max-w-md mx-auto space-y-3">
+                      <div className="w-12 h-12 bg-pink-50 text-brand-pink rounded-2xl flex items-center justify-center mx-auto border border-pink-100 shadow-2xs">
+                        <Briefcase className="w-6 h-6" />
+                      </div>
+                      <h4 className="text-sm font-bold text-gray-900 font-serif">
+                        No casting calls announced yet
+                      </h4>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        You have not created any casting calls for {profileForm.companyName || 'your production studio'}. Announce your first casting call to start receiving audition submissions from verified talent.
+                      </p>
+                      <div className="pt-2 flex flex-wrap items-center justify-center gap-2.5">
+                        <Link to="/post-job">
+                          <Button size="sm" variant="primary" className="bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold space-x-1.5 shadow-xs">
+                            <PlusCircle className="w-3.5 h-3.5" />
+                            <span>Post a Casting Call</span>
+                          </Button>
+                        </Link>
+                        <Link to="/admin/talent">
+                          <Button size="sm" variant="secondary" className="text-xs font-bold space-x-1.5 border-gray-300">
+                            <Search className="w-3.5 h-3.5" />
+                            <span>Discover Talent</span>
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                opportunities.slice(0, 6).map((opp) => {
                 const s = (opp.listingStatus || opp.status || 'published').toLowerCase();
                 const isPendingPay = s === 'pending_payment';
                 const isDraft = s === 'draft';
@@ -525,18 +624,6 @@ const AdminDashboardPage = () => {
 
                     <td className="py-3.5 px-5 text-right">
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                        {/* Action 4: Resume Pending Payment (Reuses order ID, no duplicate charge) */}
-                        {isPendingPay && (
-                          <Link
-                            to={`/payment`}
-                            state={{ opportunity: opp }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-brand-pink text-[11px] font-bold border border-pink-200 transition-colors"
-                            title="Resume pending payment via Juspay or Simulator"
-                          >
-                            <CreditCard className="w-3 h-3" />
-                            <span>Resume Payment</span>
-                          </Link>
-                        )}
 
                         {/* Action 3: Preview Job */}
                         <button
@@ -608,214 +695,14 @@ const AdminDashboardPage = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+            )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Two Dense Admin Data Tables: Candidates & Audition Submissions */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        {/* Recently Registered Candidates (7 Cols) */}
-        <div className="xl:col-span-7 bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden text-left">
-          <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <h2 className="text-base font-bold font-serif text-brand-navy">
-                Recently Registered Candidates
-              </h2>
-              <p className="text-xs text-neutral-500">
-                Latest performer sign-ups awaiting verification or casting review.
-              </p>
-            </div>
-            <Link
-              to="/admin/candidates"
-              className="text-xs font-bold text-brand-pink hover:underline flex items-center gap-1 group"
-            >
-              <span>View Directory</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-neutral-50 text-neutral-500 font-semibold uppercase text-[10px] tracking-wider border-b border-neutral-200">
-                <tr>
-                  <th className="py-3.5 px-4">Candidate</th>
-                  <th className="py-3.5 px-3">Location</th>
-                  <th className="py-3.5 px-3">Experience</th>
-                  <th className="py-3.5 px-3">Profile</th>
-                  <th className="py-3.5 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100">
-                {recentCandidates.map((candidate) => (
-                  <tr key={candidate.id} className="hover:bg-neutral-50/70 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar src={candidate.avatar} name={candidate.fullName} size="sm" />
-                        <div className="min-w-0">
-                          <Link
-                            to={`/admin/candidates/${candidate.id}`}
-                            className="font-bold text-brand-navy hover:text-brand-pink block truncate max-w-[200px]"
-                          >
-                            {candidate.fullName}
-                          </Link>
-                          <span className="text-[10px] text-neutral-500 truncate block max-w-[200px]">
-                            {candidate.headline}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-3 text-neutral-700 whitespace-nowrap">
-                      {candidate.location.split('/')[0].trim()}
-                    </td>
-
-                    <td className="py-3.5 px-3 text-neutral-600 whitespace-nowrap font-medium">
-                      {candidate.yearsOfExperience} yrs
-                    </td>
-
-                    <td className="py-3.5 px-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-12 bg-neutral-100 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className="bg-brand-pink h-full rounded-full"
-                            style={{ width: `${candidate.profileCompletion}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-semibold text-neutral-700">
-                          {candidate.profileCompletion}%
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <Link
-                        to={`/admin/candidates/${candidate.id}`}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-brand-navy hover:text-white text-brand-navy text-[11px] font-bold transition-all shadow-2xs"
-                      >
-                        <Eye className="w-3 h-3" />
-                        <span>View</span>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Recent Applications (5 Cols) */}
-        <div className="xl:col-span-5 bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden text-left">
-          <div className="p-5 border-b border-neutral-200 flex items-center justify-between">
-            <div className="space-y-0.5">
-              <h2 className="text-base font-bold font-serif text-brand-navy">
-                Recent Auditions
-              </h2>
-              <p className="text-xs text-neutral-500">
-                Submissions for active casting calls.
-              </p>
-            </div>
-            <Link
-              to="/admin/applications"
-              className="text-xs font-bold text-brand-pink hover:underline flex items-center gap-1 group"
-            >
-              <span>All Submissions</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          <div className="divide-y divide-neutral-100">
-            {recentApplications.map((app) => (
-              <div
-                key={app.id}
-                className="p-4 sm:p-5 hover:bg-neutral-50/70 transition-colors flex items-start justify-between gap-3 text-xs"
-              >
-                <div className="space-y-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-brand-navy truncate">{app.candidateName}</span>
-                    <span className="text-[10px] text-neutral-400">• {app.appliedDate}</span>
-                  </div>
-                  <p className="text-neutral-600 truncate font-medium">
-                    Applied for <strong className="text-brand-pink">{app.roleAppliedFor}</strong>
-                  </p>
-                  <p className="text-[11px] text-neutral-500 truncate">
-                    {app.opportunityTitle} ({app.productionCompany})
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  <ApplicationStatusBadge status={app.status} />
-                  <Link
-                    to={`/admin/candidates/${app.candidateId}`}
-                    className="text-[11px] font-bold text-neutral-500 hover:text-brand-pink hover:underline"
-                  >
-                    View Performer →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recruiter & Studio Help & Support Section Card */}
-      <div className="bg-white rounded-3xl border border-brand-border p-6 sm:p-8 shadow-card flex flex-col lg:flex-row lg:items-center justify-between gap-6 text-left">
-        <div className="space-y-1.5 max-w-2xl">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 text-brand-pink text-[11px] font-bold border border-pink-100">
-              <LifeBuoy className="w-3.5 h-3.5" />
-              <span>Studio &amp; Recruiter Desk</span>
-            </span>
-            {recruiterTickets.some((t) => t.unreadForUser) && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-brand-pink border border-pink-200">
-                New Reply from Team
-              </span>
-            )}
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold font-serif text-brand-navy">
-            Help &amp; Support for Production Companies
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">
-            Need urgent assistance with casting publication, candidate ranking, Juspay transaction receipts, or studio verification? Contact our Operation Team directly.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 shrink-0">
-          {/* Option 1: Contact Operation Team */}
-          <button
-            type="button"
-            onClick={() => setIsSupportModalOpen(true)}
-            className="px-5 py-3 bg-brand-pink hover:bg-rose-700 active:scale-95 text-white rounded-2xl font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Contact Operation Team</span>
-          </button>
-
-          {/* Option 2: My Support Tickets */}
-          <Link
-            to="/admin/support"
-            className="px-5 py-3 rounded-2xl border border-gray-300 hover:border-gray-900 text-brand-navy font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer bg-white"
-          >
-            <LifeBuoy className="w-4 h-4 text-brand-pink" />
-            <span>My Support Tickets</span>
-            {recruiterTickets.length > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-gray-700 font-bold ml-1">
-                {recruiterTickets.length}
-              </span>
-            )}
-          </Link>
-
-          {/* Option 3: Unified Staff Hub */}
-          <Link
-            to="/admin/operations/support"
-            className="px-4 py-3 rounded-2xl bg-neutral-900 hover:bg-black text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <ShieldCheck className="w-4 h-4 text-brand-pink" />
-            <span>Staff Inbox</span>
-          </Link>
-        </div>
-      </div>
 
       {/* Opportunity Public Preview Modal */}
       <OpportunityPreviewModal

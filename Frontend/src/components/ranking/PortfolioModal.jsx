@@ -13,6 +13,9 @@ import Modal from '../common/Modal';
 import Button from '../common/Button';
 
 const PortfolioModal = ({ isOpen, onClose, candidate, application }) => {
+  const [activeTab, setActiveTab] = useState('media');
+  const [selectedImage, setSelectedImage] = useState(null);
+
   if (!candidate && !application) return null;
 
   const cand = candidate || application.candidate || {};
@@ -29,9 +32,7 @@ const PortfolioModal = ({ isOpen, onClose, candidate, application }) => {
   const actingReel = portfolio.actingReel || portfolio.acting_reel || submitted.videoAudition;
   const introVideo = portfolio.introVideo || portfolio.intro_video;
   const resume = portfolio.resume || submitted.resume;
-
-  const [activeTab, setActiveTab] = useState('media');
-  const [selectedImage, setSelectedImage] = useState(uniqueHeadshots[0] || cand.avatar);
+  const currentImage = selectedImage || uniqueHeadshots[0] || cand.avatar;
 
   return (
     <Modal

@@ -140,3 +140,18 @@ class CastingOpportunitiesAPITests(SimpleTestCase):
         rej_res = self.client.post('/api/opportunities/opp-pending-mod/reject/', {"reason": "Policy violation"}, format='json')
         self.assertEqual(rej_res.status_code, status.HTTP_200_OK)
         self.assertEqual(rej_res.data["opportunity"]["status"], "rejected")
+
+    def test_delete_opportunity(self):
+        """Verifies deleting a casting opportunity via DELETE /api/opportunities/<pk>/."""
+        self.mock_opps.insert_one({
+            "id": "opp-to-delete",
+            "title": "Temporary Film",
+            "status": "published"
+        })
+        res = self.client.delete('/api/opportunities/opp-to-delete/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["success"])
+        # Subsequent get should return 404
+        get_res = self.client.get('/api/opportunities/opp-to-delete/')
+        self.assertEqual(get_res.status_code, status.HTTP_404_NOT_FOUND)
+

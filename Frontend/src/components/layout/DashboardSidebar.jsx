@@ -73,12 +73,23 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
     { label: 'Settings', path: '/admin/settings', icon: Settings },
   ];
 
-  const isOperationsUser = user?.role === 'operations';
-  const isAdminUser = role === 'admin' || user?.role === 'admin';
-  const isRecruiterUser = role === 'recruiter' || user?.role === 'recruiter';
+  const operationsLinks = [
+    { label: 'Operations Desk', path: '/admin/operations/support', icon: ShieldCheck, badge: staffNewCount || null },
+    { label: 'Candidates & Profiles', path: '/admin/candidates', icon: Users },
+    { label: 'Casting Calls', path: '/admin/opportunities', icon: Briefcase },
+    { label: 'Applications', path: '/admin/applications', icon: FileCheck },
+    { label: 'Messages', path: '/admin/messages', icon: MessageSquare },
+    { label: 'Settings', path: '/admin/settings', icon: Settings },
+  ];
+
+  const isOperationsUser = role === 'operations' || user?.role === 'operations';
+  const isAdminUser = !isOperationsUser && (role === 'admin' || user?.role === 'admin');
+  const isRecruiterUser = !isOperationsUser && !isAdminUser && (role === 'recruiter' || user?.role === 'recruiter');
 
   let links = candidateLinks;
-  if (isOperationsUser || isAdminUser) {
+  if (isOperationsUser) {
+    links = operationsLinks;
+  } else if (isAdminUser) {
     links = adminLinks;
   } else if (isRecruiterUser) {
     links = adminLinks.filter((item) => item.path !== '/admin/operations/support');

@@ -5,7 +5,13 @@
  */
 
 import { mockOpportunities } from '../data/mockOpportunities';
-import { getCustomOpportunities } from '../utils/paymentAccess';
+import {
+  getCustomOpportunities,
+  deleteCustomOpportunity,
+  markOpportunityAsDeleted,
+  getDeletedOpportunityIds,
+} from '../utils/paymentAccess';
+import { apiRequest } from './api';
 
 const STORAGE_KEY_CUSTOM_OPPS = 'starcast_custom_opportunities';
 const STORAGE_KEY_DRAFTS = 'starcast_draft_opportunities';
@@ -22,7 +28,7 @@ export const castingService = {
       if (filters.location && filters.location !== 'all') queryParams.append('location', filters.location);
       if (filters.search) queryParams.append('search', filters.search);
 
-      const res = await fetch(`/api/opportunities/?${queryParams.toString()}`);
+      const res = await apiRequest(`/api/opportunities/?${queryParams.toString()}`);
       if (res.ok) {
         const data = await res.json();
         const backendOpps = data.results || data.opportunities || [];
@@ -48,15 +54,19 @@ export const castingService = {
    * Get recruiter opportunities (includes published, drafts, pending_payment, closed)
    */
   getRecruiterOpportunities: async () => {
+    const deletedIds = getDeletedOpportunityIds();
+    const isNotDeleted = (o) => !deletedIds.has(String(o?.id)) && !deletedIds.has(String(o?.refId));
+
     try {
-      const res = await fetch('/api/opportunities/recruiter/');
+      const res = await apiRequest('/api/opportunities/recruiter/');
       if (res.ok) {
         const data = await res.json();
         if (data.opportunities && Array.isArray(data.opportunities)) {
           const localCustom = getCustomOpportunities();
           const drafts = castingService.getDrafts();
           const ids = new Set([...localCustom.map((c) => c.id), ...drafts.map((d) => d.id)]);
-          return [...localCustom, ...drafts, ...data.opportunities.filter((o) => !ids.has(o.id))];
+          const merged = [...localCustom, ...drafts, ...data.opportunities.filter((o) => !ids.has(o.id))];
+          return merged.filter(isNotDeleted);
         }
       }
     } catch {
@@ -66,7 +76,23 @@ export const castingService = {
     const localCustom = getCustomOpportunities();
     const drafts = castingService.getDrafts();
     const ids = new Set([...localCustom.map((c) => c.id), ...drafts.map((d) => d.id)]);
-    return [...localCustom, ...drafts, ...mockOpportunities.filter((m) => !ids.has(m.id))];
+    const fallback = [...localCustom, ...drafts, ...mockOpportunities.filter((m) => !ids.has(m.id))];
+    return fallback.filter(isNotDeleted);
+  },
+
+  /**
+   * Get recruiter dashboard data with aggregated live metrics
+   */
+  getRecruiterDashboardData: async () => {
+    try {
+      const res = await apiRequest('/api/opportunities/recruiter/dashboard/');
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch {
+      // fallback
+    }
+    return null;
   },
 
   /**
@@ -74,7 +100,7 @@ export const castingService = {
    */
   getById: async (id) => {
     try {
-      const res = await fetch(`/api/opportunities/${id}/`);
+      const res = await apiRequest(`/api/opportunities/${id}/`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.id) return data;
@@ -154,7 +180,16 @@ export const castingService = {
   /**
    * Close an open opportunity
    */
-  closeOpportunity: (id) => {
+  closeOpportunity: async (id) => {
+    try {
+      await apiRequest(`/api/opportunities/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'closed', listingStatus: 'closed' }),
+      });
+    } catch {
+      // offline fallback
+    }
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_OPPS);
       if (raw) {
@@ -166,13 +201,22 @@ export const castingService = {
     } catch (err) {
       console.error('Failed to close opportunity:', err);
     }
-    return false;
+    return true;
   },
 
   /**
    * Archive an opportunity
    */
-  archiveOpportunity: (id) => {
+  archiveOpportunity: async (id) => {
+    try {
+      await apiRequest(`/api/opportunities/${id}/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'archived', listingStatus: 'archived' }),
+      });
+    } catch {
+      // offline fallback
+    }
+
     try {
       const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_OPPS);
       if (raw) {
@@ -184,6 +228,39 @@ export const castingService = {
     } catch (err) {
       console.error('Failed to archive opportunity:', err);
     }
-    return false;
+    return true;
+  },
+
+  /**
+   * Delete an opportunity completely from Backend API and Local Storage
+   */
+  deleteOpportunity: async (id, refId = null) => {
+    // 1. Mark in permanent deleted set so mock or cache never restores it
+    markOpportunityAsDeleted(id, refId);
+
+    // 2. Remove from custom opportunities in localStorage
+    deleteCustomOpportunity(id, refId);
+
+    // 3. Remove from drafts in localStorage
+    try {
+      const drafts = castingService.getDrafts();
+      const filtered = drafts.filter(
+        (d) => d.id !== id && d.refId !== id && (refId ? d.refId !== refId : true)
+      );
+      localStorage.setItem(STORAGE_KEY_DRAFTS, JSON.stringify(filtered));
+    } catch (err) {
+      console.warn('Error removing draft:', err);
+    }
+
+    // 4. Send DELETE request to backend API (MongoDB Atlas)
+    try {
+      await apiRequest(`/api/opportunities/${id}/`, {
+        method: 'DELETE',
+      });
+    } catch (err) {
+      console.warn('Backend opportunity delete fallback:', err);
+    }
+
+    return true;
   },
 };

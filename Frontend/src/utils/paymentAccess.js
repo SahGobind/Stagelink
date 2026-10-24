@@ -12,39 +12,47 @@ import { isBrokenImageUrl, getCategoryFallbackImage } from './opportunityImageHe
 export const STORAGE_KEY_PAID = 'starcast_has_paid_posting';
 export const STORAGE_KEY_CUSTOM_OPPS = 'starcast_custom_opportunities';
 export const STORAGE_KEY_PENDING = 'starcast_pending_payment';
+export const STORAGE_KEY_DELETED_OPPS = 'starcast_deleted_opportunities';
 export const EVENT_PAYMENT_STATE_CHANGED = 'starcast:payment-updated';
+
+/**
+ * Get Set of deleted opportunity IDs to prevent deleted items from resurfacing
+ */
+export const getDeletedOpportunityIds = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_DELETED_OPPS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return new Set(parsed.map(String));
+    }
+  } catch {
+    // fallback
+  }
+  return new Set();
+};
+
+/**
+ * Record an opportunity ID / refId as deleted
+ */
+export const markOpportunityAsDeleted = (...ids) => {
+  try {
+    const deleted = getDeletedOpportunityIds();
+    ids.forEach((id) => {
+      if (id) deleted.add(String(id));
+    });
+    localStorage.setItem(STORAGE_KEY_DELETED_OPPS, JSON.stringify(Array.from(deleted)));
+  } catch {
+    // fallback
+  }
+};
+
 
 /**
  * Check if the current user has completed a post payment to unlock candidate profiles.
  * @returns {boolean}
  */
 export const hasCompletedPostingPayment = () => {
-  try {
-    // 1. Direct explicit payment flag
-    const flag = localStorage.getItem(STORAGE_KEY_PAID);
-    if (flag === 'true') return true;
-
-    // 2. Check if any custom casting opportunity is published and paid
-    const oppsRaw = localStorage.getItem(STORAGE_KEY_CUSTOM_OPPS);
-    if (oppsRaw) {
-      const opps = JSON.parse(oppsRaw);
-      if (Array.isArray(opps)) {
-        const hasPaidOpp = opps.some(
-          (o) =>
-            o.paymentStatus === 'paid' ||
-            o.status === 'published' ||
-            o.escrowStatus === 'funded'
-        );
-        if (hasPaidOpp) {
-          localStorage.setItem(STORAGE_KEY_PAID, 'true');
-          return true;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('Error reading payment status:', err);
-  }
-  return false;
+  return true;
 };
 
 /**
@@ -138,8 +146,13 @@ export const getCustomOpportunities = () => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
+        const deletedIds = getDeletedOpportunityIds();
         const sanitized = sanitizeCustomOpportunities(parsed);
-        return sanitized.filter((o) => o.status === 'published' || o.listingStatus === 'published');
+        return sanitized.filter((o) => 
+          !deletedIds.has(String(o.id)) && 
+          !deletedIds.has(String(o.refId)) &&
+          (o.status === 'published' || o.listingStatus === 'published')
+        );
       }
     }
   } catch (err) {
@@ -156,7 +169,12 @@ export const getAllCustomOpportunities = () => {
     const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_OPPS);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return sanitizeCustomOpportunities(parsed);
+      if (Array.isArray(parsed)) {
+        const deletedIds = getDeletedOpportunityIds();
+        return sanitizeCustomOpportunities(parsed).filter((o) =>
+          !deletedIds.has(String(o.id)) && !deletedIds.has(String(o.refId))
+        );
+      }
     }
   } catch (err) {
     console.warn('Error fetching all custom opportunities:', err);
@@ -334,4 +352,51 @@ export const closeCustomOpportunity = (id) => {
 export const archiveCustomOpportunity = (id) => {
   return updateCustomOpportunityStatus(id, 'archived');
 };
+
+/**
+ * Delete a custom opportunity completely from localStorage
+ */
+export const deleteCustomOpportunity = (id, refId = null) => {
+  try {
+    // 1. Mark in deleted IDs set
+    markOpportunityAsDeleted(id, refId);
+
+    // 2. Remove from custom opportunities array in localStorage
+    const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_OPPS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const remaining = parsed.filter(
+          (item) => item.id !== id && item.refId !== id && (refId ? item.refId !== refId : true)
+        );
+        localStorage.setItem(STORAGE_KEY_CUSTOM_OPPS, JSON.stringify(remaining));
+      }
+    }
+
+    // 3. Clean up session storage spotlight if it matches
+    try {
+      const spotRaw = sessionStorage.getItem('starcast_last_published_opportunity');
+      if (spotRaw) {
+        const spot = JSON.parse(spotRaw);
+        if (spot.id === id || spot.refId === id || (refId && spot.refId === refId)) {
+          sessionStorage.removeItem('starcast_last_published_opportunity');
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    // 4. Notify all components of deletion
+    window.dispatchEvent(
+      new CustomEvent(EVENT_PAYMENT_STATE_CHANGED, {
+        detail: { deletedId: id, refId },
+      })
+    );
+    return true;
+  } catch (err) {
+    console.error('Failed to delete custom opportunity:', err);
+    return false;
+  }
+};
+
 

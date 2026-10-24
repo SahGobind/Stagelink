@@ -47,8 +47,15 @@ const EmailVerificationPage = () => {
       // Simulate verification latency
       await new Promise((r) => setTimeout(r, 600));
 
-      // Authenticate the recruiter in session
-      await login(email, 'password123');
+      // Ensure session is set or re-login if needed
+      const currentUser = authService.getCurrentUser();
+      if (!currentUser || currentUser.email !== email) {
+        try {
+          await login(email, 'StageLink2026!');
+        } catch {
+          // If custom password was used during signup, user is redirected to login or stays logged in
+        }
+      }
 
       navigate(redirectParam || '/admin/dashboard', {
         state: { message: `Welcome to StageLink, ${name}! Your studio account is active.` },

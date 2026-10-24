@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Search, X, MessageSquare, Inbox } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import ConversationItem from './ConversationItem';
 
 const ConversationList = ({
@@ -7,6 +8,10 @@ const ConversationList = ({
   activeId,
   onSelect,
 }) => {
+  const { user, role } = useAuth();
+  const isCandidate = (role === 'candidate' || user?.role === 'candidate');
+  const isOperations = (role === 'operations' || user?.role === 'operations');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'unread' | 'archived'
 
@@ -47,6 +52,12 @@ const ConversationList = ({
   ).length;
   const archivedCount = conversations.filter((c) => c.isArchived).length;
 
+  const headerTitle = isOperations
+    ? 'Member Inquiries'
+    : isCandidate
+    ? 'Casting Messages'
+    : 'Direct Messages';
+
   return (
     <div className="w-full md:w-80 lg:w-96 border-r border-gray-100 flex flex-col h-full bg-white select-none">
       {/* Header */}
@@ -55,7 +66,7 @@ const ConversationList = ({
           <div className="flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-brand-navy" />
             <h2 className="text-base font-bold text-brand-navy font-serif">
-              Casting Messages
+              {headerTitle}
             </h2>
           </div>
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-brand-navy">
@@ -68,7 +79,11 @@ const ConversationList = ({
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search directors, projects, messages..."
+            placeholder={
+              isCandidate
+                ? 'Search directors, projects, messages...'
+                : 'Search talent, directors, messages...'
+            }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-gray-50 border border-gray-200 focus:border-black rounded-xl pl-9 pr-8 py-2 text-xs text-brand-navy placeholder-gray-400 outline-none transition-colors"
@@ -85,28 +100,30 @@ const ConversationList = ({
           )}
         </div>
 
-        {/* Quick Button to Text Operations Team */}
-        <button
-          type="button"
-          onClick={() => onSelect('conv-ops')}
-          className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all ${
-            activeId === 'conv-ops'
-              ? 'bg-black text-white border-black shadow-xs'
-              : 'bg-emerald-50/70 border-emerald-200 text-emerald-950 hover:bg-emerald-100/80'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Text Operations Team</span>
-          </div>
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-              activeId === 'conv-ops' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+        {/* Quick Button to Text Operations Team - Candidate only */}
+        {isCandidate && (
+          <button
+            type="button"
+            onClick={() => onSelect('conv-ops')}
+            className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-bold transition-all ${
+              activeId === 'conv-ops'
+                ? 'bg-black text-white border-black shadow-xs'
+                : 'bg-emerald-50/70 border-emerald-200 text-emerald-950 hover:bg-emerald-100/80'
             }`}
           >
-            Direct Help
-          </span>
-        </button>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Text Operations Team</span>
+            </div>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                activeId === 'conv-ops' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+              }`}
+            >
+              Direct Help
+            </span>
+          </button>
+        )}
 
         {/* Filter Pills (All / Unread / Archived) */}
         <div className="flex items-center gap-1.5 p-1 bg-gray-100/80 rounded-xl text-xs font-semibold">

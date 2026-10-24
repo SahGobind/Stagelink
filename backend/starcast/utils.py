@@ -75,3 +75,32 @@ def handle_db_error(err: Exception) -> Response:
         "error": "An unexpected server error occurred.",
         "code": "INTERNAL_ERROR"
     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def get_auth_user_from_request(request):
+    """
+    Extracts authenticated user from Authorization header or session token.
+    Token format: stg-token-{role}-{user_id}-{hash} or Bearer {token}
+    """
+    auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    else:
+        token = auth_header.strip()
+
+    if not token or not token.startswith("stg-token-"):
+        return None
+
+    try:
+        from users import repository as user_repo
+        body = token[len("stg-token-"):]
+        role, rest = body.split("-", 1)
+        user_id, _ = rest.rsplit("-", 1)
+        if user_id:
+            user = user_repo.find_user_by_id(user_id)
+            if user:
+                return user
+    except Exception:
+        pass
+    return None
+

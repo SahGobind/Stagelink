@@ -23,6 +23,7 @@ import Button from '../../components/common/Button';
 import Toast from '../../components/common/Toast';
 import { getCandidateProfile, saveCandidateProfile } from '../../data/mockCandidates';
 import { useAuth } from '../../context/AuthContext';
+import { candidateService } from '../../services/candidateService';
 import SkillDropdownPicker from '../../components/profile/SkillDropdownPicker';
 import { POPULAR_LANGUAGES } from '../../data/skillsData';
 
@@ -35,6 +36,7 @@ const EditProfilePage = () => {
   const initialTab = searchParams.get('tab') || 'personal';
   const [activeTab, setActiveTab] = useState(initialTab); // 'personal' | 'professional' | 'credits' | 'skills' | 'media' | 'privacy'
   const [toastMessage, setToastMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // 1. Personal & Contact
   const [fullName, setFullName] = useState(candidate.fullName || '');
@@ -83,6 +85,30 @@ const EditProfilePage = () => {
       profileVisibility: 'public',
     }
   );
+
+  // Load from backend on mount
+  useEffect(() => {
+    let isMounted = true;
+    if (user?.id) {
+      candidateService.getById(user.id).then((profile) => {
+        if (isMounted && profile) {
+          if (profile.fullName) setFullName(profile.fullName);
+          if (profile.dateOfBirth) setDateOfBirth(profile.dateOfBirth);
+          if (profile.location) setLocation(profile.location);
+          if (profile.contactEmail) setContactEmail(profile.contactEmail);
+          if (profile.phone) setPhone(profile.phone);
+          if (profile.avatar) setAvatar(profile.avatar);
+          if (profile.headline) setHeadline(profile.headline);
+          if (profile.bio) setBio(profile.bio);
+          if (profile.yearsOfExperience) setYearsOfExperience(profile.yearsOfExperience);
+          if (profile.skills && profile.skills.length > 0) setSkills(profile.skills);
+          if (profile.languages && profile.languages.length > 0) setLanguages(profile.languages);
+          if (profile.portfolio?.headshots) setHeadshots(profile.portfolio.headshots);
+        }
+      }).catch((e) => console.warn('Could not load profile from backend on edit mount:', e));
+    }
+    return () => { isMounted = false; };
+  }, [user?.id]);
 
   // Handlers for adding/removing items
   const [dropdownLanguage, setDropdownLanguage] = useState('');
@@ -133,23 +159,35 @@ const EditProfilePage = () => {
     });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e?.preventDefault();
+    setIsSaving(true);
+
+    if (!fullName || fullName.trim().length < 2) {
+      setIsSaving(false);
+      setToastMessage('Full Stage Name is required.');
+      return;
+    }
 
     const updatedProfile = {
       ...candidate,
       fullName,
+      full_name: fullName,
       dateOfBirth,
+      date_of_birth: dateOfBirth,
       location,
       contactEmail,
       phone,
+      phoneNumber: phone,
       avatar,
       coverImage,
       headline,
       experienceLevel,
       yearsOfExperience: Number(yearsOfExperience) || 0,
+      years_of_experience: Number(yearsOfExperience) || 0,
       bio,
       availability,
+      availability_status: availability,
       unionStatus,
       height,
       eyeColor,
@@ -178,15 +216,24 @@ const EditProfilePage = () => {
         resume,
       },
       privacySettings,
+      // Preserve existing publication status so editing does not reset it
+      is_published: candidate.is_published ?? candidate.isPublished ?? false,
     };
 
-    saveCandidateProfile(updatedProfile, user);
-    setToastMessage('Profile changes saved successfully!');
-
-    setTimeout(() => {
-      navigate('/candidate/profile');
-    }, 1000);
+    try {
+      await candidateService.updateProfile(user?.id, updatedProfile, user);
+      setIsSaving(false);
+      setToastMessage('Profile changes saved successfully!');
+      setTimeout(() => {
+        navigate('/candidate/profile');
+      }, 800);
+    } catch (err) {
+      setIsSaving(false);
+      console.error('Backend profile save error:', err);
+      setToastMessage(err.message || 'Failed to save profile changes to database.');
+    }
   };
+
 
   const tabs = [
     { id: 'personal', label: 'Personal & Contact', icon: User },

@@ -3,15 +3,29 @@ import { useSearchParams } from 'react-router-dom';
 import ConversationList from '../../components/messaging/ConversationList';
 import ChatWindow from '../../components/messaging/ChatWindow';
 import { getStoredMessages, saveStoredMessages } from '../../data/mockMessages';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminMessagesPage = () => {
+  const { user, role } = useAuth();
+  const isOpsOrAdmin = user?.role === 'operations' || user?.role === 'admin' || role === 'operations' || role === 'admin';
+
   const [searchParams] = useSearchParams();
   const requestedCandidateId = searchParams.get('candidateId');
   const requestedConvId = searchParams.get('conversationId') || searchParams.get('id');
 
-  const [conversations, setConversations] = useState(() => getStoredMessages());
+  const filterNonStaff = (list) => {
+    if (!isOpsOrAdmin) return list;
+    return list.filter(
+      (c) => !c.isOperationsTeam && c.id !== 'conv-ops' && c.participant?.id !== 'ops-team'
+    );
+  };
+
+  const [conversations, setConversations] = useState(() => {
+    return filterNonStaff(getStoredMessages());
+  });
+
   const [activeId, setActiveId] = useState(() => {
-    const list = getStoredMessages();
+    const list = filterNonStaff(getStoredMessages());
     if (requestedCandidateId) {
       const match = list.find((c) => c.participant?.id === requestedCandidateId);
       if (match) return match.id;
@@ -56,8 +70,8 @@ const AdminMessagesPage = () => {
     const messageText = typeof text === 'string' ? text : '';
     const newMessage = {
       id: `m-${Date.now()}`,
-      senderId: 'admin-1',
-      senderName: 'Audrey Miller (Admin)',
+      senderId: user?.id || (user?.role === 'operations' ? 'staff-sarah' : 'admin-1'),
+      senderName: user?.fullName || (user?.role === 'operations' ? 'Sarah Jenkins (Operations)' : 'Audrey Miller (Admin)'),
       text: messageText,
       timestamp: 'Just now',
       isOwn: true,

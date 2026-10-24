@@ -83,15 +83,15 @@ class MongoDBManager:
 
     @property
     def server_selection_timeout_ms(self) -> int:
-        return getattr(settings, 'MONGODB_SERVER_SELECTION_TIMEOUT_MS', 5000)
+        return getattr(settings, 'MONGODB_SERVER_SELECTION_TIMEOUT_MS', 3000)
 
     @property
     def connect_timeout_ms(self) -> int:
-        return getattr(settings, 'MONGODB_CONNECT_TIMEOUT_MS', 5000)
+        return getattr(settings, 'MONGODB_CONNECT_TIMEOUT_MS', 3000)
 
     @property
     def socket_timeout_ms(self) -> int:
-        return getattr(settings, 'MONGODB_SOCKET_TIMEOUT_MS', 10000)
+        return getattr(settings, 'MONGODB_SOCKET_TIMEOUT_MS', 5000)
 
     def is_configured(self) -> bool:
         """
@@ -127,12 +127,13 @@ class MongoDBManager:
                 serverSelectionTimeoutMS=self.server_selection_timeout_ms,
                 connectTimeoutMS=self.connect_timeout_ms,
                 socketTimeoutMS=self.socket_timeout_ms,
+                maxPoolSize=50,
+                minPoolSize=5,
+                maxIdleTimeMS=45000,
                 appName='StageLink',
                 retryWrites=True,
-                w='majority'
+                w=1
             )
-            # Perform a fast check to verify credentials and connectivity immediately
-            client.admin.command('ping')
             self._client = client
             return self._client
         except (ServerSelectionTimeoutError, ConnectionFailure) as err:

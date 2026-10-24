@@ -25,33 +25,12 @@ OPPORTUNITY_CONTEXT_OPP1 = {
     "travel_covered": True
 }
 
-def get_candidates_from_db():
-    """Fetches candidate users from MongoDB, merging their talent profiles."""
-    users_col = get_collection('users')
-    profiles_col = get_collection('talent_profiles')
+from users.repository import list_talent
 
-    candidates = list(users_col.find({"role": {"$in": ["candidate", "talent"]}}))
-    results = []
-    for cand in candidates:
-        c_clean = clean_doc(cand, drop_password=True)
-        # Fetch profile
-        prof = profiles_col.find_one({"user_id": c_clean["id"]})
-        if prof:
-            p_clean = clean_doc(prof)
-            for k, v in p_clean.items():
-                if k not in c_clean or not c_clean[k]:
-                    c_clean[k] = v
-        # Ensure default fields
-        if not c_clean.get("category"):
-            c_clean["category"] = "Actor"
-        if not c_clean.get("skills"):
-            c_clean["skills"] = ["Method Acting", "Stage Combat"]
-        if not c_clean.get("languages"):
-            c_clean["languages"] = ["English"]
-        if not c_clean.get("years_of_experience"):
-            c_clean["years_of_experience"] = 3
-        results.append(c_clean)
-    return results
+def get_candidates_from_db():
+    """Fetches published candidate users from MongoDB Atlas for casting call matching."""
+    return list_talent(is_published_only=True)
+
 
 
 class RankedCandidatesView(APIView):

@@ -22,6 +22,7 @@ import PublicProfileModal from '../../components/profile/PublicProfileModal';
 import Toast from '../../components/common/Toast';
 import { getCandidateProfile, saveCandidateProfile } from '../../data/mockCandidates';
 import { useAuth } from '../../context/AuthContext';
+import { candidateService } from '../../services/candidateService';
 
 const MyProfilePage = () => {
   const navigate = useNavigate();
@@ -35,6 +36,15 @@ const MyProfilePage = () => {
   // Synchronize if profile changes or user changes
   useEffect(() => {
     setCandidate(getCandidateProfile(user));
+    let isMounted = true;
+    if (user?.id) {
+      candidateService.getById(user.id).then((profile) => {
+        if (isMounted && profile) setCandidate(profile);
+      }).catch((err) => console.warn('Failed to load profile dynamically:', err));
+    }
+    return () => {
+      isMounted = false;
+    };
   }, [user]);
 
   useEffect(() => {
@@ -250,8 +260,8 @@ const MyProfilePage = () => {
                 <ImageIcon className="w-5 h-5" />
               </div>
               <p className="text-xs text-gray-700 font-medium">
-                {candidate.portfolio?.headshots?.length || 4} photos,{' '}
-                {candidate.portfolio?.auditionClips?.length ? `${candidate.portfolio.auditionClips.length} audition clips` : '1 video'}
+                {candidate.portfolio?.headshots?.length || 4} headshots
+                {candidate.instagram || candidate.portfolio?.instagram ? ` • ${candidate.instagram || candidate.portfolio?.instagram}` : ' • 1 video showreel'}
               </p>
             </div>
           </div>

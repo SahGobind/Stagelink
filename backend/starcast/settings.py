@@ -124,6 +124,15 @@ STORAGES = {
 # Trust reverse proxy SSL termination (Render, Cloudflare, etc.)
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# Password Hashers: optimized PBKDF2 for cloud container responsiveness
+PASSWORD_HASHERS = [
+    'starcast.hashers.StageLinkPBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+]
+
 # Django REST Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],

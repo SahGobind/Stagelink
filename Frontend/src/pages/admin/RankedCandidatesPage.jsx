@@ -233,26 +233,6 @@ const RankedCandidatesPage = () => {
     setSortBy('match_score');
   };
 
-  if (!hasPaid) {
-    return (
-      <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-16 py-6">
-        <div className="flex items-center gap-2 text-xs text-neutral-500">
-          <Link
-            to="/admin/opportunities"
-            className="inline-flex items-center gap-1 hover:text-brand-pink transition-colors font-medium"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Casting Opportunities</span>
-          </Link>
-        </div>
-        <CandidateAccessLock
-          title="Ranked Candidate Matching is Locked"
-          subtitle="Complete your casting post payment via JuicePay Credit Card or PayPal to unlock automated candidate matching, match scoring, and audition invites."
-        />
-      </PageContainer>
-    );
-  }
-
   return (
     <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">
       {/* Toast Notification */}

@@ -54,10 +54,37 @@ export const CINEMATIC_PRESETS = [
     url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
     description: 'High fashion editorial runway and studio',
   },
+  {
+    id: 'digital-social',
+    label: 'YouTube / Social / UGC',
+    category: 'Digital Content & Social Media',
+    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    description: 'Digital creator and content studio setup',
+  },
+  {
+    id: 'corporate-training',
+    label: 'Corporate Film / Training',
+    category: 'Corporate & Training',
+    url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80',
+    description: 'Modern corporate architecture and business production',
+  },
+  {
+    id: 'gaming-mocap',
+    label: 'Game / Motion Capture',
+    category: 'Gaming & Motion Capture',
+    url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+    description: 'High-tech gaming and motion capture technology',
+  },
+  {
+    id: 'documentary',
+    label: 'Documentary Production',
+    category: 'Documentary',
+    url: 'https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=800&q=80',
+    description: 'Documentary location shooting',
+  },
 ];
 
 const KNOWN_BROKEN_PATTERNS = [
-  'photo-1518173946687-a4c8a383392e', // Unsplash 404
   'via.placeholder.com',
   'placeholder.com',
 ];
@@ -79,13 +106,22 @@ export const getCategoryFallbackImage = (category = '', type = '') => {
   if (query.includes('theatre') || query.includes('theater') || query.includes('stage') || query.includes('play')) {
     return CINEMATIC_PRESETS.find((p) => p.id === 'theatre-stage').url;
   }
-  if (query.includes('music') || query.includes('song')) {
+  if (query.includes('game') || query.includes('motion capture') || query.includes('mocap')) {
+    return CINEMATIC_PRESETS.find((p) => p.id === 'gaming-mocap').url;
+  }
+  if (query.includes('corporate') || query.includes('training') || query.includes('recruitment')) {
+    return CINEMATIC_PRESETS.find((p) => p.id === 'corporate-training').url;
+  }
+  if (query.includes('youtube') || query.includes('tiktok') || query.includes('ugc') || query.includes('influencer')) {
+    return CINEMATIC_PRESETS.find((p) => p.id === 'digital-social').url;
+  }
+  if (query.includes('music') || query.includes('song') || query.includes('concert') || query.includes('live event')) {
     return CINEMATIC_PRESETS.find((p) => p.id === 'music-video').url;
   }
-  if (query.includes('ad') || query.includes('commercial') || query.includes('brand') || query.includes('tvc')) {
+  if (query.includes('ad') || query.includes('commercial') || query.includes('brand') || query.includes('tvc') || query.includes('campaign')) {
     return CINEMATIC_PRESETS.find((p) => p.id === 'commercial').url;
   }
-  if (query.includes('model') || query.includes('fashion') || query.includes('print')) {
+  if (query.includes('model') || query.includes('fashion') || query.includes('shoot') || query.includes('photography') || query.includes('lifestyle')) {
     return CINEMATIC_PRESETS.find((p) => p.id === 'modeling-fashion').url;
   }
   if (query.includes('web') || query.includes('series') || query.includes('ott') || query.includes('digital')) {

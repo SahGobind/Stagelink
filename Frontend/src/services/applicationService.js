@@ -1,6 +1,7 @@
 /**
  * applicationService.js
  * Manages candidate audition applications, status transitions, duplicate checks, and withdrawal.
+ * Bridges local storage with MongoDB Atlas backed Django REST Framework endpoints.
  */
 
 import {
@@ -8,6 +9,7 @@ import {
   saveCandidateApplication,
   updateApplicationStatus,
 } from '../data/mockApplications';
+import { apiRequest } from './api';
 
 const STORAGE_KEY_APPS = 'starcast_all_applications';
 
@@ -32,7 +34,7 @@ export const applicationService = {
   apply: async (applicationData) => {
     const { candidateId, opportunityId } = applicationData;
 
-    // 1. Prevent duplicate applications
+    // 1. Prevent duplicate applications locally
     const duplicate = applicationService.hasAlreadyApplied(candidateId, opportunityId);
     if (duplicate) {
       return {
@@ -81,19 +83,26 @@ export const applicationService = {
     // 3. Save locally in localStorage
     saveCandidateApplication(newApp);
 
-    // 4. Also call backend /api/applications/
+    // 4. Save dynamically to MongoDB Atlas backend (/api/applications/)
     try {
-      await fetch('/api/applications/', {
+      const res = await apiRequest('/api/applications/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           opportunity_id: opportunityId,
           role_id: newApp.roleId,
           candidate_id: candidateId,
           cover_message: newApp.coverMessage,
           video_audition_url: newApp.submittedMaterials.videoAuditionUrl,
+          answers: newApp.answers,
         }),
       });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.id) {
+          newApp.id = data.id;
+          saveCandidateApplication(newApp);
+        }
+      }
     } catch {
       // offline/mock fallback
     }
@@ -109,6 +118,14 @@ export const applicationService = {
    * Withdraw an active application
    */
   withdraw: async (applicationId, candidateId) => {
+    try {
+      await apiRequest(`/api/applications/${applicationId}/withdraw/`, {
+        method: 'POST',
+      });
+    } catch {
+      // offline fallback
+    }
+
     const all = getAllApplications();
     const app = all.find((a) => a.id === applicationId);
 
@@ -141,7 +158,7 @@ export const applicationService = {
    */
   getByCandidate: async (candidateId) => {
     try {
-      const res = await fetch(`/api/applications/my/?candidate_id=${candidateId}`);
+      const res = await apiRequest(`/api/applications/my/?candidate_id=${encodeURIComponent(candidateId)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.applications && Array.isArray(data.applications)) {
@@ -161,7 +178,7 @@ export const applicationService = {
    */
   getByOpportunity: async (opportunityId) => {
     try {
-      const res = await fetch(`/api/applications/?opportunity_id=${opportunityId}`);
+      const res = await apiRequest(`/api/applications/?opportunity_id=${encodeURIComponent(opportunityId)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.results && Array.isArray(data.results)) {
@@ -181,9 +198,8 @@ export const applicationService = {
    */
   updateStatus: async (applicationId, newStatus, recruiterNote = '', extraDetails = null) => {
     try {
-      await fetch(`/api/applications/${applicationId}/status/`, {
+      await apiRequest(`/api/applications/${applicationId}/status/`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus, note: recruiterNote }),
       });
     } catch {

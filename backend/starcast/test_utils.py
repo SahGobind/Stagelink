@@ -130,5 +130,25 @@ class MockCollection:
     def count_documents(self, query=None):
         return len(list(self.find(query)))
 
+    def delete_one(self, query):
+        for i, d in enumerate(self.docs):
+            if self._matches(d, query):
+                del self.docs[i]
+                class DeleteResult:
+                    deleted_count = 1
+                return DeleteResult()
+        class DeleteResult:
+            deleted_count = 0
+        return DeleteResult()
+
+    def delete_many(self, query):
+        initial_len = len(self.docs)
+        self.docs = [d for d in self.docs if not self._matches(d, query)]
+        class DeleteResult:
+            def __init__(self, count):
+                self.deleted_count = count
+        return DeleteResult(initial_len - len(self.docs))
+
     def create_index(self, keys, **kwargs):
         return "idx_created"
+

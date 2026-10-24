@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -14,6 +14,7 @@ import OpportunityCard from '../../components/opportunities/OpportunityCard';
 import EmptyState from '../../components/common/EmptyState';
 import { mockOpportunities } from '../../data/mockOpportunities';
 import { getCustomOpportunities } from '../../utils/paymentAccess';
+import { castingService } from '../../services/castingService';
 
 const OpportunitiesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -134,12 +135,45 @@ const OpportunitiesPage = () => {
       selectedDeadline
   );
 
+  const [liveOpportunities, setLiveOpportunities] = useState(() => {
+    const custom = getCustomOpportunities();
+    return [...custom, ...mockOpportunities];
+  });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch dynamic opportunities from MongoDB Atlas backend
+  useEffect(() => {
+    let isMounted = true;
+    castingService
+      .getPublicOpportunities()
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setLiveOpportunities(data);
+        }
+      })
+      .catch((err) => console.warn('Live opportunities fetch fallback:', err))
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    const handleUpdate = () => {
+      castingService.getPublicOpportunities().then((data) => {
+        if (Array.isArray(data) && data.length > 0) setLiveOpportunities(data);
+      });
+    };
+    window.addEventListener('starcast:opportunity-published', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('starcast:opportunity-published', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
   // STRICT Filter: Only Published & Open casting calls appear in the public listing
   const allOpportunities = useMemo(() => {
-    const custom = getCustomOpportunities();
-    const combined = [...custom, ...mockOpportunities];
-
-    return combined.filter((opp) => {
+    return liveOpportunities.filter((opp) => {
       const status = (opp.listingStatus || opp.status || '').toLowerCase();
       // Explicitly reject drafts, pending payments, payment failures, pending moderation review, closed, rejected, or archived
       if (
@@ -156,7 +190,7 @@ const OpportunitiesPage = () => {
       }
       return status === 'published' || status === 'open';
     });
-  }, []);
+  }, [liveOpportunities]);
 
   const filteredAndSortedOpportunities = useMemo(() => {
     const filtered = allOpportunities.filter((opp) => {

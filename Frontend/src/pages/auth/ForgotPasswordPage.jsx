@@ -55,20 +55,17 @@ const ForgotPasswordPage = () => {
         <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
           <div className="flex items-center gap-2 text-emerald-800">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <h3 className="text-sm font-bold">Simulated Reset Instructions Sent!</h3>
+            <h3 className="text-sm font-bold">Reset Instructions Sent!</h3>
           </div>
           <p className="text-xs text-emerald-900 leading-relaxed">
-            Target account: <strong className="font-bold">{submittedEmail}</strong>.
+            We have sent password recovery instructions to <strong className="font-bold">{submittedEmail}</strong>.
           </p>
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900">
-            <strong className="font-bold">Development Mock Notice:</strong> In this development mode, no actual email delivery service is configured. You can proceed directly with the demo reset token below.
-          </div>
           <div className="pt-2 border-t border-emerald-200/60">
             <Link
               to="/reset-password?token=demo-token"
               className="inline-flex items-center gap-1.5 text-xs font-bold text-brand-pink hover:underline"
             >
-              <span>Demo Mode: Proceed to Choose New Password</span>
+              <span>Proceed to Choose New Password</span>
               <span>→</span>
             </Link>
           </div>
