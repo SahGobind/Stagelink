@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   Film,
   UserPlus,
-  Lock,
   Music,
   Palette,
   Smile,
@@ -403,35 +402,14 @@ const HomePage = () => {
       <section className="bg-neutral-50/70 py-12 border-b border-neutral-200 overflow-hidden">
         <PageContainer>
           {/* Section Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 text-left gap-4">
-            <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-2">
-                <Globe className="w-3.5 h-3.5" />
-                <span>Global Production Hubs & Discovered Talent</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
-                Top Production Countries Casting on StageLink
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-600 mt-1 max-w-2xl leading-relaxed">
-                Continuous casting opportunities across the world&apos;s most influential film and entertainment industries, paired with StageLink&apos;s leading discovered talent.
-              </p>
+          <div className="mb-8 text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-2">
+              <Globe className="w-3.5 h-3.5" />
+              <span>Global Production Hubs & Discovered Talent</span>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <Link
-                to="/talent"
-                className="inline-flex items-center px-4 py-2.5 bg-white hover:bg-neutral-100 text-black text-xs font-bold rounded-xl border border-neutral-200 shadow-2xs transition-colors gap-1.5"
-              >
-                <span>Discover All Talent</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link
-                to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
-                className="inline-flex items-center px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-1.5"
-              >
-                <Briefcase className="w-3.5 h-3.5" />
-                <span>Post a Job as Production House</span>
-              </Link>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+              Top Production Countries Casting on StageLink
+            </h2>
           </div>
         </PageContainer>
 
@@ -586,31 +564,6 @@ const HomePage = () => {
           </div>
         </div>
 
-        <PageContainer>
-          {/* Banner for Production Houses to Post Job & Go to Payment */}
-          <div className="mt-10 bg-black text-white rounded-3xl p-8 sm:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 text-left">
-            <div className="space-y-2 max-w-xl">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">
-                For Casting Directors & Studios
-              </span>
-              <h3 className="text-xl sm:text-2xl font-bold font-serif text-white">
-                Looking to Cast for Your Next Film, Series, or Commercial?
-              </h3>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Connect with leading performers across India, Europe, and global entertainment hubs. Publish your casting call instantly.
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 w-full lg:w-auto">
-              <Link
-                to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
-                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-neutral-100 text-black text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
-              >
-                <span>List a Job / Casting Call</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </PageContainer>
       </section>
 
       {/* 3. PLATFORM BENEFITS SECTION */}
@@ -872,7 +825,7 @@ const HomePage = () => {
       </section>
 
       {/* 4 & 5. OPPORTUNITIES (ONLY ACCESSIBLE AFTER REGISTRATION & LOGIN) */}
-      {isAuthenticated ? (
+      {isAuthenticated && (
         <>
           {/* 4. EXPLORE OPPORTUNITIES (CATEGORY ROW) */}
           <section>
@@ -953,40 +906,6 @@ const HomePage = () => {
             </PageContainer>
           </section>
         </>
-      ) : (
-        /* Locked teaser banner for unregistered / unauthenticated users */
-        <section className="bg-neutral-50/70 py-12 border-b border-neutral-200">
-          <PageContainer>
-            <div className="max-w-2xl mx-auto text-center space-y-4">
-              <div className="w-12 h-12 bg-black text-white rounded-2xl flex items-center justify-center mx-auto shadow-sm">
-                <Lock className="w-5 h-5 text-white" />
-              </div>
-              <div className="space-y-1">
-                <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
-                  Casting Opportunities & Auditions
-                </h2>
-                <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed max-w-lg mx-auto">
-                  Live casting calls, auditions, and roles are available exclusively to registered candidates. Create your performer profile or log in to unlock full access.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                <Link
-                  to="/signup?redirect=/opportunities"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Register to View Opportunities</span>
-                </Link>
-                <Link
-                  to="/login?redirect=/opportunities"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-neutral-100 text-black border border-neutral-300 text-xs font-bold rounded-xl transition-colors"
-                >
-                  <span>Log In</span>
-                </Link>
-              </div>
-            </div>
-          </PageContainer>
-        </section>
       )}
 
       {/* 6. HOW IT WORKS (4 STEPS) */}
@@ -1046,42 +965,6 @@ const HomePage = () => {
         </PageContainer>
       </section>
 
-      {/* 7. CALL TO ACTION BOTTOM BANNER */}
-      <section className="py-16">
-        <PageContainer>
-          <div className="bg-neutral-950 text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-3d-floating border border-neutral-900 flex flex-col md:flex-row items-center justify-between gap-8 specular-top">
-            {/* Ambient Rose Backlight */}
-            <div className="absolute top-0 right-1/4 w-80 h-80 bg-brand-pink/15 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 max-w-xl space-y-3 text-left">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif tracking-tight leading-snug">
-                Ready to Show Your Talent to the World?
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
-                Create your profile today and take the first step towards your next casting breakthrough.
-              </p>
-            </div>
-
-            <div className="relative z-10 flex flex-wrap items-center gap-3.5 shrink-0">
-              <Link
-                to={isAuthenticated ? '/candidate/profile/setup' : '/signup?redirect=/candidate/profile/setup'}
-                className="inline-flex items-center justify-center px-6 py-3.5 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>Create Your Profile</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
-                className="inline-flex items-center justify-center px-6 py-3.5 bg-white/10 hover:bg-white/15 text-white border border-white/20 text-xs font-bold rounded-xl backdrop-blur-md active:translate-y-0.5 transition-all gap-2"
-              >
-                <Briefcase className="w-4 h-4" />
-                <span>Post a Job</span>
-              </Link>
-            </div>
-          </div>
-        </PageContainer>
-      </section>
     </div>
   );
 };
