@@ -181,25 +181,25 @@ const HomePage = () => {
   const steps = [
     {
       num: '01',
-      title: 'Create & Post',
+      title: 'Join',
       desc: 'Performers build verified showreels and acting portfolios, while production houses post casting calls with role criteria.',
       icon: UserCheck,
     },
     {
       num: '02',
-      title: 'Discover & Match',
+      title: 'Discover',
       desc: 'Performers explore curated casting calls, while casting directors scout and filter top matching talent.',
       icon: Search,
     },
     {
       num: '03',
-      title: 'Audition & Review',
+      title: 'Audition',
       desc: 'Performers submit digital self-tape auditions and tailored pitches, while production teams evaluate submissions with zero middlemen.',
       icon: Send,
     },
     {
       num: '04',
-      title: 'Connect & Cast',
+      title: 'Cast',
       desc: 'Direct communication for audition callbacks, live screening requests, and final role casting between performers and studios.',
       icon: MessageCircle,
     },
