@@ -145,9 +145,11 @@ class CastingOpportunitiesAPITests(SimpleTestCase):
         """Verifies deleting a casting opportunity via DELETE /api/opportunities/<pk>/."""
         self.mock_opps.insert_one({
             "id": "opp-to-delete",
+            "recruiterId": "rec-marcus",
             "title": "Temporary Film",
             "status": "published"
         })
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-recruiter-rec-marcus-test1234')
         res = self.client.delete('/api/opportunities/opp-to-delete/')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(res.data["success"])

@@ -15,16 +15,22 @@ import {
   HelpCircle,
   XCircle,
   RotateCcw,
+  Star,
+  Building2,
+  Quote,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
 import ApplicationTimeline from '../../components/applications/ApplicationTimeline';
+import CompanyRatingModal from '../../components/feedback/CompanyRatingModal';
+import ProductionFeedbackCard from '../../components/feedback/ProductionFeedbackCard';
 import { getApplicationById, getAllApplications } from '../../data/mockApplications';
 import { mockOpportunities } from '../../data/mockOpportunities';
 import { initialCandidateProfile } from '../../data/mockCandidates';
 import { applicationService } from '../../services/applicationService';
+import { feedbackService } from '../../services/feedbackService';
 import { calculateCandidateMatchScore } from '../../services/scoringEngine';
 
 const ApplicationDetailsPage = () => {
@@ -34,9 +40,36 @@ const ApplicationDetailsPage = () => {
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawSuccess, setWithdrawSuccess] = useState(false);
 
+  // Two-way rating & feedback state
+  const [productionFeedback, setProductionFeedback] = useState(null);
+  const [isCompanyRatingModalOpen, setIsCompanyRatingModalOpen] = useState(false);
+  const [companyStats, setCompanyStats] = useState({ averageRating: 4.9, totalReviews: 1 });
+  const [myCompanyReview, setMyCompanyReview] = useState(null);
+
   useEffect(() => {
     const found = getApplicationById(id) || getAllApplications().find((a) => a.id === id) || getAllApplications()[0];
     setApplication(found);
+
+    if (found) {
+      // 1. Check if studio has evaluated this audition/production
+      feedbackService.getApplicationProductionFeedback(found.id).then((fb) => {
+        if (fb) {
+          setProductionFeedback(fb);
+        } else if (found.production_feedback || found.productionFeedback) {
+          setProductionFeedback(found.production_feedback || found.productionFeedback);
+        }
+      });
+
+      // 2. Fetch candidate's reviews of this production company
+      const compName = found.productionCompany || found.production_company || 'Rising Star Productions';
+      feedbackService.getCompanyReviews(compName).then((res) => {
+        setCompanyStats({ averageRating: res.averageRating || 4.9, totalReviews: res.totalReviews || 0 });
+        const mine = (res.reviews || []).find(
+          (r) => r.candidate_id === (found.candidateId || 'cand-1')
+        );
+        if (mine) setMyCompanyReview(mine);
+      });
+    }
   }, [id]);
 
   const opportunity = useMemo(() => {
@@ -110,15 +143,15 @@ const ApplicationDetailsPage = () => {
       </div>
 
       {/* Main Info Card */}
-      <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-8 shadow-card space-y-6">
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-3d-card specular-top space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <ApplicationStatusBadge status={application.status} />
-              <span className="text-xs text-gray-400 font-mono">Ref #{application.id}</span>
+              <span className="text-xs text-slate-400 font-mono">Ref #{application.id}</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy tracking-tight">
               {application.opportunityTitle}
             </h1>
             <p className="text-xs text-gray-500">
@@ -213,6 +246,93 @@ const ApplicationDetailsPage = () => {
             </div>
           </div>
         )}
+
+        {/* STUDIO PRODUCTION & AUDITION EVALUATION */}
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                Studio Audition Evaluation & Performance Rating
+              </h3>
+            </div>
+            {productionFeedback && (
+              <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                ★ {Number(productionFeedback.rating).toFixed(1)} / 5.0 Verified Score
+              </span>
+            )}
+          </div>
+
+          {productionFeedback ? (
+            <ProductionFeedbackCard feedback={productionFeedback} />
+          ) : (
+            <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 text-left space-y-1">
+              <span className="text-xs font-bold text-neutral-800">
+                Evaluation Pending from {application.productionCompany || 'Production Studio'}
+              </span>
+              <p className="text-[11px] text-neutral-600 leading-relaxed">
+                The casting team reviews submitted showreels, self-tapes, and audition sides during stage progression. Once evaluated, your verified 1–5 star rating and director notes will appear directly in this section.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* CANDIDATE REVIEW OF PRODUCTION COMPANY */}
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-brand-navy" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                  Your Review of {application.productionCompany || 'Production House'}
+                </h3>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                StageLink studio rating: <span className="font-bold text-black">★ {companyStats.averageRating}</span> ({companyStats.totalReviews} performer {companyStats.totalReviews === 1 ? 'review' : 'reviews'})
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant={myCompanyReview ? 'outline' : 'primary'}
+              onClick={() => setIsCompanyRatingModalOpen(true)}
+              className="text-xs shrink-0 self-start sm:self-auto gap-1.5"
+            >
+              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+              <span>{myCompanyReview ? 'Edit Your Studio Review' : 'Rate & Review Studio'}</span>
+            </Button>
+          </div>
+
+          {myCompanyReview ? (
+            <div className="p-4 bg-amber-50/40 rounded-2xl border border-amber-200 text-left space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  Your Rating: {Number(myCompanyReview.rating).toFixed(1)} / 5.0
+                </span>
+                <span className="text-[10px] text-amber-800 font-medium">
+                  {myCompanyReview.created_at ? new Date(myCompanyReview.created_at).toLocaleDateString() : 'Recently'}
+                </span>
+              </div>
+              <p className="text-xs text-neutral-700 italic">
+                &ldquo;{myCompanyReview.feedback}&rdquo;
+              </p>
+            </div>
+          ) : (
+            <div className="p-4 rounded-2xl bg-neutral-50/60 border border-dashed border-neutral-200 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <p className="text-xs text-neutral-600">
+                Have you auditioned or communicated with <strong className="text-black">{application.productionCompany}</strong>? Leave feedback to support the actor community.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsCompanyRatingModalOpen(true)}
+                className="text-xs font-bold text-black hover:underline shrink-0"
+              >
+                Write a Review →
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Profile Improvement Recommendations */}
         {matchResult?.improvementSuggestions && matchResult.improvementSuggestions.length > 0 && (
@@ -321,6 +441,25 @@ const ApplicationDetailsPage = () => {
           )}
         </div>
       </Modal>
+
+      {/* CANDIDATE COMPANY RATING & REVIEW MODAL */}
+      <CompanyRatingModal
+        isOpen={isCompanyRatingModalOpen}
+        onClose={() => setIsCompanyRatingModalOpen(false)}
+        companyName={application.productionCompany || 'Production Studio'}
+        companyId={application.productionCompany?.toLowerCase().replace(/\s+/g, '-')}
+        opportunityId={application.opportunityId}
+        opportunityTitle={application.opportunityTitle}
+        candidateId={application.candidateId || 'cand-1'}
+        candidateName={application.candidateName || 'Candidate Artist'}
+        onReviewSubmitted={(newRev) => {
+          setMyCompanyReview(newRev);
+          setCompanyStats((prev) => ({
+            averageRating: newRev.rating,
+            totalReviews: (prev.totalReviews || 0) + 1,
+          }));
+        }}
+      />
     </PageContainer>
   );
 };

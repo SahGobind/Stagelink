@@ -15,6 +15,9 @@ from .serializers import CastingOpportunitySerializer
 from . import repository
 from starcast.db import get_collection
 from starcast.utils import handle_db_error, clean_doc, get_auth_user_from_request
+from starcast.rbac import Permissions
+from starcast.permissions import check_permission, check_resource_ownership
+from starcast.audit import log_audit_event
 
 # Backend authoritative pricing configuration
 PRICING_CONFIG = {
@@ -79,6 +82,10 @@ class OpportunityListView(APIView):
             return handle_db_error(err)
 
     def post(self, request):
+        perm_error = check_permission(request, Permissions.OPPORTUNITY_CREATE, resource_type="opportunity")
+        if perm_error:
+            return perm_error
+
         serializer = CastingOpportunitySerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -87,7 +94,7 @@ class OpportunityListView(APIView):
         opp_id = f"opp-{int(datetime.datetime.now().timestamp() * 1000)}"
         ref_id = f"PRD-{uuid.uuid4().hex[:6].upper()}"
 
-        auth_user = get_auth_user_from_request(request)
+        auth_user = getattr(request, "auth_user", None) or get_auth_user_from_request(request)
         recruiter_id = auth_user.get("id") if auth_user else None
         recruiter_email = auth_user.get("email") if auth_user else ""
 
@@ -108,6 +115,14 @@ class OpportunityListView(APIView):
 
         try:
             saved = repository.save_opportunity(new_opp)
+            log_audit_event(
+                action="OPPORTUNITY_CREATED",
+                actor=auth_user,
+                resource_type="opportunity",
+                resource_id=opp_id,
+                status="SUCCESS",
+                request=request
+            )
             return Response(saved, status=status.HTTP_201_CREATED)
         except Exception as err:
             return handle_db_error(err)
@@ -130,9 +145,28 @@ class OpportunityDetailView(APIView):
             if not opp:
                 return Response({"error": "Casting opportunity not found"}, status=status.HTTP_404_NOT_FOUND)
             
+            perm_error = check_resource_ownership(
+                request,
+                opp,
+                owner_keys=["recruiterId", "recruiter_id", "recruiterEmail", "productionCompany", "production_company"],
+                admin_permission=Permissions.OPPORTUNITY_UPDATE_ALL,
+                resource_type="opportunity",
+                resource_id=pk
+            )
+            if perm_error:
+                return perm_error
+
             updates = request.data.copy()
             opp.update(updates)
             saved = repository.save_opportunity(opp)
+            log_audit_event(
+                action="OPPORTUNITY_UPDATED",
+                actor=getattr(request, "auth_user", None),
+                resource_type="opportunity",
+                resource_id=pk,
+                status="SUCCESS",
+                request=request
+            )
             return Response({
                 "message": "Opportunity updated successfully",
                 "opportunity": saved
@@ -146,7 +180,26 @@ class OpportunityDetailView(APIView):
             if not opp:
                 return Response({"error": "Casting opportunity not found"}, status=status.HTTP_404_NOT_FOUND)
             
+            perm_error = check_resource_ownership(
+                request,
+                opp,
+                owner_keys=["recruiterId", "recruiter_id", "recruiterEmail", "productionCompany", "production_company"],
+                admin_permission=Permissions.OPPORTUNITY_DELETE_ALL,
+                resource_type="opportunity",
+                resource_id=pk
+            )
+            if perm_error:
+                return perm_error
+
             repository.delete_opportunity(pk)
+            log_audit_event(
+                action="OPPORTUNITY_DELETED",
+                actor=getattr(request, "auth_user", None),
+                resource_type="opportunity",
+                resource_id=pk,
+                status="SUCCESS",
+                request=request
+            )
             return Response({
                 "success": True,
                 "message": "Opportunity deleted successfully",

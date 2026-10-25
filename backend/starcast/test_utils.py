@@ -19,6 +19,14 @@ class MockCursor:
         self.docs.sort(key=sort_val, reverse=(direction == -1))
         return self
 
+    def skip(self, count):
+        self.docs = self.docs[count:]
+        return self
+
+    def limit(self, count):
+        self.docs = self.docs[:count]
+        return self
+
     def __iter__(self):
         return iter(self.docs)
 

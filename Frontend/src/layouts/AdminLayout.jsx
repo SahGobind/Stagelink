@@ -9,15 +9,20 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 
 const AdminLayout = () => {
   const { user, role } = useAuth();
-  const isOps = user?.role === 'operations' || role === 'operations';
+  const isSuper = user?.role === 'super_admin' || role === 'super_admin';
+  const isOps = !isSuper && (user?.role === 'operations' || role === 'operations');
 
-  const headerTitle = isOps
+  const headerTitle = isSuper
+    ? 'StageLink Governance Suite'
+    : isOps
     ? 'StageLink Operations Desk'
     : role === 'recruiter'
     ? 'StageLink Studio Suite'
     : 'StageLink Studio Admin';
 
-  const headerSubtitle = isOps
+  const headerSubtitle = isSuper
+    ? 'System Governance, Granular RBAC Permissions & Security Audit Stream'
+    : isOps
     ? 'Support Tickets, Talent Verification & Member Assistance'
     : role === 'recruiter'
     ? 'Casting Calls, Talent Discovery & Audition Management'

@@ -18,13 +18,16 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import Toast from '../../components/common/Toast';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import AccessControlPanel from '../../components/admin/AccessControlPanel';
 
-const AdminSettingsPage = () => {
-  const { user, logout, updateUser } = useAuth();
+const AdminSettingsPage = ({ initialTab = null }) => {
+  const { user, logout, updateUser, isSuperAdmin, isAdmin, hasPermission } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [activeTab, setActiveTab] = useState('studio'); // 'studio' | 'notifications' | 'security'
+  const queryTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(initialTab || queryTab || 'studio'); // 'studio' | 'notifications' | 'security' | 'accessControl'
   const [toastMsg, setToastMsg] = useState('');
   const [toastType, setToastType] = useState('success');
 
@@ -122,6 +125,9 @@ const AdminSettingsPage = () => {
           { id: 'studio', label: 'Studio Profile', icon: Building2 },
           { id: 'notifications', label: 'Casting Alerts', icon: Bell },
           { id: 'security', label: 'Security & Team', icon: Shield },
+          ...((isSuperAdmin || isAdmin || hasPermission('role:view') || hasPermission('audit:view'))
+            ? [{ id: 'accessControl', label: 'Access Control & Audit (RBAC)', icon: ShieldCheck }]
+            : []),
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -341,6 +347,9 @@ const AdminSettingsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Tab 4: Access Control & Audit (RBAC) */}
+      {activeTab === 'accessControl' && <AccessControlPanel />}
 
       <Toast message={toastMsg} type={toastType} onClose={() => setToastMsg('')} />
     </PageContainer>

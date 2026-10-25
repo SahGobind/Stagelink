@@ -36,6 +36,8 @@ import { formatDate } from '../../utils/formatters';
 import { calculateCandidateMatchScore } from '../../services/scoringEngine';
 import { rankingService } from '../../services/rankingService';
 import { mockCandidates } from '../../data/mockCandidates';
+import ProductionFeedbackModal from '../../components/feedback/ProductionFeedbackModal';
+import ProductionFeedbackCard from '../../components/feedback/ProductionFeedbackCard';
 
 import {
   getAllApplications,
@@ -88,6 +90,9 @@ const AdminApplicationsPage = () => {
   // Score Breakdown modal state
   const [selectedScoreApp, setSelectedScoreApp] = useState(null);
   const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+
+  // Production Evaluation & Feedback modal state
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
 
   // Consequential Confirmation Modals
   const [isConfirmDecisionOpen, setIsConfirmDecisionOpen] = useState(false);
@@ -365,14 +370,14 @@ const AdminApplicationsPage = () => {
 
         {/* View Toggle */}
         <div className="flex items-center gap-3">
-          <div className="inline-flex p-1 bg-neutral-100 rounded-xl border border-neutral-200">
+          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode('kanban')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'kanban'
-                  ? 'bg-white text-brand-navy shadow-xs'
-                  : 'text-neutral-500 hover:text-neutral-900'
+                  ? 'bg-white text-brand-navy shadow-3d-button specular-top'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <Kanban className="w-3.5 h-3.5" />
@@ -381,10 +386,10 @@ const AdminApplicationsPage = () => {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-white text-brand-navy shadow-xs'
-                  : 'text-neutral-500 hover:text-neutral-900'
+                  ? 'bg-white text-brand-navy shadow-3d-button specular-top'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
             >
               <LayoutList className="w-3.5 h-3.5" />
@@ -395,16 +400,16 @@ const AdminApplicationsPage = () => {
       </div>
 
       {/* FILTERS TOOLBAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-xs space-y-3">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-3d-card specular-top space-y-3">
         {/* Row 1: Search */}
         <div className="relative">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by candidate name, role title, or opportunity..."
-            className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-brand-navy placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-brand-navy placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white shadow-inner-bevel transition-all"
           />
         </div>
 
@@ -882,6 +887,40 @@ const AdminApplicationsPage = () => {
               </div>
             )}
 
+            {/* STUDIO AUDITION & PRODUCTION EVALUATION */}
+            <div className="p-4 rounded-2xl border border-neutral-200 bg-white space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                    Studio Audition & Performance Rating
+                  </span>
+                  <p className="text-xs text-neutral-600 mt-0.5">
+                    Evaluate {selectedApp.candidateName}&apos;s audition tape / performance submission with 1–5 stars and feedback.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setIsFeedbackModalOpen(true)}
+                  className="text-xs bg-black hover:bg-neutral-800 text-white shrink-0 self-start sm:self-auto gap-1.5"
+                >
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  <span>
+                    {selectedApp.production_feedback || selectedApp.productionFeedback
+                      ? 'Edit Audition Rating'
+                      : 'Evaluate / Rate Submission'}
+                  </span>
+                </Button>
+              </div>
+
+              {(selectedApp.production_feedback || selectedApp.productionFeedback) && (
+                <ProductionFeedbackCard
+                  feedback={selectedApp.production_feedback || selectedApp.productionFeedback}
+                  className="border-neutral-200/80 bg-neutral-50/50"
+                />
+              )}
+            </div>
+
             {/* Quick Status Action Bar */}
             <div className="p-4 rounded-2xl border border-neutral-200 bg-white space-y-2">
               <span className="block text-[11px] font-bold uppercase tracking-wider text-neutral-400">
@@ -1314,6 +1353,36 @@ const AdminApplicationsPage = () => {
               console.error(err);
               showToast('Score refreshed with current criteria.');
             }
+          }}
+        />
+      )}
+
+      {/* STUDIO PRODUCTION & AUDITION FEEDBACK MODAL */}
+      {selectedApp && (
+        <ProductionFeedbackModal
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setIsFeedbackModalOpen(false)}
+          applicationId={selectedApp.id}
+          candidateId={selectedApp.candidateId}
+          candidateName={selectedApp.candidateName}
+          productionCompany={selectedApp.productionCompany}
+          opportunityTitle={selectedApp.opportunityTitle}
+          roleTitle={selectedApp.roleAppliedFor}
+          existingFeedback={selectedApp.production_feedback || selectedApp.productionFeedback}
+          onFeedbackSaved={(newFb) => {
+            setSelectedApp((prev) => ({
+              ...prev,
+              production_feedback: newFb,
+              productionFeedback: newFb,
+            }));
+            setApplications((prev) =>
+              prev.map((a) =>
+                a.id === selectedApp.id
+                  ? { ...a, production_feedback: newFb, productionFeedback: newFb }
+                  : a
+              )
+            );
+            showToast(`Audition evaluation and rating saved for ${selectedApp.candidateName}`);
           }}
         />
       )}

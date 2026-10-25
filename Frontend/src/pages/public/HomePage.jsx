@@ -16,60 +16,169 @@ import {
   Film,
   UserPlus,
   Lock,
+  Music,
+  Palette,
+  Smile,
+  Globe,
+  Star,
+  MapPin,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
 import { OPPORTUNITY_CATEGORIES, mockOpportunities } from '../../data/mockOpportunities';
+import { mockTalentProfiles, FALLBACK_TALENT_AVATAR } from '../../data/mockTalentDirectory';
 import { useAuth } from '../../context/AuthContext';
 
-const PRODUCTION_COMPANIES = [
+export const TOP_PRODUCTION_COUNTRIES = [
   {
-    name: 'Netflix Studios',
-    type: 'Global OTT & Film',
-    activeCalls: '28 Active Roles',
-    location: 'Mumbai & Los Angeles',
-    badge: 'Verified Studio',
+    name: 'India',
+    code: 'IN',
+    flag: '🇮🇳',
+    industry: 'Bollywood, South Cinema & OTT',
+    hub: 'Mumbai, Hyderabad, Chennai, Bengaluru',
+    activeCalls: '180+ Active Calls',
+    badge: 'Premier Film Hub',
+    link: '/opportunities?search=India',
   },
   {
-    name: 'Dharma Productions',
-    type: 'Feature Film House',
-    activeCalls: '14 Active Roles',
-    location: 'Mumbai',
-    badge: 'Premier Partner',
+    name: 'United States',
+    code: 'US',
+    flag: '🇺🇸',
+    industry: 'Hollywood & Global Streamers',
+    hub: 'Los Angeles, New York, Atlanta',
+    activeCalls: '240+ Active Calls',
+    badge: 'Global Production Hub',
+    link: '/opportunities?search=USA',
   },
   {
-    name: 'Yash Raj Films',
-    type: 'Theatrical Productions',
-    activeCalls: '19 Active Roles',
-    location: 'Mumbai & UK',
-    badge: 'Premier Partner',
+    name: 'United Kingdom',
+    code: 'GB',
+    flag: '🇬🇧',
+    industry: 'British Film, BBC & Pinewood',
+    hub: 'London, Pinewood, Bristol',
+    activeCalls: '135+ Active Calls',
+    badge: 'Theatrical & Prestige',
+    link: '/opportunities?search=UK',
   },
   {
-    name: 'A24 Films',
-    type: 'Independent Cinema',
-    activeCalls: '9 Active Roles',
-    location: 'Global / Remote',
-    badge: 'Verified Studio',
+    name: 'France',
+    code: 'FR',
+    flag: '🇫🇷',
+    industry: 'Cannes Arthouse & French Cinema',
+    hub: 'Paris, Cannes, Lyon',
+    activeCalls: '85+ Active Calls',
+    badge: 'European Auteur Hub',
+    link: '/opportunities?search=France',
   },
   {
-    name: 'Red Chillies Ent.',
-    type: 'Cinema & VFX Studio',
-    activeCalls: '12 Active Roles',
-    location: 'Mumbai',
-    badge: 'Premier Partner',
+    name: 'South Korea',
+    code: 'KR',
+    flag: '🇰🇷',
+    industry: 'K-Drama & Chungmuro Studios',
+    hub: 'Seoul, Busan',
+    activeCalls: '110+ Active Calls',
+    badge: 'Global Hallyu Wave',
+    link: '/opportunities?search=Korea',
   },
   {
-    name: 'Excel Entertainment',
-    type: 'Web Series & Features',
-    activeCalls: '11 Active Roles',
-    location: 'Mumbai & Goa',
-    badge: 'Verified Studio',
+    name: 'Germany',
+    code: 'DE',
+    flag: '🇩🇪',
+    industry: 'Studio Babelsberg & Co-Productions',
+    hub: 'Berlin, Munich, Cologne',
+    activeCalls: '75+ Active Calls',
+    badge: 'European Cinema Base',
+    link: '/opportunities?search=Germany',
+  },
+  {
+    name: 'Italy',
+    code: 'IT',
+    flag: '🇮🇹',
+    industry: 'Cinecittà & Neorealist Heritage',
+    hub: 'Rome, Milan, Venice',
+    activeCalls: '65+ Active Calls',
+    badge: 'Cine & Fashion Capital',
+    link: '/opportunities?search=Italy',
+  },
+  {
+    name: 'Spain',
+    code: 'ES',
+    flag: '🇪🇸',
+    industry: 'Spanish OTT Originals & Cinema',
+    hub: 'Madrid, Barcelona, Valencia',
+    activeCalls: '90+ Active Calls',
+    badge: 'Rapid-Growth Hub',
+    link: '/opportunities?search=Spain',
+  },
+  {
+    name: 'Canada',
+    code: 'CA',
+    flag: '🇨🇦',
+    industry: 'Hollywood North & VFX Studios',
+    hub: 'Vancouver, Toronto, Montreal',
+    activeCalls: '115+ Active Calls',
+    badge: 'VFX & Feature Base',
+    link: '/opportunities?search=Canada',
+  },
+  {
+    name: 'Japan',
+    code: 'JP',
+    flag: '🇯🇵',
+    industry: 'Toho, Anime & Contemporary Screen',
+    hub: 'Tokyo, Kyoto, Osaka',
+    activeCalls: '70+ Active Calls',
+    badge: 'Animation & Film',
+    link: '/opportunities?search=Japan',
+  },
+  {
+    name: 'Australia',
+    code: 'AU',
+    flag: '🇦🇺',
+    industry: 'Pacific Feature Studios & Fox Studios',
+    hub: 'Sydney, Melbourne, Gold Coast',
+    activeCalls: '60+ Active Calls',
+    badge: 'Pacific Production Hub',
+    link: '/opportunities?search=Australia',
+  },
+  {
+    name: 'Sweden',
+    code: 'SE',
+    flag: '🇸🇪',
+    industry: 'Nordic Noir & Scandinavian Studios',
+    hub: 'Stockholm, Gothenburg',
+    activeCalls: '45+ Active Calls',
+    badge: 'Nordic Cinema & Music',
+    link: '/opportunities?search=Sweden',
   },
 ];
 
 const HomePage = () => {
   const { isAuthenticated, user } = useAuth();
   const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin');
+
+  // Curated list of top candidate profiles for continuous marquee
+  const topCandidateProfiles = [
+    // Iconic Indian Film Stars
+    ...mockTalentProfiles.filter((t) => t.isFilmStar),
+    // Plus featured top verified candidates across disciplines
+    ...mockTalentProfiles.filter(
+      (t) =>
+        !t.isFilmStar &&
+        [
+          'cand-1',
+          'cand-2',
+          'cand-3',
+          'cand-4',
+          'cand-5',
+          'cand-6',
+          'cand-arjun-design',
+          'cand-kunal-comedy',
+          'cand-camille',
+          'cand-matteo',
+        ].includes(t.id)
+    ),
+  ];
+
   const steps = [
     {
       num: '01',
@@ -123,69 +232,75 @@ const HomePage = () => {
   return (
     <div className="pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-white pt-8 pb-8 lg:pt-12 lg:pb-8 border-b border-neutral-200">
+      <section className="relative overflow-hidden bg-white pt-8 pb-10 lg:pt-14 lg:pb-12 border-b border-slate-200/80 cinematic-subtle-glow">
         <PageContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* Left Content */}
             <div className="lg:col-span-6 space-y-6 text-left">
-              <span className="text-xs font-bold text-black uppercase tracking-widest block">
-                A Platform for Talented Artists & Performers
-              </span>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-neutral-900 text-[11px] font-bold uppercase tracking-widest shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-brand-pink shadow-xs" />
+                <span>Premier Casting & Acting Platform</span>
+              </div>
 
-              <h1 className="text-4xl sm:text-6xl font-bold font-serif text-black leading-[1.1] tracking-tight">
+              <h1 className="text-4xl sm:text-6xl font-bold font-serif text-neutral-950 leading-[1.08] tracking-tight">
                 Your Talent. <br />
                 Your Next Role. <br />
-                <span className="text-black italic font-serif">New Stories.</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-950 via-neutral-800 to-brand-pink italic font-serif">
+                  New Stories.
+                </span>
               </h1>
 
-              <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-lg">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-lg font-medium">
                 StageLink connects aspiring and seasoned performers directly with visionary directors, film productions, OTT series, and commercial casting agencies.
               </p>
             </div>
 
             {/* Right Side: TEST YOUR TALENT Feature Card */}
             <div className="lg:col-span-6 space-y-5 text-left">
-              {/* Feature 1: TEST YOUR TALENT */}
-              <div className="bg-neutral-50 rounded-3xl p-6 sm:p-7 border border-neutral-200 shadow-subtle hover:border-black/30 transition-all space-y-3.5 relative overflow-hidden group">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center shadow-xs">
-                      <Sparkles className="w-5 h-5" />
+              {/* Feature 1: TEST YOUR TALENT - 3D Floating Showcase Card */}
+              <div className="bg-white/95 rounded-3xl p-7 sm:p-8 border border-slate-200/90 shadow-3d-floating hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 space-y-4 relative overflow-hidden group specular-top">
+                {/* Ambient Rose Light in corner */}
+                <div className="absolute -top-10 -right-10 w-44 h-44 bg-brand-pink/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neutral-900 to-black text-white flex items-center justify-center shadow-3d-button group-hover:scale-105 transition-transform duration-200">
+                      <Sparkles className="w-5 h-5 text-rose-300" />
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 block">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
                         For Artists & Performers
                       </span>
-                      <h2 className="text-xl font-bold font-serif text-black">
+                      <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-950">
                         Test Your Talent
                       </h2>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 bg-white border border-neutral-200 rounded-full text-[10px] font-bold text-black uppercase tracking-wider">
+                  <span className="px-3 py-1 bg-slate-100/90 border border-slate-200 rounded-full text-[10px] font-bold text-neutral-950 uppercase tracking-wider shadow-2xs">
                     Audition Hub
                   </span>
                 </div>
 
-                <p className="text-xs text-neutral-600 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed relative z-10">
                   Build your verified profile, submit self-tape auditions, and get discovered by top casting directors.
                 </p>
 
-                <div className="grid grid-cols-2 gap-2 py-0.5 text-[11px] text-neutral-600 font-medium">
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>Self-Tape Auditions</span>
+                <div className="grid grid-cols-2 gap-2.5 py-1 text-[11px] text-slate-700 font-semibold relative z-10">
+                  <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/70 rounded-xl p-2.5 shadow-2xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">Self-Tape Auditions</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                    <span>Direct Callback Invites</span>
+                  <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/70 rounded-xl p-2.5 shadow-2xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">Direct Callbacks</span>
                   </div>
                 </div>
 
-                <div className="pt-1.5 flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3 relative z-10">
                   {isAuthenticated ? (
                     <Link
                       to="/candidate/profile/setup"
-                      className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                      className="inline-flex items-center justify-center px-5 py-3 bg-neutral-950 hover:bg-black text-white text-xs font-bold rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 transition-all gap-2"
                     >
                       <UserPlus className="w-4 h-4" />
                       <span>Edit Your Profile</span>
@@ -195,7 +310,7 @@ const HomePage = () => {
                     <>
                       <Link
                         to="/signup?from=test-your-talent&redirect=/candidate/profile/setup"
-                        className="inline-flex items-center justify-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                        className="inline-flex items-center justify-center px-5 py-3 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
                       >
                         <UserPlus className="w-4 h-4" />
                         <span>Join as Performer</span>
@@ -203,7 +318,7 @@ const HomePage = () => {
                       </Link>
                       <Link
                         to="/login?redirect=/candidate/profile/setup"
-                        className="text-xs font-medium text-neutral-600 hover:text-black underline underline-offset-4"
+                        className="text-xs font-semibold text-slate-600 hover:text-neutral-950 underline underline-offset-4 transition-colors"
                       >
                         Already registered? Log In →
                       </Link>
@@ -214,108 +329,221 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* 4 Demo Stats Metrics Strip */}
-          <div className="mt-6 pt-5 border-t border-neutral-200">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-left">
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-black">5,000+</p>
-                <p className="text-xs text-neutral-600 mt-0.5 font-medium">Talented Artists</p>
+          {/* 4 Demo Stats Metrics Strip - Floating 3D Tiles */}
+          <div className="mt-8 pt-6 border-t border-slate-200/80">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
+                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">5,000+</p>
+                <p className="text-xs text-slate-500 mt-1 font-semibold">Talented Artists</p>
               </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-black">300+</p>
-                <p className="text-xs text-neutral-600 mt-0.5 font-medium">Production Houses</p>
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
+                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">300+</p>
+                <p className="text-xs text-slate-500 mt-1 font-semibold">Production Houses</p>
               </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-black">1,000+</p>
-                <p className="text-xs text-neutral-600 mt-0.5 font-medium">Casting Opportunities</p>
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
+                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">1,000+</p>
+                <p className="text-xs text-slate-500 mt-1 font-semibold">Casting Opportunities</p>
               </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-black">95%</p>
-                <p className="text-xs text-neutral-600 mt-0.5 font-medium">Success Stories</p>
+              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
+                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">95%</p>
+                <p className="text-xs text-slate-500 mt-1 font-semibold">Success Stories</p>
               </div>
             </div>
-            <p className="text-[10px] text-neutral-400 mt-3 text-left">
+            <p className="text-[10px] text-slate-400 mt-3 text-left font-medium">
               * Platform metrics shown for demonstration purposes.
             </p>
           </div>
         </PageContainer>
       </section>
 
-      {/* 2. PRODUCTION COMPANIES LISTED SECTION */}
-      <section className="bg-neutral-50/70 py-10 border-b border-neutral-200">
+      {/* 2. TOP PRODUCTION COUNTRIES & TOP CANDIDATES (CONTINUOUS SCROLLING MARQUEE) */}
+      <section className="bg-neutral-50/70 py-12 border-b border-neutral-200 overflow-hidden">
         <PageContainer>
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 text-left gap-4">
+          {/* Section Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 text-left gap-4">
             <div>
-              <span className="text-xs font-bold text-black uppercase tracking-widest block">
-                Production Companies & Studios
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight mt-1">
-                Top Production Houses Casting on StageLink
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-2">
+                <Globe className="w-3.5 h-3.5" />
+                <span>Global Production Hubs & Discovered Talent</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+                Top Production Countries Casting on StageLink
               </h2>
-              <p className="text-xs text-neutral-600 mt-1 max-w-xl">
-                Leading film studios, OTT platforms, and commercial production houses discover and cast professional talent every day.
+              <p className="text-xs sm:text-sm text-neutral-600 mt-1 max-w-2xl leading-relaxed">
+                Continuous casting opportunities across the world&apos;s most influential film and entertainment industries, paired with StageLink&apos;s leading discovered talent.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                to="/talent"
+                className="inline-flex items-center px-4 py-2.5 bg-white hover:bg-neutral-100 text-black text-xs font-bold rounded-xl border border-neutral-200 shadow-2xs transition-colors gap-1.5"
+              >
+                <span>Discover All Talent</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
               <Link
                 to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
-                className="inline-flex items-center px-5 py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+                className="inline-flex items-center px-4 py-2.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-1.5"
               >
-                <Briefcase className="w-4 h-4" />
+                <Briefcase className="w-3.5 h-3.5" />
                 <span>Post a Job as Production House</span>
-                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           </div>
+        </PageContainer>
 
-          {/* Production Houses Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PRODUCTION_COMPANIES.map((company, index) => (
+        {/* Track 1: Top Production Countries - Continuous Infinite Marquee */}
+        <div className="relative w-full overflow-hidden my-3">
+          {/* Edge gradient masks */}
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+
+          <div className="flex animate-marquee-continuous py-2 gap-4 px-4">
+            {[...TOP_PRODUCTION_COUNTRIES, ...TOP_PRODUCTION_COUNTRIES].map((country, index) => (
               <div
-                key={index}
-                className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:shadow-card transition-all text-left flex flex-col justify-between"
+                key={`country-${index}`}
+                className="w-72 sm:w-80 shrink-0 bg-white p-5 rounded-2xl border border-neutral-200 shadow-subtle hover:shadow-card hover:border-black transition-all text-left flex flex-col justify-between group cursor-pointer"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-black">
-                      <Building2 className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-3xl leading-none select-none">{country.flag}</span>
+                      <div>
+                        <h3 className="text-base font-bold font-serif text-black group-hover:text-neutral-900 transition-colors">
+                          {country.name}
+                        </h3>
+                        <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider block">
+                          {country.code} • Entertainment Hub
+                        </span>
+                      </div>
                     </div>
-                    <span className="px-2.5 py-1 bg-neutral-100 text-black text-[10px] font-bold rounded-full border border-neutral-200">
-                      {company.badge}
+                    <span className="px-2.5 py-0.5 bg-neutral-100 text-black text-[10px] font-bold rounded-full border border-neutral-200">
+                      {country.badge}
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold font-serif text-black">{company.name}</h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">{company.type} • {company.location}</p>
+                  <p className="text-xs font-medium text-neutral-800 line-clamp-1">
+                    {country.industry}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
+                    <span className="truncate">{country.hub}</span>
+                  </p>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-neutral-100 flex items-center justify-between">
+                <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between">
                   <span className="text-xs font-semibold text-black flex items-center gap-1.5">
                     <Film className="w-3.5 h-3.5 text-black" />
-                    {company.activeCalls}
+                    {country.activeCalls}
                   </span>
-                  {isAuthenticated ? (
-                    <Link
-                      to="/opportunities"
-                      className="text-xs font-bold text-black hover:underline flex items-center gap-1"
-                    >
-                      <span>View Castings</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  ) : (
-                    <Link
-                      to="/login?redirect=/opportunities"
-                      className="text-xs font-bold text-neutral-700 hover:text-black hover:underline flex items-center gap-1"
-                    >
-                      <span>Login to View</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  )}
+                  <Link
+                    to={country.link}
+                    className="text-xs font-bold text-black group-hover:underline flex items-center gap-1"
+                  >
+                    <span>View Roles</span>
+                    <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
                 </div>
               </div>
             ))}
           </div>
+        </div>
 
+        {/* Track 2: "Just Niche" - Top Candidate Profiles - Continuous Infinite Marquee */}
+        <div className="mt-8">
+          <PageContainer>
+            <div className="flex items-center justify-between mb-3 text-left">
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <h3 className="text-sm sm:text-base font-bold font-serif text-black uppercase tracking-wider">
+                  Top Candidate Profiles Casting on StageLink
+                </h3>
+              </div>
+              <span className="text-xs font-medium text-neutral-500 hidden sm:inline">
+                Hover card to pause • Direct profile access
+              </span>
+            </div>
+          </PageContainer>
+
+          <div className="relative w-full overflow-hidden my-2">
+            {/* Edge gradient masks */}
+            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+
+            <div className="flex animate-marquee-continuous-reverse py-2 gap-4 px-4">
+              {[...topCandidateProfiles, ...topCandidateProfiles].map((talent, index) => (
+                <div
+                  key={`candidate-${talent.id}-${index}`}
+                  className="w-72 sm:w-80 shrink-0 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-subtle hover:shadow-card hover:border-black transition-all text-left flex flex-col justify-between group cursor-pointer"
+                >
+                  <div>
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="relative shrink-0">
+                        <img
+                          src={talent.avatar || FALLBACK_TALENT_AVATAR}
+                          alt={talent.fullName}
+                          onError={(e) => {
+                            e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+                          }}
+                          className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl object-cover border border-neutral-200 shadow-2xs"
+                        />
+                        {talent.isFilmStar && (
+                          <span className="absolute -bottom-1 -right-1 bg-amber-400 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                            ★
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm sm:text-base font-bold font-serif text-black truncate group-hover:text-neutral-900 transition-colors">
+                            {talent.fullName}
+                          </h4>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              talent.isFilmStar
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-neutral-100 text-neutral-800 border border-neutral-200'
+                            }`}
+                          >
+                            {talent.isFilmStar ? '⭐ Film Star' : talent.category}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed min-h-[32px]">
+                      {talent.headline}
+                    </p>
+
+                    <div className="mt-2.5 flex items-center gap-1 text-[11px] text-neutral-500">
+                      <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
+                      <span className="truncate">{talent.location}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-neutral-500">
+                      {talent.experienceYears ? `${talent.experienceYears} Exp` : talent.experienceLevel || 'Verified'}
+                    </span>
+                    <Link
+                      to={`/talent/${talent.id}`}
+                      className="text-xs font-bold text-black group-hover:underline flex items-center gap-1"
+                    >
+                      <span>View Profile</span>
+                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <PageContainer>
           {/* Banner for Production Houses to Post Job & Go to Payment */}
           <div className="mt-10 bg-black text-white rounded-3xl p-8 sm:p-10 flex flex-col lg:flex-row items-center justify-between gap-6 text-left">
             <div className="space-y-2 max-w-xl">
@@ -326,7 +554,7 @@ const HomePage = () => {
                 Looking to Cast for Your Next Film, Series, or Commercial?
               </h3>
               <p className="text-xs text-neutral-300 leading-relaxed">
-                Fill in your role breakdown, select your listing tier, and proceed to our secure payment gateway to publish your casting call instantly.
+                Connect with leading performers across India, Europe, and global entertainment hubs. Publish your casting call instantly.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0 w-full lg:w-auto">
@@ -343,13 +571,13 @@ const HomePage = () => {
       </section>
 
       {/* 3. PLATFORM BENEFITS SECTION */}
-      <section className="py-12 border-b border-neutral-200">
+      <section className="py-14 border-b border-slate-200/80 bg-slate-50/50">
         <PageContainer>
-          <div className="text-left mb-8 space-y-1">
-            <span className="text-xs font-bold text-black uppercase tracking-widest block">
+          <div className="text-left mb-10 space-y-1.5">
+            <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest block">
               Why Choose StageLink
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
               A Casting Platform Built Around You
             </h2>
           </div>
@@ -360,16 +588,242 @@ const HomePage = () => {
               return (
                 <div
                   key={i}
-                  className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:shadow-card transition-all duration-200 text-left space-y-3"
+                  className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/85 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 text-left space-y-3.5 specular-top group"
                 >
-                  <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-black">
-                    <Icon className="w-6 h-6" />
+                  <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-neutral-950 shadow-2xs group-hover:scale-105 group-hover:bg-rose-50/60 group-hover:text-brand-pink transition-all">
+                    <Icon className="w-6 h-6 stroke-[1.75]" />
                   </div>
-                  <h3 className="text-sm font-bold text-black font-serif">{b.title}</h3>
-                  <p className="text-xs text-neutral-600 leading-relaxed">{b.desc}</p>
+                  <h3 className="text-sm font-bold text-neutral-950 font-serif">{b.title}</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed font-medium">{b.desc}</p>
                 </div>
               );
             })}
+          </div>
+        </PageContainer>
+      </section>
+
+      {/* 3b. SPOTLIGHT TALENT SHOWCASE: INDIAN FILM STARS, MUSICIANS, DANCERS, GRAPHIC DESIGNERS, COMEDIANS, EUROPE */}
+      <section className="py-12 bg-neutral-50/60 border-b border-neutral-200">
+        <PageContainer>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 text-left gap-4">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-100 text-brand-pink text-xs font-bold mb-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Featured Performer Showcase</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+                Discover Artists Across Creative Disciplines &amp; Countries
+              </h2>
+              <p className="text-xs text-neutral-600 mt-1 max-w-xl">
+                Explore Indian film stars, classical &amp; soundtrack musicians, professional dancers, key art graphic designers, and European performers ready for casting calls.
+              </p>
+            </div>
+
+            <Link
+              to="/talent"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-black hover:text-brand-pink group self-start md:self-end"
+            >
+              <span>Explore All Verified Talent</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* 1. Indian Film Stars */}
+            <Link
+              to="/talent?category=Film Stars&region=india"
+              className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-amber-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-950 flex items-center justify-center shadow-xs">
+                    <Star className="w-6 h-6 fill-amber-950" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-extrabold uppercase tracking-wider">
+                    🇮🇳 Indian Film Stars
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-black group-hover:text-amber-600 transition-colors">
+                  Bollywood &amp; Pan-India Stars
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Leading screen actors and dramatic icons with blockbuster credits across Bollywood, South Indian cinema, and major OTT streaming originals.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-neutral-500">
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Amitabh Bachchan</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Aamir Khan</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Akshay Kumar</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Shahid Kapoor</span>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-black group-hover:text-amber-600">
+                <span>View Film Stars</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* 2. Musicians & Composers */}
+            <Link
+              to="/talent?category=Musicians"
+              className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-purple-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center shadow-xs">
+                    <Music className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-purple-50 text-purple-900 border border-purple-200 text-[10px] font-extrabold uppercase tracking-wider">
+                    🎵 Musicians &amp; Scores
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-black group-hover:text-purple-600 transition-colors">
+                  Soundtracks &amp; Instrumentalists
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Playback vocalists, classical sitar masters, Italian cello soloists, and Berlin electronic sound designers crafting original film scores.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-neutral-500">
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Aarav Mukherjee (🇮🇳)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Matteo Rossi (🇮🇹)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Lukas Weber (🇩🇪)</span>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-black group-hover:text-purple-600">
+                <span>View Musicians</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* 3. Dancers & Choreographers */}
+            <Link
+              to="/talent?category=Dancers"
+              className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-rose-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-pink-600 text-white flex items-center justify-center shadow-xs">
+                    <Sparkles className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-900 border border-rose-200 text-[10px] font-extrabold uppercase tracking-wider">
+                    💃 Dancers &amp; Movement
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-black group-hover:text-rose-600 transition-colors">
+                  Kathak, Bollywood &amp; Ballet
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Classical Kathak and Bharatanatyam soloists, Bollywood choreographers, Paris Opera-trained ballet dancers, and Spanish Flamenco performers.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-neutral-500">
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Ananya Iyer (🇮🇳)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Camille Laurent (🇫🇷)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Elena Gómez (🇪🇸)</span>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-black group-hover:text-rose-600">
+                <span>View Dancers</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* 4. Graphic Designers */}
+            <Link
+              to="/talent?category=Graphic Designers"
+              className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-sky-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-xs">
+                    <Palette className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-sky-50 text-sky-900 border border-sky-200 text-[10px] font-extrabold uppercase tracking-wider">
+                    🎨 Graphic Designers
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-black group-hover:text-sky-600 transition-colors">
+                  Key Art &amp; Movie Posters
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Film poster compositors, theatrical key art directors, typography artists, and 3D opening title sequence motion designers.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-neutral-500">
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Arjun Varma (🇮🇳)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Sofia Lindqvist (🇸🇪)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Julian Moreau (🇫🇷)</span>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-black group-hover:text-sky-600">
+                <span>View Graphic Designers</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* 5. Comedians */}
+            <Link
+              to="/talent?category=Comedians"
+              className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-emerald-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-xs">
+                    <Smile className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-900 border border-emerald-200 text-[10px] font-extrabold uppercase tracking-wider">
+                    🎭 Comedians &amp; Satire
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-black group-hover:text-emerald-600 transition-colors">
+                  Stand-Up &amp; Character Comedy
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Touring stand-up comedians, Netflix comedy special performers, British satire artists, and physical comedy specialists for feature comedies.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-neutral-500">
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Kunal Mathur (🇮🇳)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Oliver Wright (🇬🇧)</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">Manon Dubois (🇫🇷)</span>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-black group-hover:text-emerald-600">
+                <span>View Comedians</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+
+            {/* 6. European Countries */}
+            <Link
+              to="/talent?region=europe"
+              className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-blue-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center shadow-xs">
+                    <Globe className="w-6 h-6" />
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-900 border border-blue-200 text-[10px] font-extrabold uppercase tracking-wider">
+                    🇪🇺 European Countries
+                  </span>
+                </div>
+                <h3 className="text-base font-bold font-serif text-black group-hover:text-blue-600 transition-colors">
+                  International European Roster
+                </h3>
+                <p className="text-xs text-neutral-600 leading-relaxed">
+                  Verified talent from across the United Kingdom, France, Germany, Italy, Spain, Ireland, and Sweden for cross-border and co-productions.
+                </p>
+                <div className="pt-2 flex flex-wrap gap-1.5 text-[10px] font-medium text-neutral-500">
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">🇬🇧 UK</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">🇫🇷 France</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">🇩🇪 Germany</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">🇮🇹 Italy</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">🇪🇸 Spain</span>
+                  <span className="px-2 py-0.5 bg-neutral-100 rounded-md">🇸🇪 Sweden</span>
+                </div>
+              </div>
+              <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs font-bold text-black group-hover:text-blue-600">
+                <span>View European Talent</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
           </div>
         </PageContainer>
       </section>
@@ -493,52 +947,52 @@ const HomePage = () => {
       )}
 
       {/* 6. HOW IT WORKS (4 STEPS) */}
-      <section className="bg-neutral-50/50 py-12 border-b border-neutral-200">
+      <section className="bg-slate-50/70 py-14 border-b border-slate-200/80">
         <PageContainer>
-          <div className="text-left mb-10 space-y-1">
-            <span className="text-xs font-bold text-black uppercase tracking-widest block">
+          <div className="text-left mb-10 space-y-1.5">
+            <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest block">
               The Journey
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
               How It Works
             </h2>
-            <p className="text-xs text-neutral-600">
+            <p className="text-xs sm:text-sm text-slate-500 font-medium">
               A simple, four-step process to get noticed and start your professional acting journey.
             </p>
           </div>
 
-          {/* Connected Steps Row */}
+          {/* Connected Steps Row with 3D Depth */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {steps.map((step) => {
               const Icon = step.icon;
               return (
                 <div
                   key={step.num}
-                  className="bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle flex flex-col justify-between relative text-left group hover:border-black/30 transition-colors"
+                  className="bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/85 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative text-left group specular-top"
                 >
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-black">
-                        <Icon className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-center text-neutral-950 shadow-2xs group-hover:scale-105 group-hover:bg-rose-50/60 group-hover:text-brand-pink transition-all">
+                        <Icon className="w-5 h-5 stroke-[1.75]" />
                       </div>
-                      <span className="text-2xl font-bold font-serif text-neutral-300">
+                      <span className="text-2xl font-bold font-serif text-slate-300 group-hover:text-neutral-950 transition-colors">
                         {step.num}
                       </span>
                     </div>
 
-                    <h3 className="text-sm font-bold text-black font-sans mb-1.5">
+                    <h3 className="text-sm font-bold text-neutral-950 font-serif mb-1.5">
                       {step.title}
                     </h3>
-                    <p className="text-xs text-neutral-600 leading-relaxed">
+                    <p className="text-xs text-slate-500 leading-relaxed font-medium">
                       {step.desc}
                     </p>
                     {step.num === '01' && (
                       <Link
                         to={isAuthenticated ? '/candidate/profile/setup' : '/signup?redirect=/candidate/profile/setup'}
-                        className="inline-flex items-center gap-1 text-[11px] font-bold text-black hover:underline mt-3"
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold text-brand-pink hover:underline mt-4 group"
                       >
                         <span>Start Profile Setup</span>
-                        <ArrowRight className="w-3 h-3" />
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </Link>
                     )}
                   </div>
@@ -550,22 +1004,25 @@ const HomePage = () => {
       </section>
 
       {/* 7. CALL TO ACTION BOTTOM BANNER */}
-      <section className="py-12">
+      <section className="py-16">
         <PageContainer>
-          <div className="bg-black text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="bg-neutral-950 text-white rounded-3xl p-8 sm:p-12 relative overflow-hidden shadow-3d-floating border border-neutral-900 flex flex-col md:flex-row items-center justify-between gap-8 specular-top">
+            {/* Ambient Rose Backlight */}
+            <div className="absolute top-0 right-1/4 w-80 h-80 bg-brand-pink/15 rounded-full blur-3xl pointer-events-none" />
+
             <div className="relative z-10 max-w-xl space-y-3 text-left">
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif tracking-tight leading-snug">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif tracking-tight leading-snug">
                 Ready to Show Your Talent to the World?
               </h2>
-              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-medium">
                 Create your profile today and take the first step towards your next casting breakthrough.
               </p>
             </div>
 
-            <div className="relative z-10 flex flex-wrap items-center gap-4 shrink-0">
+            <div className="relative z-10 flex flex-wrap items-center gap-3.5 shrink-0">
               <Link
                 to={isAuthenticated ? '/candidate/profile/setup' : '/signup?redirect=/candidate/profile/setup'}
-                className="inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-neutral-100 text-black text-xs font-bold rounded-xl shadow-xs transition-all duration-200 gap-2"
+                className="inline-flex items-center justify-center px-6 py-3.5 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Create Your Profile</span>
@@ -573,7 +1030,7 @@ const HomePage = () => {
               </Link>
               <Link
                 to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
-                className="inline-flex items-center justify-center px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white border border-neutral-700 text-xs font-bold rounded-xl transition-all duration-200 gap-2"
+                className="inline-flex items-center justify-center px-6 py-3.5 bg-white/10 hover:bg-white/15 text-white border border-white/20 text-xs font-bold rounded-xl backdrop-blur-md active:translate-y-0.5 transition-all gap-2"
               >
                 <Briefcase className="w-4 h-4" />
                 <span>Post a Job</span>

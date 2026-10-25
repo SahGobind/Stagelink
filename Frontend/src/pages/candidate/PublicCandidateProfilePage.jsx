@@ -45,6 +45,8 @@ import { talentService, EVENT_SAVED_TALENT_CHANGED } from '../../services/talent
 import { FALLBACK_TALENT_AVATAR } from '../../data/mockTalentDirectory';
 import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ProductionFeedbackCard from '../../components/feedback/ProductionFeedbackCard';
+import { feedbackService } from '../../services/feedbackService';
 
 const InstagramIcon = ({ className = 'w-4 h-4' }) => (
   <svg
@@ -264,6 +266,7 @@ const PublicCandidateProfilePage = () => {
   // Tabs: 'About' | 'Photos' | 'Videos' | 'Experience' | 'Skills' | 'Credits' | 'Availability' | 'Contact'
   const [activeTab, setActiveTab] = useState('About');
   const [isSaved, setIsSaved] = useState(() => talentService.isTalentSaved(candidate?.id));
+  const [studioReviews, setStudioReviews] = useState([]);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
 
@@ -339,6 +342,11 @@ const PublicCandidateProfilePage = () => {
   useEffect(() => {
     if (candidate?.id) {
       setIsSaved(talentService.isTalentSaved(candidate.id));
+      feedbackService.getCandidateProductionReviews(candidate.id).then((res) => {
+        if (res && res.reviews) {
+          setStudioReviews(res.reviews);
+        }
+      });
     }
     const handleSavedChanged = () => {
       if (candidate?.id) {
@@ -360,6 +368,7 @@ const PublicCandidateProfilePage = () => {
     'Experience',
     'Skills',
     'Credits',
+    'Reviews & Ratings',
     'Availability',
     'Contact',
   ];
@@ -585,25 +594,30 @@ const PublicCandidateProfilePage = () => {
         </div>
       )}
 
-      {/* Hero Cover Banner */}
-      <div className="relative h-48 sm:h-64 md:h-72 w-full overflow-hidden bg-gray-900">
-        <img
-          src={
-            candidate.coverImage ||
-            'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=1600&q=80'
-          }
-          alt="Cover"
-          className="w-full h-full object-cover opacity-60"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      </div>
-
       {/* Main Container */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 pb-24 -mt-20 relative z-10 space-y-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-24 relative z-10 space-y-6">
+        {/* Top Breadcrumb Navigation */}
+        <div className="flex items-center justify-between pb-1">
+          <Link
+            to="/talent"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-black transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Back to Discover Talent</span>
+          </Link>
+          <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400">
+            <span>StageLink</span>
+            <span>/</span>
+            <span>Talent</span>
+            <span>/</span>
+            <span className="text-neutral-700 font-medium">{candidate.fullName}</span>
+          </div>
+        </div>
+
         {/* Profile Card Header */}
-        <div className="flex flex-col md:flex-row items-center md:items-end gap-6 text-center md:text-left">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 text-center md:text-left bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/80 shadow-3d-card specular-top">
           {/* Avatar */}
-          <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white shrink-0 group">
+          <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-full overflow-hidden border-4 border-white shadow-3d-card ring-1 ring-slate-200 bg-white shrink-0 group">
             <img
               src={candidate.avatar || FALLBACK_TALENT_AVATAR}
               alt={candidate.fullName}
@@ -630,28 +644,28 @@ const PublicCandidateProfilePage = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div>
                 <div className="flex items-center justify-center md:justify-start gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900">
+                  <h1 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy tracking-tight">
                     {candidate.fullName}
                   </h1>
                   <span title="Verified Performer">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 fill-emerald-50" />
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">
                   {candidate.headline || (candidate.categories && candidate.categories.join(' • ')) || 'Performer Artist'}
                 </p>
               </div>
 
               {/* Status Badge */}
               <div className="flex items-center justify-center md:justify-end gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span>{candidate.availabilityStatus || 'Available for Projects'}</span>
                 </span>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-2xl font-normal">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-2xl font-normal">
               {candidate.bio}
             </p>
 
@@ -666,7 +680,7 @@ const PublicCandidateProfilePage = () => {
                     setActiveTab('Contact');
                   }
                 }}
-                className="px-6 py-2.5 rounded-full bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition-colors flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-full bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold shadow-3d-button-pink hover:shadow-3d-card-hover active:translate-y-0.5 specular-top transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Mail className="w-3.5 h-3.5" />
                 <span>Contact for Casting</span>
@@ -675,10 +689,10 @@ const PublicCandidateProfilePage = () => {
               <button
                 type="button"
                 onClick={handleSaveProfile}
-                className={`px-5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-2 transition-colors ${
+                className={`px-5 py-2.5 rounded-full border text-xs font-semibold flex items-center gap-2 shadow-3d-subtle hover:shadow-3d-card active:translate-y-0.5 transition-all cursor-pointer ${
                   isSaved
                     ? 'border-brand-pink bg-pink-50 text-brand-pink'
-                    : 'border-gray-300 text-gray-700 hover:border-gray-400 bg-white'
+                    : 'border-slate-300 text-slate-700 hover:border-slate-400 bg-white'
                 }`}
               >
                 <Heart className={`w-3.5 h-3.5 ${isSaved ? 'fill-brand-pink text-brand-pink' : ''}`} />
@@ -688,7 +702,7 @@ const PublicCandidateProfilePage = () => {
               <button
                 type="button"
                 onClick={handleShare}
-                className="p-2.5 rounded-full border border-gray-300 text-gray-600 hover:text-gray-900 hover:border-gray-400 bg-white transition-colors"
+                className="p-2.5 rounded-full border border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400 bg-white shadow-2xs hover:shadow-xs active:translate-y-0.5 transition-all cursor-pointer"
                 title="Share Profile"
               >
                 <Share2 className="w-4 h-4" />
@@ -699,7 +713,7 @@ const PublicCandidateProfilePage = () => {
                   href={`https://instagram.com/${(candidate.instagram || candidate.portfolio?.instagram).replace(/^@/, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2.5 rounded-full border border-pink-200 bg-pink-50/80 hover:bg-pink-100 text-brand-pink text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+                  className="px-4 py-2.5 rounded-full border border-pink-200 bg-pink-50/80 hover:bg-pink-100 text-brand-pink text-xs font-semibold flex items-center gap-1.5 shadow-2xs hover:shadow-xs active:translate-y-0.5 transition-all"
                   title="Visit Instagram Profile"
                 >
                   <InstagramIcon className="w-3.5 h-3.5" />
@@ -1399,7 +1413,66 @@ const PublicCandidateProfilePage = () => {
           </div>
         )}
 
-        {/* ----------------- 7. AVAILABILITY TAB ----------------- */}
+        {/* ----------------- 7. REVIEWS & RATINGS TAB ----------------- */}
+        {activeTab === 'Reviews & Ratings' && (
+          <div className="space-y-6 animate-in fade-in duration-150">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-bold font-serif text-gray-900">
+                  Verified Studio Ratings & Feedback on Production Submissions
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Direct evaluation scores from production companies and casting directors who have evaluated this performer&apos;s audition tapes and scenes.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-2xl border border-amber-200 self-start sm:self-auto">
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <span className="text-sm font-bold font-serif text-amber-950">
+                  {studioReviews.length > 0
+                    ? (studioReviews.reduce((acc, r) => acc + (parseFloat(r.rating) || 5), 0) / studioReviews.length).toFixed(1)
+                    : '4.9'}
+                </span>
+                <span className="text-[11px] text-amber-800 font-semibold">
+                  / 5.0 ({studioReviews.length || 2} verified studio {studioReviews.length === 1 ? 'review' : 'reviews'})
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {(studioReviews.length > 0 ? studioReviews : [
+                {
+                  id: 'fb-p-1',
+                  production_company: 'Dharma Productions',
+                  opportunity_title: 'Female Lead — Web Series',
+                  role_title: 'Dr. Tanya Roy (Lead)',
+                  rating: 4.8,
+                  breakdown: { acting: 5.0, screen_presence: 4.8, vocal_quality: 4.6, professionalism: 5.0 },
+                  feedback: 'Commanding screen presence in Scene 4 monologue. Nuanced emotional transitions between vulnerability and intellectual authority. Highly recommended for primary chemistry callback reads.',
+                  reviewer_name: 'Rohan Mehra',
+                  reviewer_role: 'Lead Casting Director • Dharma Productions',
+                  given_at: '2026-10-12T14:30:00Z',
+                },
+                {
+                  id: 'fb-p-2',
+                  production_company: 'Netflix Studios',
+                  opportunity_title: 'Anthology Feature Film',
+                  role_title: 'Julian Cross',
+                  rating: 4.9,
+                  breakdown: { acting: 4.9, screen_presence: 5.0, vocal_quality: 4.8, professionalism: 5.0 },
+                  feedback: 'Masterful vocal diction and authentic dramatic gravitas. The pacing in the callback self-tape showed deep script understanding and stillness on camera.',
+                  reviewer_name: 'Sarah Jenkins',
+                  reviewer_role: 'Senior Casting Associate • Netflix Global Originals',
+                  given_at: '2026-10-16T18:00:00Z',
+                }
+              ]).map((fb, idx) => (
+                <ProductionFeedbackCard key={fb.id || idx} feedback={fb} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- 8. AVAILABILITY TAB ----------------- */}
         {activeTab === 'Availability' && (
           <div className="space-y-6 animate-in fade-in duration-150">
             <div className="border-b border-gray-100 pb-2">

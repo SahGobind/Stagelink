@@ -107,16 +107,16 @@ const MyApplicationsPage = () => {
               key={tab.id}
               type="button"
               onClick={() => setSelectedStatus(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                 selectedStatus === tab.id
-                  ? 'bg-brand-pink text-white shadow-xs'
-                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  ? 'bg-brand-pink text-white shadow-3d-button-pink'
+                  : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                  selectedStatus === tab.id ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                  selectedStatus === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
                 }`}
               >
                 {count}

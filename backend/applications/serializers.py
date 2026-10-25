@@ -25,3 +25,16 @@ class AuditionInviteSerializer(serializers.Serializer):
     notes = serializers.CharField(required=False, allow_blank=True)
     submission_deadline = serializers.CharField(required=False, allow_blank=True)
     private_notes = serializers.CharField(required=False, allow_blank=True)
+
+class ProductionFeedbackSerializer(serializers.Serializer):
+    rating = serializers.FloatField(min_value=1.0, max_value=5.0)
+    feedback = serializers.CharField(min_length=3)
+    breakdown = serializers.DictField(required=False, default=dict)
+    reviewer_name = serializers.CharField(required=False, default='Casting Director')
+    reviewer_role = serializers.CharField(required=False, default='Lead Studio Reviewer')
+    candidate_id = serializers.CharField(required=False, allow_blank=True, default='')
+    candidate_name = serializers.CharField(required=False, allow_blank=True, default='')
+    production_company = serializers.CharField(required=False, allow_blank=True, default='')
+    opportunity_title = serializers.CharField(required=False, allow_blank=True, default='')
+    role_title = serializers.CharField(required=False, allow_blank=True, default='')
+

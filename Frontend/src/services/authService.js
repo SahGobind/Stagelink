@@ -14,6 +14,19 @@ const REGISTERED_ACCOUNTS_KEY = 'starcast_registered_accounts';
 
 export const SEEDED_ACCOUNTS = [
   {
+    id: 'superadmin-1',
+    fullName: 'Alexander Vance (Super Admin)',
+    companyName: 'StageLink Global Governance',
+    email: 'superadmin@stagelink.com',
+    phoneNumber: '+1 (555) 019-2834',
+    dateOfBirth: '1985-04-12',
+    country: 'United States',
+    location: 'New York, USA',
+    role: 'super_admin',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
     id: 'cand-aanya',
     fullName: 'Aanya Sharma',
     email: 'aanya@stagelink.com',
@@ -88,13 +101,77 @@ export const SEEDED_ACCOUNTS = [
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80',
     createdAt: '2026-08-01T00:00:00.000Z',
   },
+  {
+    id: 'user-standard',
+    fullName: 'Jordan Lee (Standard User)',
+    email: 'user@stagelink.com',
+    phoneNumber: '+91 98123 45678',
+    dateOfBirth: '1999-11-20',
+    location: 'Bangalore, India',
+    role: 'user',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+    createdAt: '2026-09-01T00:00:00.000Z',
+  },
 ];
 
 export const DEMO_USERS = {
-  candidate: SEEDED_ACCOUNTS[0],
-  admin: SEEDED_ACCOUNTS[3],
-  recruiter: SEEDED_ACCOUNTS[4],
-  operations: SEEDED_ACCOUNTS[5],
+  super_admin: SEEDED_ACCOUNTS[0],
+  candidate: SEEDED_ACCOUNTS[1],
+  admin: SEEDED_ACCOUNTS[4],
+  recruiter: SEEDED_ACCOUNTS[5],
+  operations: SEEDED_ACCOUNTS[6],
+  user: SEEDED_ACCOUNTS[7],
+};
+
+export const DEFAULT_ROLE_PERMISSIONS = {
+  super_admin: [
+    'opportunity:view', 'opportunity:create', 'opportunity:update', 'opportunity:delete', 'opportunity:publish', 'opportunity:feature',
+    'application:view_all', 'application:create', 'application:update_status', 'application:withdraw', 'application:schedule_audition',
+    'profile:view', 'profile:update_any', 'profile:delete_any', 'profile:verify',
+    'support:view_all', 'support:manage', 'support:respond',
+    'role:view', 'role:create', 'role:update', 'role:delete', 'role:assign',
+    'audit:view', 'audit:export',
+    'admin:access', 'superadmin:access',
+  ],
+  admin: [
+    'opportunity:view', 'opportunity:create', 'opportunity:update', 'opportunity:delete', 'opportunity:publish',
+    'application:view_all', 'application:update_status', 'application:schedule_audition',
+    'profile:view', 'profile:verify',
+    'support:view_all', 'support:manage', 'support:respond',
+    'role:view',
+    'audit:view',
+    'admin:access',
+  ],
+  operations: [
+    'opportunity:view',
+    'application:view_all',
+    'profile:view', 'profile:verify',
+    'support:view_all', 'support:manage', 'support:respond',
+    'admin:access',
+  ],
+  recruiter: [
+    'opportunity:view', 'opportunity:create', 'opportunity:update', 'opportunity:delete', 'opportunity:publish',
+    'application:view_all', 'application:update_status', 'application:schedule_audition',
+    'profile:view',
+    'admin:access',
+  ],
+  candidate: [
+    'opportunity:view',
+    'application:view_own', 'application:create', 'application:withdraw',
+    'profile:view_own', 'profile:update_own',
+    'support:create', 'support:view_own',
+  ],
+  talent: [
+    'opportunity:view',
+    'application:view_own', 'application:create', 'application:withdraw',
+    'profile:view_own', 'profile:update_own',
+    'support:create', 'support:view_own',
+  ],
+  user: [
+    'opportunity:view',
+    'profile:view_own', 'profile:update_own',
+    'support:create', 'support:view_own',
+  ],
 };
 
 const getStoredAccounts = () => {
@@ -190,41 +267,27 @@ export const authService = {
     // 1. Authenticate against the persistent Django REST Framework backend
     let res;
     let data;
+    let backendOffline = false;
+
     try {
       res = await apiRequest('/api/users/login/', {
         method: 'POST',
         body: JSON.stringify({ email: normalizedEmail, password: password || 'StageLink2026!' }),
-        timeout: 12000,
+        timeout: 10000,
       });
-      data = await res.json().catch(() => ({}));
+
+      // 502 / 503 / 504 from Vite proxy or gateway indicates backend is unreachable
+      if (res && res.status >= 500) {
+        backendOffline = true;
+      } else {
+        data = await res.json().catch(() => ({}));
+      }
     } catch (networkErr) {
       console.warn('Network error connecting to backend:', networkErr);
-      // If backend is offline or timing out, check local accounts registry for quick login
-      const accounts = getStoredAccounts();
-      const localMatch = accounts.find(
-        (a) => a.email?.toLowerCase() === normalizedEmail || a.phoneNumber === normalizedEmail
-      );
-      if (localMatch) {
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(localMatch));
-        localStorage.setItem('starcast_jwt_token', localMatch.token || 'stg-token-local');
-        return localMatch;
-      }
-
-      // Safe dev fallback session so the user is never blocked by transient connection drops
-      const isRecruiter = normalizedEmail.includes('buss') || normalizedEmail.includes('recruiter') || normalizedEmail.includes('studio') || normalizedEmail.includes('prod');
-      const fallbackUser = {
-        id: 'rec-' + Math.random().toString(36).slice(2, 10),
-        email: normalizedEmail,
-        fullName: normalizedEmail.split('@')[0] || 'Studio Recruiter',
-        companyName: 'StageLink Studio',
-        role: isRecruiter ? 'recruiter' : 'candidate',
-        is_verified: true,
-      };
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(fallbackUser));
-      localStorage.setItem('starcast_jwt_token', 'stg-token-fallback-' + Date.now());
-      return fallbackUser;
+      backendOffline = true;
     }
 
+    // A. Backend authenticated successfully (200 OK)
     if (res && res.ok && data && data.user) {
       const authUser = {
         ...data.user,
@@ -235,15 +298,95 @@ export const authService = {
       if (data.token) {
         localStorage.setItem('starcast_jwt_token', data.token);
       }
+
+      // Also ensure updated in local registered cache
+      const accounts = getStoredAccounts();
+      const existingIdx = accounts.findIndex((a) => a.id === authUser.id || a.email?.toLowerCase() === normalizedEmail);
+      if (existingIdx !== -1) {
+        accounts[existingIdx] = { ...accounts[existingIdx], ...authUser, password: password || accounts[existingIdx].password };
+      } else {
+        accounts.push({ ...authUser, password: password || '' });
+      }
+      saveStoredAccounts(accounts);
+
       return authUser;
     }
 
-    if (res && !res.ok) {
-      const errorMsg = data?.error || (data?.details ? JSON.stringify(data.details) : 'Invalid email or password.');
+    // B. Check local registered accounts registry (handles offline signups or unverified MongoDB sync)
+    const accounts = getStoredAccounts();
+    const localMatch = accounts.find(
+      (a) => a.email?.toLowerCase() === normalizedEmail || a.phoneNumber === normalizedEmail
+    );
+
+    if (localMatch) {
+      // If a local account has a stored password, verify it matches
+      if (localMatch.password && password && localMatch.password !== password) {
+        throw new Error('Invalid email or password. Please verify your credentials.');
+      }
+
+      // If local account had no password stored yet, store the password entered
+      if (!localMatch.password && password) {
+        localMatch.password = password;
+        const idx = accounts.findIndex((a) => a.id === localMatch.id);
+        if (idx !== -1) {
+          accounts[idx] = localMatch;
+          saveStoredAccounts(accounts);
+        }
+      }
+
+      // Set active session
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(localMatch));
+      localStorage.setItem('starcast_jwt_token', localMatch.token || `stg-token-${localMatch.role || 'candidate'}-${localMatch.id}`);
+
+      // If backend is alive, attempt to sync this account to MongoDB Atlas in the background
+      if (!backendOffline) {
+        const syncEndpoint = localMatch.role === 'recruiter' ? '/api/users/recruiter/register/' : '/api/users/register/';
+        const syncPayload = localMatch.role === 'recruiter'
+          ? {
+              fullName: localMatch.fullName || 'Studio Recruiter',
+              companyName: localMatch.companyName || 'StageLink Studio',
+              email: normalizedEmail,
+              password: password || 'StageLink2026!',
+              confirmPassword: password || 'StageLink2026!',
+              agreeToTerms: true,
+            }
+          : {
+              fullName: localMatch.fullName || 'StageLink Member',
+              full_name: localMatch.fullName || 'StageLink Member',
+              email: normalizedEmail,
+              password: password || 'StageLink2026!',
+              role: localMatch.role || 'candidate',
+            };
+        apiRequest(syncEndpoint, { method: 'POST', body: JSON.stringify(syncPayload) }).catch(() => {});
+      }
+
+      return localMatch;
+    }
+
+    // C. If backend returned explicit error (e.g. incorrect password for existing MongoDB user)
+    if (res && !res.ok && !backendOffline) {
+      const errorMsg = data?.error || (data?.details ? (typeof data.details === 'object' ? Object.values(data.details).flat().join(' ') : String(data.details)) : 'Invalid email or password.');
       throw new Error(errorMsg);
     }
 
-    throw new Error('Login failed. Please verify your credentials.');
+    // D. Safe dev fallback session if backend is completely offline and not in registry
+    if (backendOffline) {
+      const isRecruiter = normalizedEmail.includes('buss') || normalizedEmail.includes('recruiter') || normalizedEmail.includes('studio') || normalizedEmail.includes('prod');
+      const fallbackUser = {
+        id: (isRecruiter ? 'rec-' : 'cand-') + Math.random().toString(36).slice(2, 10),
+        email: normalizedEmail,
+        fullName: normalizedEmail.split('@')[0] || 'StageLink User',
+        companyName: isRecruiter ? 'StageLink Studio' : undefined,
+        role: isRecruiter ? 'recruiter' : 'candidate',
+        is_verified: true,
+        password: password || '',
+      };
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(fallbackUser));
+      localStorage.setItem('starcast_jwt_token', 'stg-token-fallback-' + Date.now());
+      return fallbackUser;
+    }
+
+    throw new Error('Invalid email or password. Please verify your credentials.');
   },
 
   /**
@@ -303,7 +446,7 @@ export const authService = {
         }
         const accounts = getStoredAccounts();
         if (!accounts.some((a) => a.id === authUser.id)) {
-          accounts.push(authUser);
+          accounts.push({ ...authUser, password: userData.password || '' });
           saveStoredAccounts(accounts);
         }
         return authUser;
@@ -348,6 +491,7 @@ export const authService = {
       token: `stg-token-${role}-${generatedId}`,
       isVerified: true,
       status: 'active',
+      password: userData.password || '',
     };
 
     if (autoLogin) {
@@ -506,5 +650,157 @@ export const authService = {
       return null;
     }
   },
+
+  /**
+   * Fetches authoritative permissions for the authenticated session from the backend.
+   * Endpoint: GET /api/users/permissions/
+   */
+  fetchPermissions: async () => {
+    try {
+      const res = await apiRequest('/api/users/permissions/', { method: 'GET' });
+      if (res && res.ok) {
+        const data = await res.json();
+        return data; // { role, permissions: [...] }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch backend permissions:', err);
+    }
+
+    // Fallback based on current user role
+    const current = authService.getCurrentUser();
+    const currentRole = current?.role || 'user';
+    const permissions = DEFAULT_ROLE_PERMISSIONS[currentRole] || DEFAULT_ROLE_PERMISSIONS.user;
+    return {
+      role: currentRole,
+      permissions,
+      fallback: true,
+    };
+  },
+
+  /**
+   * Fetches all registered roles and their configured permissions from the backend.
+   * Endpoint: GET /api/users/roles/
+   */
+  fetchRoles: async () => {
+    try {
+      const res = await apiRequest('/api/users/roles/', { method: 'GET' });
+      if (res && res.ok) {
+        const data = await res.json();
+        return data.roles || [];
+      }
+    } catch (err) {
+      console.warn('Failed to fetch backend roles list:', err);
+    }
+
+    // Fallback array of roles with default permissions
+    return Object.entries(DEFAULT_ROLE_PERMISSIONS).map(([role, perms]) => ({
+      name: role,
+      permissions: perms,
+      description: `${role.replace('_', ' ').toUpperCase()} role`,
+    }));
+  },
+
+  /**
+   * Updates configurable granular permissions for a role (Super Admin only).
+   * Endpoint: PUT /api/users/roles/<role_name>/
+   */
+  updateRolePermissions: async (roleName, permissions) => {
+    const res = await apiRequest(`/api/users/roles/${encodeURIComponent(roleName)}/`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to update permissions for role ${roleName}`);
+    }
+    return await res.json();
+  },
+
+  /**
+   * Reassigns a user's role following the security hierarchy (Super Admin / Admin).
+   * Endpoint: POST /api/users/manage-role/
+   */
+  manageUserRole: async (userId, newRole) => {
+    const res = await apiRequest('/api/users/manage-role/', {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId, new_role: newRole }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to assign role ${newRole}`);
+    }
+    return await res.json();
+  },
+
+  /**
+   * Fetches immutable security audit logs with optional filters and pagination.
+   * Endpoint: GET /api/users/audit-logs/?action=...&status=...&actor_id=...&page=...
+   */
+  fetchAuditLogs: async (params = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.action) searchParams.set('action', params.action);
+    if (params.status) searchParams.set('status', params.status);
+    if (params.actor_id) searchParams.set('actor_id', params.actor_id);
+    if (params.page) searchParams.set('page', params.page);
+    if (params.page_size) searchParams.set('page_size', params.page_size);
+
+    const queryStr = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    const res = await apiRequest(`/api/users/audit-logs/${queryStr}`, { method: 'GET' });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch security audit logs');
+    }
+    return await res.json();
+  },
+
+  /**
+   * Evaluates if a user possesses a specific granular permission.
+   * Denies access by default if permission is not found.
+   */
+  hasPermission: (user, permission, userPermissions = null) => {
+    if (!permission) return true;
+    if (!user) return false;
+
+    // If explicit permissions list passed from AuthContext, check it directly
+    if (Array.isArray(userPermissions) && userPermissions.length > 0) {
+      return userPermissions.includes(permission);
+    }
+
+    // Role-based evaluation fallback
+    const role = user.role || 'user';
+    const perms = DEFAULT_ROLE_PERMISSIONS[role] || [];
+    return perms.includes(permission);
+  },
+
+  /**
+   * Evaluates if a user has ANY of the specified permissions.
+   */
+  hasAnyPermission: (user, permissions = [], userPermissions = null) => {
+    if (!permissions || permissions.length === 0) return true;
+    return permissions.some((p) => authService.hasPermission(user, p, userPermissions));
+  },
+
+  /**
+   * Evaluates if a user has ALL of the specified permissions.
+   */
+  hasAllPermissions: (user, permissions = [], userPermissions = null) => {
+    if (!permissions || permissions.length === 0) return true;
+    return permissions.every((p) => authService.hasPermission(user, p, userPermissions));
+  },
+
+  /**
+   * Role hierarchy check: returns true if user is Super Admin
+   */
+  isSuperAdmin: (user) => {
+    return user?.role === 'super_admin';
+  },
+
+  /**
+   * Role hierarchy check: returns true if user is Admin or Super Admin
+   */
+  isAdmin: (user) => {
+    return user?.role === 'admin' || user?.role === 'super_admin';
+  },
 };
+
 

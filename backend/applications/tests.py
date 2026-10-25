@@ -11,21 +11,26 @@ from rest_framework import status
 from unittest.mock import patch
 
 from starcast.test_utils import MockCollection
-from starcast.seeder import INITIAL_APPLICATIONS
+from starcast.seeder import INITIAL_APPLICATIONS, INITIAL_USERS
 
 
 class ApplicationsAPITests(SimpleTestCase):
     def setUp(self):
         self.client = APIClient()
         self.mock_apps = MockCollection("applications", initial_docs=INITIAL_APPLICATIONS)
+        self.mock_users = MockCollection("users", initial_docs=INITIAL_USERS)
         self.patch_apps = patch('applications.repository.get_apps_col', return_value=self.mock_apps)
+        self.patch_users = patch('users.repository.get_users_col', return_value=self.mock_users)
         self.patch_apps.start()
+        self.patch_users.start()
 
     def tearDown(self):
         self.patch_apps.stop()
+        self.patch_users.stop()
 
     def test_application_submission(self):
         """Verifies submitting a new application into MongoDB."""
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-rohit-test1234')
         payload = {
             "opportunity_id": "opp-2",
             "role_id": "role-3",
@@ -41,6 +46,7 @@ class ApplicationsAPITests(SimpleTestCase):
 
     def test_duplicate_application_prevention(self):
         """Verifies candidate cannot submit multiple active applications to the same opportunity."""
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-1-test1234')
         # cand-1 already applied to opp-1 in initial data
         payload = {
             "opportunity_id": "opp-1",
@@ -63,7 +69,8 @@ class ApplicationsAPITests(SimpleTestCase):
 
     def test_status_update_and_withdrawal(self):
         """Verifies recruiter status update and candidate withdrawal."""
-        # Recruiter shortlists app-102
+        # Admin / Recruiter shortlists app-102
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-admin-admin-1-test1234')
         update_res = self.client.patch('/api/applications/app-102/status/', {
             "status": "shortlisted",
             "note": "Great screen presence in reel."
@@ -72,6 +79,7 @@ class ApplicationsAPITests(SimpleTestCase):
         self.assertEqual(update_res.data["application"]["status"], "shortlisted")
 
         # Candidate withdraws
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-2-test1234')
         withdraw_res = self.client.post('/api/applications/app-102/withdraw/')
         self.assertEqual(withdraw_res.status_code, status.HTTP_200_OK)
         self.assertEqual(withdraw_res.data["application"]["status"], "withdrawn")

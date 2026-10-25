@@ -38,10 +38,10 @@ const Input = forwardRef(({
           required={required}
           aria-invalid={!!error}
           aria-describedby={error ? `${generatedId}-error` : helperText ? `${generatedId}-helper` : undefined}
-          className={`w-full ${Icon ? 'pl-10' : 'px-4'} ${rightElement ? 'pr-11' : ''} py-2.5 bg-white border rounded-xl text-sm text-brand-navy placeholder-gray-400 transition-all duration-150 focus-visible:outline-none focus:ring-2 ${
+          className={`w-full ${Icon ? 'pl-10' : 'px-4'} ${rightElement ? 'pr-11' : ''} py-2.5 bg-white border rounded-xl text-sm text-brand-navy placeholder-gray-400 shadow-2xs hover:shadow-subtle transition-all duration-200 focus-visible:outline-none focus:ring-4 ${
             error
-              ? 'border-brand-error focus:border-brand-error focus:ring-brand-error/20 bg-red-50/10'
-              : 'border-brand-border hover:border-gray-400 focus:border-black focus:ring-black/20'
+              ? 'border-brand-error focus:border-brand-error focus:ring-brand-error/15 bg-red-50/10'
+              : 'border-brand-border hover:border-slate-400 focus:border-neutral-900 focus:ring-neutral-900/10'
           } ${className}`}
           {...props}
         />

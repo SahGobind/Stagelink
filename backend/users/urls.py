@@ -9,6 +9,11 @@ from .views import (
     RecruiterRegisterView,
     RecruiterLoginView,
     RecruiterProfileView,
+    UserPermissionsView,
+    RoleListView,
+    RoleDetailView,
+    UserRoleManageView,
+    AuditLogListView,
 )
 
 urlpatterns = [
@@ -21,5 +26,12 @@ urlpatterns = [
     path('recruiter/register/', RecruiterRegisterView.as_view(), name='recruiter-register'),
     path('recruiter/login/', RecruiterLoginView.as_view(), name='recruiter-login'),
     path('recruiter/profile/', RecruiterProfileView.as_view(), name='recruiter-profile'),
+
+    # RBAC & Authorization Management Routes
+    path('permissions/', UserPermissionsView.as_view(), name='user-permissions'),
+    path('roles/', RoleListView.as_view(), name='role-list'),
+    path('roles/<str:role_name>/', RoleDetailView.as_view(), name='role-detail'),
+    path('manage-role/', UserRoleManageView.as_view(), name='user-role-manage'),
+    path('audit-logs/', AuditLogListView.as_view(), name='audit-logs-list'),
 ]
 

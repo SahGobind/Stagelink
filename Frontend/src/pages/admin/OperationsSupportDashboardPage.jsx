@@ -245,85 +245,85 @@ const OperationsSupportDashboardPage = () => {
         {/* Card 1: New Tickets */}
         <div
           onClick={() => setStatusFilter('new')}
-          className={`p-5 bg-white rounded-3xl border transition-all cursor-pointer shadow-2xs space-y-1 hover:border-brand-pink ${
-            statusFilter === 'new' ? 'border-brand-pink ring-2 ring-pink-100' : 'border-gray-200'
+          className={`p-5 bg-white rounded-2xl border transition-all cursor-pointer shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top space-y-1 ${
+            statusFilter === 'new' ? 'border-brand-pink ring-2 ring-pink-100 shadow-3d-card' : 'border-slate-200/80 hover:border-brand-pink/50'
           }`}
         >
-          <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider block">
+          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
             New Tickets
           </span>
           <p className="text-2xl sm:text-3xl font-bold font-serif text-brand-pink">
             {metrics.new_tickets || 0}
           </p>
-          <span className="text-[11px] text-gray-400 block">Needs staff response</span>
+          <span className="text-[11px] text-slate-400 block">Needs staff response</span>
         </div>
 
         {/* Card 2: Open Tickets */}
         <div
           onClick={() => setStatusFilter('open')}
-          className={`p-5 bg-white rounded-3xl border transition-all cursor-pointer shadow-2xs space-y-1 hover:border-blue-400 ${
-            statusFilter === 'open' ? 'border-blue-500 ring-2 ring-blue-100' : 'border-gray-200'
+          className={`p-5 bg-white rounded-2xl border transition-all cursor-pointer shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top space-y-1 ${
+            statusFilter === 'open' ? 'border-blue-500 ring-2 ring-blue-100 shadow-3d-card' : 'border-slate-200/80 hover:border-blue-400'
           }`}
         >
-          <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider block">
+          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
             Open Tickets
           </span>
           <p className="text-2xl sm:text-3xl font-bold font-serif text-blue-600">
             {metrics.open_tickets || 0}
           </p>
-          <span className="text-[11px] text-gray-400 block">Under active investigation</span>
+          <span className="text-[11px] text-slate-400 block">Under active investigation</span>
         </div>
 
         {/* Card 3: Waiting for User */}
         <div
           onClick={() => setStatusFilter('waiting_user')}
-          className={`p-5 bg-white rounded-3xl border transition-all cursor-pointer shadow-2xs space-y-1 hover:border-purple-400 ${
+          className={`p-5 bg-white rounded-2xl border transition-all cursor-pointer shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top space-y-1 ${
             statusFilter === 'waiting_user'
-              ? 'border-purple-500 ring-2 ring-purple-100'
-              : 'border-gray-200'
+              ? 'border-purple-500 ring-2 ring-purple-100 shadow-3d-card'
+              : 'border-slate-200/80 hover:border-purple-400'
           }`}
         >
-          <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider block">
+          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
             Waiting for User
           </span>
           <p className="text-2xl sm:text-3xl font-bold font-serif text-purple-600">
             {metrics.waiting_for_user || 0}
           </p>
-          <span className="text-[11px] text-gray-400 block">Awaiting customer reply</span>
+          <span className="text-[11px] text-slate-400 block">Awaiting customer reply</span>
         </div>
 
         {/* Card 4: Resolved Tickets */}
         <div
           onClick={() => setStatusFilter('resolved')}
-          className={`p-5 bg-white rounded-3xl border transition-all cursor-pointer shadow-2xs space-y-1 hover:border-emerald-400 ${
+          className={`p-5 bg-white rounded-2xl border transition-all cursor-pointer shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top space-y-1 ${
             statusFilter === 'resolved'
-              ? 'border-emerald-500 ring-2 ring-emerald-100'
-              : 'border-gray-200'
+              ? 'border-emerald-500 ring-2 ring-emerald-100 shadow-3d-card'
+              : 'border-slate-200/80 hover:border-emerald-400'
           }`}
         >
-          <span className="text-[10px] font-bold uppercase text-gray-400 tracking-wider block">
+          <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider block">
             Resolved Tickets
           </span>
           <p className="text-2xl sm:text-3xl font-bold font-serif text-emerald-600">
             {metrics.resolved_tickets || 0}
           </p>
-          <span className="text-[11px] text-gray-400 block">Successfully resolved</span>
+          <span className="text-[11px] text-slate-400 block">Successfully resolved</span>
         </div>
       </div>
 
       {/* 3. SHARED INBOX FILTERS & SEARCH */}
-      <div className="bg-white rounded-3xl border border-brand-border p-5 shadow-card space-y-4">
+      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-3d-card specular-top space-y-4">
         {/* User Type Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-gray-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-brand-navy mr-1">User Scope:</span>
             <button
               type="button"
               onClick={() => setUserTypeFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer ${
                 userTypeFilter === 'all'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-slate-900 text-white shadow-3d-button'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               All Tickets ({metrics.total_tickets || tickets.length})
@@ -331,10 +331,10 @@ const OperationsSupportDashboardPage = () => {
             <button
               type="button"
               onClick={() => setUserTypeFilter('candidate')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer ${
                 userTypeFilter === 'candidate'
-                  ? 'bg-brand-pink text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-brand-pink text-white shadow-3d-button-pink'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               <User className="w-3.5 h-3.5" />
@@ -343,10 +343,10 @@ const OperationsSupportDashboardPage = () => {
             <button
               type="button"
               onClick={() => setUserTypeFilter('recruiter')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer ${
                 userTypeFilter === 'recruiter'
-                  ? 'bg-brand-navy text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-brand-navy text-white shadow-3d-button'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
@@ -356,13 +356,13 @@ const OperationsSupportDashboardPage = () => {
 
           {/* Search Input */}
           <div className="relative w-full sm:w-72">
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search ticket #, subject, or user..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-brand-navy placeholder:text-gray-400 focus:outline-none focus:border-brand-pink focus:bg-white transition-all"
+              className="w-full pl-8 pr-3 py-2 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-brand-navy placeholder:text-slate-400 focus:outline-none focus:border-brand-pink focus:bg-white shadow-inner-bevel transition-all"
             />
           </div>
         </div>

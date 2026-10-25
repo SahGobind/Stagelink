@@ -13,20 +13,21 @@ const Button = ({
   onClick,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.985] active:translate-y-0.5 relative overflow-hidden';
 
   const variants = {
-    primary: 'bg-black hover:bg-neutral-800 text-white shadow-sm hover:shadow-card focus-visible:ring-black',
-    secondary: 'bg-white hover:bg-neutral-100 text-black border border-neutral-300 shadow-sm hover:border-neutral-400 focus-visible:ring-black',
-    outline: 'border border-black text-black hover:bg-neutral-100 focus-visible:ring-black',
-    danger: 'bg-neutral-900 hover:bg-black text-white shadow-sm focus-visible:ring-black',
-    ghost: 'text-neutral-700 hover:text-black hover:bg-neutral-100 focus-visible:ring-neutral-400',
+    primary: 'bg-neutral-950 hover:bg-black text-white shadow-3d-button hover:shadow-3d-card-hover border border-neutral-800/90 hover:border-neutral-700 focus-visible:ring-black',
+    pink: 'bg-brand-pink hover:bg-brand-pink-hover text-white shadow-3d-button-pink hover:shadow-3d-pink border border-rose-400/40 focus-visible:ring-brand-pink',
+    secondary: 'bg-white hover:bg-neutral-50/90 text-neutral-900 border border-neutral-200/90 shadow-3d-subtle hover:border-neutral-300 hover:shadow-md focus-visible:ring-neutral-900',
+    outline: 'border border-neutral-900/90 text-neutral-900 hover:bg-neutral-900 hover:text-white shadow-xs hover:shadow-sm focus-visible:ring-black',
+    danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md border border-red-500/40 focus-visible:ring-red-600',
+    ghost: 'text-neutral-700 hover:text-black hover:bg-neutral-100/80 focus-visible:ring-neutral-400',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs font-medium gap-1.5',
-    md: 'px-4 py-2.5 text-sm font-medium gap-2',
-    lg: 'px-6 py-3.5 text-base font-semibold gap-2.5',
+    sm: 'px-3 py-1.5 text-xs font-semibold gap-1.5',
+    md: 'px-4 py-2.5 text-sm font-semibold gap-2',
+    lg: 'px-6 py-3.5 text-base font-bold gap-2.5',
   };
 
   return (

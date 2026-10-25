@@ -149,10 +149,13 @@ const LoginPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-      {/* Centered Login Card */}
-      <div className="max-w-xl mx-auto bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-gray-100 flex flex-col justify-center text-left">
+      {/* Centered 3D Floating Login Card */}
+      <div className="max-w-xl mx-auto bg-white/95 rounded-3xl p-7 sm:p-10 shadow-3d-floating border border-slate-200/90 flex flex-col justify-center text-left relative overflow-hidden specular-top">
+        {/* Subtle Ambient Glow */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-brand-pink/5 rounded-full blur-3xl pointer-events-none" />
+
         {/* User Type Switcher: Only Candidate / Artist & Recruiter / Production Company */}
-        <div className="flex p-1 bg-gray-100 rounded-2xl mb-6">
+        <div className="flex p-1.5 bg-slate-100/90 rounded-2xl mb-6 border border-slate-200/70 shadow-inner-bevel">
           <button
             type="button"
             onClick={() => {
@@ -161,8 +164,8 @@ const LoginPage = () => {
             }}
             className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               userType === 'candidate'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
+                ? 'bg-white text-neutral-950 shadow-3d-subtle border border-slate-200/80'
+                : 'text-slate-500 hover:text-neutral-950'
             }`}
           >
             <User className={`w-4 h-4 ${userType === 'candidate' ? 'text-brand-pink' : ''}`} />
@@ -176,21 +179,21 @@ const LoginPage = () => {
             }}
             className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
               userType === 'recruiter'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
+                ? 'bg-white text-neutral-950 shadow-3d-subtle border border-slate-200/80'
+                : 'text-slate-500 hover:text-neutral-950'
             }`}
           >
             <Building2 className={`w-4 h-4 ${userType === 'recruiter' ? 'text-brand-pink' : ''}`} />
-            <span>Recruiter / Production Company</span>
+            <span>Recruiter / Studio</span>
           </button>
         </div>
 
         {/* Header */}
-        <div className="space-y-1 mb-6">
-          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
+        <div className="space-y-1.5 mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
             {userType === 'recruiter' ? 'Welcome Back, Studio' : 'Welcome Back'}
           </h2>
-          <p className="text-xs sm:text-sm text-brand-text-secondary leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
             {userType === 'recruiter'
               ? 'Log in to your Studio / Production account to announce casting calls and review talent.'
               : 'Log in to your Candidate account to explore casting calls and track applications.'}
@@ -346,7 +349,7 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-black hover:bg-neutral-800 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-2 cursor-pointer"
+            className="w-full py-3.5 bg-neutral-950 hover:bg-black text-white text-sm font-bold rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-3 cursor-pointer"
           >
             <span>{loading ? 'Signing in...' : userType === 'recruiter' ? 'Sign In as Recruiter' : 'Sign In as Candidate'}</span>
             <ArrowRight className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Search,
   X,
@@ -8,6 +8,13 @@ import {
   ChevronDown,
   Filter,
   CheckCircle2,
+  ShieldCheck,
+  Building2,
+  Film,
+  PlusCircle,
+  ArrowRight,
+  Briefcase,
+  Users,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
@@ -334,38 +341,115 @@ const OpportunitiesPage = () => {
   const canLoadMore = visibleCount < totalCount;
 
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-20 space-y-8">
+    <div className="bg-slate-50/60 min-h-screen pb-20 space-y-8">
       {/* 1. HERO HEADER */}
-      <section className="bg-brand-navy text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-pink/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-        <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-brand-gold/10 rounded-full blur-2xl pointer-events-none" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-100/70 via-white to-white border-b border-slate-200/80 pt-8 pb-12 sm:pt-12 sm:pb-16 text-left">
+        {/* Subtle decorative background glows */}
+        <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-rose-100/35 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32" />
+        <div className="absolute bottom-0 left-10 w-96 h-96 bg-amber-50/40 rounded-full blur-3xl pointer-events-none" />
 
-        <PageContainer className="py-10 sm:py-14 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-            <div className="md:col-span-8 space-y-3 text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-brand-gold text-xs font-semibold backdrop-blur-sm">
-                <Sparkles className="w-3.5 h-3.5" />
+        <PageContainer className="relative z-10 py-2 sm:py-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200/80 text-brand-pink text-xs font-bold tracking-wide shadow-2xs">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-pink" />
+                </span>
+                <Sparkles className="w-3.5 h-3.5 text-brand-pink" />
                 <span>Verified Casting Directory</span>
+                <span className="text-rose-300">•</span>
+                <span className="text-neutral-700 font-semibold">{allOpportunities.length} Active Auditions</span>
               </div>
-              <h1 className="text-3xl sm:text-5xl font-bold font-serif tracking-tight">
-                Casting Calls &amp; Auditions
+
+              {/* Title */}
+              <h1 className="text-3xl sm:text-5xl lg:text-5xl font-bold font-serif text-neutral-950 tracking-tight leading-[1.15]">
+                Casting Calls &amp; <span className="text-brand-pink italic font-serif">Auditions</span>
               </h1>
-              <p className="text-xs sm:text-base text-gray-300 max-w-2xl leading-relaxed">
-                Discover published acting opportunities, lead roles, and casting calls
-                from certified production houses across feature films, web series, commercials, and theatre.
+
+              {/* Description */}
+              <p className="text-sm sm:text-base text-neutral-600 max-w-2xl font-normal leading-relaxed">
+                Discover verified acting opportunities, lead roles, and casting calls directly from certified production houses across feature films, OTT web series, national commercials, and theatre.
               </p>
-            </div>
-            <div className="md:col-span-4 hidden md:flex justify-end">
-              <div className="relative">
-                <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-brand-pink/50 shadow-md">
-                  <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80"
-                    alt="Artist in Audition"
-                    className="w-full h-full object-cover grayscale contrast-110"
-                  />
+
+              {/* Trust Badges */}
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-xs text-neutral-600 font-medium">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>100% Certified Productions</span>
                 </div>
-                <div className="absolute -bottom-2 -left-3 bg-brand-pink text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md">
-                  Live Calls
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-brand-pink" />
+                  <span>Direct Casting Team Review</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
+                  <Film className="w-4 h-4 text-neutral-700" />
+                  <span>Zero Middlemen Fees</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Card: Production Desk & Quick Actions */}
+            <div className="lg:col-span-5 flex justify-end">
+              <div className="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-3d-floating specular-top transition-all space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-brand-pink flex items-center justify-center font-bold shadow-2xs border border-rose-100/70">
+                      <Briefcase className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">
+                        Production Desk
+                      </h3>
+                      <p className="text-[11px] text-neutral-500">For Casting Directors &amp; Studios</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live Radar
+                  </span>
+                </div>
+
+                {/* Mini stats highlights */}
+                <div className="grid grid-cols-2 gap-2.5 text-center">
+                  <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/60 shadow-inner-bevel">
+                    <span className="text-xl font-bold font-serif text-neutral-950 block">
+                      {allOpportunities.length}
+                    </span>
+                    <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">
+                      Verified Calls
+                    </span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-rose-50/50 border border-rose-100/60 shadow-inner-bevel">
+                    <span className="text-xl font-bold font-serif text-brand-pink block">
+                      Direct
+                    </span>
+                    <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">
+                      Studio Auditions
+                    </span>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="pt-1 space-y-2">
+                  <Link
+                    to="/post-job"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 specular-top group"
+                  >
+                    <PlusCircle className="w-4 h-4 text-brand-pink group-hover:scale-110 transition-transform" />
+                    <span>Post a Casting Call</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+
+                  <Link
+                    to="/discover-talent"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:translate-y-0.5"
+                  >
+                    <Users className="w-3.5 h-3.5 text-neutral-500" />
+                    <span>Explore Talent Directory</span>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -374,24 +458,24 @@ const OpportunitiesPage = () => {
       </section>
 
       {/* 2. SEARCH & FILTER CONTROLS */}
-      <PageContainer className="-mt-10 sm:-mt-12 relative z-20 space-y-6">
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-neutral-200 shadow-xl space-y-5">
+      <PageContainer className="-mt-8 sm:-mt-10 relative z-20 space-y-6">
+        <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-3d-card specular-top space-y-5">
           {/* Top Search Input */}
           <div className="relative">
-            <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by title, production company, character, skill, or keyword..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-neutral-200 rounded-2xl text-xs sm:text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink transition-all"
+              className="w-full pl-11 pr-10 py-3.5 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs sm:text-sm text-brand-navy placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white shadow-inner-bevel transition-all"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
                 aria-label="Clear search text"
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-navy p-1 cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-navy p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -701,7 +785,7 @@ const OpportunitiesPage = () => {
             <button
               type="button"
               onClick={() => setVisibleCount((prev) => prev + 6)}
-              className="px-8 py-3 bg-white hover:bg-neutral-50 text-black border border-neutral-300 hover:border-black text-xs font-bold rounded-2xl shadow-sm transition-all transform active:scale-95 cursor-pointer"
+              className="px-8 py-3.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-900 text-xs font-bold rounded-2xl shadow-3d-subtle hover:shadow-3d-card active:translate-y-0.5 specular-top transition-all cursor-pointer"
             >
               Load More Casting Calls ({totalCount - visibleCount} remaining)
             </button>

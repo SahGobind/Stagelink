@@ -6,7 +6,7 @@
  * with Django REST Framework endpoints (/api/users/?role=talent, /api/invitations/).
  */
 
-import { mockTalentProfiles } from '../data/mockTalentDirectory';
+import { mockTalentProfiles, EUROPEAN_COUNTRIES } from '../data/mockTalentDirectory';
 import { getCandidateById } from '../data/mockCandidates';
 import { addStoredNotification } from '../data/mockNotifications';
 import { apiRequest } from './api';
@@ -136,15 +136,55 @@ export const talentService = {
 
     // 2. Talent Category Dropdown
     if (filters.category && filters.category !== 'All Categories') {
-      const selectedCat = filters.category.toLowerCase().replace(/s$/, ''); // e.g. "actors" -> "actor"
+      const filterCatLower = filters.category.toLowerCase();
+      const selectedCatSingular = filterCatLower.replace(/s$/, ''); // e.g. "actors" -> "actor", "musicians" -> "musician"
+
       results = results.filter((t) => {
+        if (filterCatLower.includes('film star') && t.isFilmStar) {
+          return true;
+        }
         const cat = (t.category || '').toLowerCase();
         const cats = (t.categories || []).map((c) => c.toLowerCase());
         return (
-          cat === filters.category.toLowerCase() ||
-          cat.includes(selectedCat) ||
-          cats.some((c) => c === filters.category.toLowerCase() || c.includes(selectedCat))
+          cat === filterCatLower ||
+          cat.includes(selectedCatSingular) ||
+          (t.isFilmStar && filterCatLower.includes('film star')) ||
+          cats.some((c) => c === filterCatLower || c.includes(selectedCatSingular))
         );
+      });
+    }
+
+    // 2b. Region Filter (All | India | Europe)
+    if (filters.region && filters.region !== 'all') {
+      const reg = filters.region.toLowerCase();
+      if (reg === 'india') {
+        results = results.filter((t) => {
+          const c = (t.country || '').toLowerCase();
+          const l = (t.location || '').toLowerCase();
+          const r = (t.region || '').toLowerCase();
+          return c === 'india' || l.includes('india') || r === 'india';
+        });
+      } else if (reg === 'europe') {
+        results = results.filter((t) => {
+          const c = (t.country || '').toLowerCase();
+          const l = (t.location || '').toLowerCase();
+          const r = (t.region || '').toLowerCase();
+          if (r === 'europe') return true;
+          return EUROPEAN_COUNTRIES.some((ec) => {
+            const ecLower = ec.toLowerCase();
+            return c === ecLower || l.includes(ecLower);
+          });
+        });
+      }
+    }
+
+    // 2c. Country Filter
+    if (filters.country && filters.country !== 'All Countries') {
+      const targetCountry = filters.country.toLowerCase();
+      results = results.filter((t) => {
+        const c = (t.country || '').toLowerCase();
+        const l = (t.location || '').toLowerCase();
+        return c === targetCountry || l.includes(targetCountry);
       });
     }
 

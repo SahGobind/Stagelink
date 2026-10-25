@@ -43,6 +43,8 @@ import { castingService } from '../../services/castingService';
 import { applicationService } from '../../services/applicationService';
 import { rankingService } from '../../services/rankingService';
 import { calculateCandidateMatchScore } from '../../services/scoringEngine';
+import { feedbackService } from '../../services/feedbackService';
+import CompanyRatingModal from '../../components/feedback/CompanyRatingModal';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -70,6 +72,20 @@ const OpportunityDetailsPage = () => {
       isMounted = false;
     };
   }, [id]);
+
+  // Production Company reviews and rating state
+  const [isCompanyRatingModalOpen, setIsCompanyRatingModalOpen] = useState(false);
+  const [companyStats, setCompanyStats] = useState({ averageRating: 4.9, totalReviews: 14, reviews: [] });
+
+  useEffect(() => {
+    if (opportunity?.productionCompany) {
+      feedbackService.getCompanyReviews(opportunity.productionCompany).then((res) => {
+        if (res) {
+          setCompanyStats(res);
+        }
+      });
+    }
+  }, [opportunity?.productionCompany]);
 
   const [activeImage, setActiveImage] = useState(0);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
@@ -321,10 +337,10 @@ const OpportunityDetailsPage = () => {
         )}
 
         {/* 2. HERO CARD: Image + Specs & Application Header */}
-        <div className="bg-white rounded-3xl border border-brand-border p-6 sm:p-8 shadow-card grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-3d-card specular-top grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           {/* Left: Project Image & Gallery */}
           <div className="md:col-span-5 space-y-3">
-            <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-900 shadow-subtle border border-gray-100 relative group">
+            <div className="aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-950 shadow-3d-subtle border border-slate-200/70 relative group">
               <img
                 src={gallery[activeImage] || safePrimaryImage}
                 alt=""
@@ -340,11 +356,11 @@ const OpportunityDetailsPage = () => {
                 }`}
               />
               <div className="absolute top-3 left-3 flex items-center gap-2">
-                <span className="px-3 py-1 bg-white/95 backdrop-blur-sm text-brand-pink text-xs font-bold rounded-full shadow-xs">
+                <span className="px-3 py-1 bg-white/95 backdrop-blur-md text-brand-pink text-xs font-bold rounded-full shadow-2xs border border-white/60">
                   {opportunity.productionCategory || opportunity.category || 'Film & TV'}
                 </span>
                 {isClosed && (
-                  <span className="px-2.5 py-1 bg-gray-900/90 text-white text-[10px] font-bold rounded-full backdrop-blur-sm uppercase">
+                  <span className="px-2.5 py-1 bg-slate-900/90 text-white text-[10px] font-bold rounded-full backdrop-blur-md uppercase shadow-2xs">
                     Closed
                   </span>
                 )}
@@ -360,10 +376,10 @@ const OpportunityDetailsPage = () => {
                     type="button"
                     onClick={() => setActiveImage(idx)}
                     aria-label={`View photo ${idx + 1}`}
-                    className={`aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
+                    className={`aspect-square rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-2xs ${
                       activeImage === idx
                         ? 'border-brand-pink ring-2 ring-brand-pink/20 scale-95'
-                        : 'border-transparent opacity-70 hover:opacity-100'
+                        : 'border-transparent opacity-70 hover:opacity-100 hover:border-slate-300'
                     }`}
                   >
                     <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
@@ -386,7 +402,7 @@ const OpportunityDetailsPage = () => {
                 <button
                   type="button"
                   onClick={() => setReportModalOpen(true)}
-                  className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-rose-600 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                   title="Report inappropriate or suspicious listing"
                 >
                   <Flag className="w-3 h-3" />
@@ -394,7 +410,7 @@ const OpportunityDetailsPage = () => {
                 </button>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-brand-navy leading-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-brand-navy leading-tight tracking-tight">
                 {opportunity.title}
               </h1>
 
@@ -421,16 +437,16 @@ const OpportunityDetailsPage = () => {
             </div>
 
             {/* Compensation Terms */}
-            <div className="p-4 bg-emerald-50/70 border border-emerald-100 rounded-2xl flex items-center justify-between">
+            <div className="p-4 bg-gradient-to-r from-emerald-50/90 to-teal-50/80 border border-emerald-200/80 rounded-2xl flex items-center justify-between shadow-inner-bevel">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
                   <Banknote className="w-5 h-5" />
                 </div>
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
                     Compensation Terms &amp; Remuneration
                   </p>
-                  <p className="text-base font-bold text-emerald-900 mt-0.5">
+                  <p className="text-base font-bold text-emerald-950 mt-0.5">
                     {opportunity.compensation && opportunity.compensation !== '0'
                       ? `${opportunity.compensation}${
                           opportunity.rateUnit ? ` / ${opportunity.rateUnit}` : ''
@@ -439,7 +455,7 @@ const OpportunityDetailsPage = () => {
                   </p>
                 </div>
               </div>
-              <span className="text-[11px] font-bold text-emerald-800 bg-white/80 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <span className="text-[11px] font-bold text-emerald-850 bg-white/90 px-3 py-1 rounded-lg border border-emerald-200 shadow-2xs">
                 {opportunity.compensationType || 'Paid Opportunity'}
               </span>
             </div>
@@ -449,7 +465,7 @@ const OpportunityDetailsPage = () => {
               {existingApplication ? (
                 <Link
                   to={`/candidate/applications/${existingApplication.id}`}
-                  className="flex-1 py-3.5 px-6 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors"
+                  className="flex-1 py-3.5 px-6 bg-emerald-50/90 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-emerald-100 shadow-2xs transition-all active:translate-y-0.5"
                 >
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   <span>Application Submitted — View Status</span>
@@ -459,10 +475,10 @@ const OpportunityDetailsPage = () => {
                   type="button"
                   onClick={handleApplyClick}
                   disabled={isClosed}
-                  className={`flex-1 py-3.5 px-6 text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`flex-1 py-3.5 px-6 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer specular-top ${
                     isClosed
-                      ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                      : 'bg-brand-pink hover:bg-rose-700 text-white shadow-sm'
+                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'
+                      : 'bg-brand-pink hover:bg-rose-700 text-white shadow-3d-button-pink hover:shadow-3d-card-hover active:translate-y-0.5'
                   }`}
                 >
                   <Sparkles className="w-4 h-4" />
@@ -474,10 +490,10 @@ const OpportunityDetailsPage = () => {
               <button
                 type="button"
                 onClick={() => toggleSaveOpportunity(opportunity.id)}
-                className={`py-3.5 px-5 border rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                className={`py-3.5 px-5 border rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-3d-subtle hover:shadow-3d-card active:translate-y-0.5 ${
                   isSaved
-                    ? 'border-black bg-neutral-100 text-black shadow-2xs'
-                    : 'border-gray-200 text-brand-navy hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
+                    : 'border-slate-200 text-brand-navy hover:border-slate-300 hover:bg-slate-50 bg-white'
                 }`}
               >
                 <Heart className={`w-4 h-4 ${isSaved ? 'fill-brand-pink text-brand-pink' : ''}`} />
@@ -487,7 +503,7 @@ const OpportunityDetailsPage = () => {
               {/* Recruiter / Production Dashboard Shortcut */}
               <Link
                 to={`/admin/opportunities/${opportunity.id}/candidates`}
-                className="py-3.5 px-4 rounded-xl bg-pink-50 border border-pink-200 text-brand-pink text-xs font-bold hover:bg-pink-100 transition-colors flex items-center gap-1.5 shrink-0"
+                className="py-3.5 px-4 rounded-xl bg-pink-50 border border-pink-200/90 text-brand-pink text-xs font-bold hover:bg-pink-100 shadow-2xs transition-all flex items-center gap-1.5 shrink-0 active:translate-y-0.5"
                 title="Review & rank candidate applications for this role"
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -710,10 +726,18 @@ const OpportunityDetailsPage = () => {
           {/* Right Sidebar (4 cols): Production Info & Match */}
           <div className="lg:col-span-4 space-y-6">
             {/* Production Company Card */}
-            <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-brand-text-secondary">
-                Production Company
-              </h3>
+            <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-4 text-left">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-brand-text-secondary">
+                  Production Company
+                </h3>
+                <span className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-full text-xs font-bold text-amber-900 border border-amber-200">
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                  <span>{companyStats.averageRating || 4.9}</span>
+                  <span className="text-[10px] text-amber-700">({companyStats.totalReviews || 14})</span>
+                </span>
+              </div>
+
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-brand-navy text-white flex items-center justify-center font-bold text-lg">
                   {opportunity.companyLogo || opportunity.productionCompany.charAt(0)}
@@ -725,9 +749,23 @@ const OpportunityDetailsPage = () => {
                   </p>
                 </div>
               </div>
+
               <p className="text-xs text-brand-text-secondary leading-relaxed">
                 Applications submitted on StageLink are delivered directly to the designated casting directors of this production.
               </p>
+
+              {/* Rate & Review Button */}
+              <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-[11px] text-gray-500 font-medium">Auditioned here before?</span>
+                <button
+                  type="button"
+                  onClick={() => setIsCompanyRatingModalOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-black hover:underline cursor-pointer"
+                >
+                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  <span>Rate Production House</span>
+                </button>
+              </div>
             </div>
 
             {/* Candidate Match Preview */}
@@ -1056,6 +1094,27 @@ const OpportunityDetailsPage = () => {
           }}
           application={selectedBreakdownApp}
         />
+
+        {/* 8. CANDIDATE PRODUCTION COMPANY RATING MODAL */}
+        {opportunity && (
+          <CompanyRatingModal
+            isOpen={isCompanyRatingModalOpen}
+            onClose={() => setIsCompanyRatingModalOpen(false)}
+            companyName={opportunity.productionCompany}
+            companyId={opportunity.productionCompany?.toLowerCase().replace(/\s+/g, '-')}
+            opportunityId={opportunity.id}
+            opportunityTitle={opportunity.title}
+            candidateId={user?.id || 'cand-1'}
+            candidateName={user?.name || user?.fullName || 'StageLink Performer'}
+            onReviewSubmitted={(newRev) => {
+              setCompanyStats((prev) => ({
+                averageRating: newRev.rating,
+                totalReviews: (prev.totalReviews || 0) + 1,
+                reviews: [newRev, ...(prev.reviews || [])],
+              }));
+            }}
+          />
+        )}
       </PageContainer>
     </div>
   );

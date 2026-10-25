@@ -86,3 +86,117 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #4B5563;
 }
+
+/* Continuous Infinite Marquee Scrolling */
+@keyframes marquee-horizontal {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes marquee-horizontal-reverse {
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-marquee-continuous {
+  display: flex;
+  width: max-content;
+  animation: marquee-horizontal 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-continuous:hover {
+  animation-play-state: paused;
+}
+
+.animate-marquee-continuous-reverse {
+  display: flex;
+  width: max-content;
+  animation: marquee-horizontal-reverse 45s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-continuous-reverse:hover {
+  animation-play-state: paused;
+}
+
+/* 3D Visual Depth & Elevation System */
+.card-3d {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 10px 30px -6px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.card-3d-interactive {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.card-3d-interactive:hover {
+  transform: translateY(-4px);
+  border-color: rgba(203, 213, 225, 1);
+  box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.12), 0 6px 16px -3px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+/* Frosted Glass Panels with specular 3D edge */
+.glass-panel-3d {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 36px -6px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+.glass-panel-dark-3d {
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 45px -8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Specular top highlight line */
+.specular-top {
+  position: relative;
+}
+.specular-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.9) 50%, transparent 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Ambient cinematic mesh background */
+.cinematic-subtle-glow {
+  background-image: radial-gradient(at 0% 0%, rgba(225, 29, 72, 0.04) 0px, transparent 50%),
+                    radial-gradient(at 100% 0%, rgba(15, 23, 42, 0.03) 0px, transparent 50%),
+                    radial-gradient(at 50% 100%, rgba(225, 29, 72, 0.03) 0px, transparent 50%);
+}
+
+/* 3D button press tactile feel */
+.btn-tactile-3d {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-tactile-3d:hover {
+  transform: translateY(-1px);
+}
+.btn-tactile-3d:active {
+  transform: translateY(1px) scale(0.985);
+}
+

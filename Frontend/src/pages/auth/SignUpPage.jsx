@@ -204,7 +204,10 @@ const SignUpPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 text-left">
-      <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl border border-gray-100 space-y-6">
+      <div className="bg-white/95 rounded-3xl p-7 sm:p-10 shadow-3d-floating border border-slate-200/90 space-y-6 relative overflow-hidden specular-top">
+        {/* Ambient illumination */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-brand-pink/5 rounded-full blur-3xl pointer-events-none" />
+
         {registrationSuccess ? (
           <div className="text-center py-4 space-y-6">
             <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto border-4 border-emerald-100 shadow-sm">
@@ -241,7 +244,7 @@ const SignUpPage = () => {
             <div className="pt-2 space-y-3 max-w-md mx-auto">
               <Link
                 to={`/login?role=recruiter&email=${encodeURIComponent(registrationSuccess.email)}`}
-                className="w-full py-3.5 px-6 bg-brand-pink hover:bg-pink-600 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-6 bg-brand-pink hover:bg-brand-pink-hover text-white text-sm font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all flex items-center justify-center gap-2"
               >
                 <span>Go to Recruiter Login</span>
                 <ArrowRight className="w-4 h-4" />
@@ -268,56 +271,55 @@ const SignUpPage = () => {
         ) : (
           <>
             {/* Role Switcher Tabs */}
-            <div className="flex p-1 bg-gray-100 rounded-2xl">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('candidate');
-              setServerError('');
-            }}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'candidate'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            <User className={`w-4 h-4 ${activeTab === 'candidate' ? 'text-brand-pink' : ''}`} />
-            <span>Candidate / Artist</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('recruiter');
-              setServerError('');
-            }}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              activeTab === 'recruiter'
-                ? 'bg-white text-gray-900 shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            <Building2 className={`w-4 h-4 ${activeTab === 'recruiter' ? 'text-brand-pink' : ''}`} />
-            <span>Recruiter / Production Company</span>
-          </button>
-        </div>
+            <div className="flex p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/70 shadow-inner-bevel">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('candidate');
+                  setServerError('');
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeTab === 'candidate'
+                    ? 'bg-white text-neutral-950 shadow-3d-subtle border border-slate-200/80'
+                    : 'text-slate-500 hover:text-neutral-950'
+                }`}
+              >
+                <User className={`w-4 h-4 ${activeTab === 'candidate' ? 'text-brand-pink' : ''}`} />
+                <span>Candidate / Artist</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('recruiter');
+                  setServerError('');
+                }}
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  activeTab === 'recruiter'
+                    ? 'bg-white text-neutral-950 shadow-3d-subtle border border-slate-200/80'
+                    : 'text-slate-500 hover:text-neutral-950'
+                }`}
+              >
+                <Building2 className={`w-4 h-4 ${activeTab === 'recruiter' ? 'text-brand-pink' : ''}`} />
+                <span>Recruiter / Studio</span>
+              </button>
+            </div>
 
-
-        {/* Heading */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-pink bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200">
-              {activeTab === 'recruiter' ? 'Step 1 of 5 — Recruiter Onboarding' : 'Performer Portal'}
-            </span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
-            {activeTab === 'recruiter' ? 'Create Your Recruiter & Studio Account' : 'Create Your Performer Account'}
-          </h2>
-          <p className="text-xs sm:text-sm text-brand-text-secondary leading-relaxed">
-            {activeTab === 'recruiter'
-              ? 'Register your production house or casting agency to announce casting calls, review fees, and manage auditions.'
-              : 'Begin your acting journey with verified casting calls and auditions.'}
-          </p>
-        </div>
+            {/* Heading */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-pink bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/70 shadow-2xs">
+                  {activeTab === 'recruiter' ? 'Step 1 of 5 — Recruiter Onboarding' : 'Performer Portal'}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
+                {activeTab === 'recruiter' ? 'Create Your Recruiter & Studio Account' : 'Create Your Performer Account'}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
+                {activeTab === 'recruiter'
+                  ? 'Register your production house or casting agency to announce casting calls, review fees, and manage auditions.'
+                  : 'Begin your acting journey with verified casting calls and auditions.'}
+              </p>
+            </div>
 
 
         {/* Server Error Message */}
@@ -551,7 +553,7 @@ const SignUpPage = () => {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-all mt-2 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3.5 bg-neutral-950 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 transition-all mt-3 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
                 <span>Creating Account...</span>

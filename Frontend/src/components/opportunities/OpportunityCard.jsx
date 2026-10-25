@@ -65,21 +65,21 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
       : opportunity.compensationType || 'Negotiable';
 
   return (
-    <div className="bg-white rounded-2xl border border-brand-border overflow-hidden hover:shadow-card-hover transition-all duration-300 flex flex-col justify-between group h-full">
+    <div className="bg-white rounded-3xl border border-slate-200/85 hover:border-slate-300 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden specular-top">
       <div>
         {/* Card Image Banner with Badges & Save Control */}
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-900">
+        <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-950">
           {!imgFailed ? (
             <img
               src={imgSrc}
               alt=""
               onError={handleImageError}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out ${
                 isClosed ? 'grayscale-[40%]' : ''
               }`}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-neutral-900 via-neutral-800 to-black p-4 flex flex-col justify-end relative overflow-hidden">
+            <div className="w-full h-full bg-gradient-to-br from-neutral-950 via-neutral-900 to-black p-4 flex flex-col justify-end relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-pink/15 rounded-full blur-2xl pointer-events-none" />
               <div className="relative z-10 space-y-0.5">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block truncate">
@@ -91,20 +91,20 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
               </div>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent pointer-events-none" />
 
           {/* Badges: Project Category + Type + Status */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center max-w-[80%]">
-            <span className="px-2.5 py-1 bg-white/95 backdrop-blur-sm text-black text-[11px] font-bold rounded-full shadow-xs">
+            <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-neutral-950 text-[11px] font-bold rounded-full shadow-xs border border-white/60">
               {opportunity.productionCategory || opportunity.category || 'Film & TV'}
             </span>
             {(opportunity.productionType || opportunity.type) && (
-              <span className="px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded-full">
+              <span className="px-2.5 py-0.5 bg-black/60 backdrop-blur-md text-white text-[10px] font-medium rounded-full border border-white/10">
                 {opportunity.productionType || opportunity.type}
               </span>
             )}
             {isClosed && (
-              <span className="px-2 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full backdrop-blur-sm uppercase tracking-wide">
+              <span className="px-2.5 py-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full backdrop-blur-md uppercase tracking-wide shadow-xs">
                 Closed
               </span>
             )}
@@ -119,11 +119,11 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
               toggleSaveOpportunity(opportunity.id);
             }}
             aria-label={isSaved ? 'Remove from saved' : 'Save opportunity'}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 flex items-center justify-center text-white transition-all transform active:scale-90"
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md hover:bg-black/65 border border-white/20 flex items-center justify-center text-white transition-all transform hover:scale-105 active:scale-90 shadow-sm cursor-pointer"
           >
             <Heart
               className={`w-4 h-4 transition-colors ${
-                isSaved ? 'fill-brand-pink text-brand-pink' : 'text-white'
+                isSaved ? 'fill-brand-pink text-brand-pink drop-shadow-xs' : 'text-white'
               }`}
             />
           </button>
@@ -134,14 +134,14 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
           {/* Production Company + Verified Badge */}
           <div className="flex items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-1.5 truncate">
-              <Building2 className="w-3.5 h-3.5 text-brand-navy/60 shrink-0" />
-              <span className="font-semibold text-brand-navy truncate">
+              <Building2 className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+              <span className="font-semibold text-neutral-900 truncate">
                 {opportunity.productionCompany || 'Certified Production House'}
               </span>
             </div>
             {isVerifiedCompany && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[10px] font-bold shrink-0"
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full text-[10px] font-bold shrink-0 shadow-2xs"
                 title="Verified Production Company"
               >
                 <ShieldCheck className="w-3 h-3 text-emerald-600" />
@@ -151,7 +151,7 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
           </div>
 
           {/* Casting Title */}
-          <h3 className="text-base font-bold text-black font-sans tracking-tight group-hover:text-brand-pink transition-colors line-clamp-1">
+          <h3 className="text-base font-bold text-neutral-950 font-sans tracking-tight group-hover:text-brand-pink transition-colors line-clamp-1">
             {opportunity.title}
           </h3>
 
@@ -160,27 +160,27 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
             {talentList.slice(0, 3).map((talent, idx) => (
               <span
                 key={idx}
-                className="px-2 py-0.5 rounded-md bg-pink-50 text-brand-pink border border-pink-100 text-[10px] font-semibold"
+                className="px-2.5 py-0.5 rounded-full bg-rose-50/80 text-brand-pink border border-rose-200/70 text-[10px] font-bold shadow-2xs"
               >
                 {talent}
               </span>
             ))}
             {talentList.length > 3 && (
-              <span className="px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-medium">
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold border border-slate-200/60">
                 +{talentList.length - 3} more
               </span>
             )}
           </div>
 
           {/* Metadata Grid: Location, Shoot Date, Deadline, Openings */}
-          <div className="space-y-1.5 text-xs text-brand-text-secondary pt-1">
+          <div className="space-y-1.5 text-xs text-slate-500 pt-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="flex items-center text-gray-600 truncate">
-                <MapPin className="w-3.5 h-3.5 text-black mr-1 shrink-0" />
+              <span className="flex items-center text-slate-700 truncate">
+                <MapPin className="w-3.5 h-3.5 text-neutral-900 mr-1 shrink-0" />
                 <span className="truncate">{opportunity.location || 'Pan-India / Flexible'}</span>
               </span>
-              <span className="flex items-center gap-1 text-gray-500 font-mono text-[10px] shrink-0">
-                <Users className="w-3 h-3 text-gray-400" />
+              <span className="flex items-center gap-1 text-slate-500 font-mono text-[10px] shrink-0">
+                <Users className="w-3 h-3 text-slate-400" />
                 <span>
                   {opportunity.artistsNeeded
                     ? `${opportunity.artistsNeeded} Opening${opportunity.artistsNeeded > 1 ? 's' : ''}`
@@ -191,7 +191,7 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
 
             {/* Job Opening Period Window */}
             {(opportunity.jobOpeningRange || (opportunity.openingStartDate && opportunity.openingEndDate)) && (
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-md font-medium">
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-lg font-medium shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                 <span className="truncate">
                   Opening: {opportunity.openingStartDate && opportunity.openingEndDate
@@ -201,12 +201,12 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
               </div>
             )}
 
-            <div className="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
+            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
               <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-gray-400" />
+                <Calendar className="w-3 h-3 text-slate-400" />
                 <span>Shoot: {opportunity.shootDate || 'Flexible / TBD'}</span>
               </span>
-              <span className="flex items-center gap-1 text-amber-700 font-medium">
+              <span className="flex items-center gap-1 text-amber-800 font-semibold">
                 <Clock className="w-3 h-3 text-amber-600" />
                 <span>
                   Due:{' '}
@@ -220,13 +220,13 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
           </div>
 
           {/* Compensation + Rate Unit */}
-          <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-100 text-[11px]">
-            <span className="inline-flex items-center gap-1 font-bold text-neutral-900 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-md truncate">
-              <Banknote className="w-3.5 h-3.5 text-black shrink-0" />
+          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-[11px]">
+            <span className="inline-flex items-center gap-1 font-bold text-neutral-950 bg-neutral-100 border border-neutral-200/80 px-2.5 py-0.5 rounded-lg shadow-inner-bevel truncate">
+              <Banknote className="w-3.5 h-3.5 text-neutral-950 shrink-0" />
               <span className="truncate">{compensationDisplay}</span>
             </span>
 
-            <span className="text-[10px] text-gray-400 shrink-0">
+            <span className="text-[10px] text-slate-400 font-medium shrink-0">
               {opportunity.compensationType || 'Paid Role'}
             </span>
           </div>
@@ -237,16 +237,16 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
       <div className="p-4 sm:p-5 pt-0 grid grid-cols-2 gap-2">
         <Link
           to={`/opportunities/${opportunity.id}`}
-          className="inline-flex items-center justify-center py-2.5 px-3 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 text-xs font-bold rounded-xl shadow-2xs transition-colors duration-200 text-center"
+          className="inline-flex items-center justify-center py-2.5 px-3 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200/90 text-xs font-bold rounded-xl shadow-2xs hover:shadow-subtle active:translate-y-0.5 transition-all text-center"
         >
           View Details
         </Link>
         <Link
           to={`/opportunities/${opportunity.id}?apply=true`}
-          className={`inline-flex items-center justify-center py-2.5 px-3 text-xs font-bold rounded-xl shadow-xs transition-colors duration-200 text-center ${
+          className={`inline-flex items-center justify-center py-2.5 px-3 text-xs font-bold rounded-xl transition-all duration-200 text-center active:translate-y-0.5 ${
             isClosed
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed pointer-events-none'
-              : 'bg-brand-pink hover:bg-rose-700 text-white'
+              ? 'bg-slate-200 text-slate-500 cursor-not-allowed pointer-events-none'
+              : 'bg-brand-pink hover:bg-brand-pink-hover text-white shadow-3d-button-pink hover:shadow-3d-pink'
           }`}
         >
           <span>{isClosed ? 'Closed' : 'Apply Now'}</span>

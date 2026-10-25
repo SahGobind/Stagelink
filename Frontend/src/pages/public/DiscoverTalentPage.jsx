@@ -22,6 +22,12 @@ import {
   PlusCircle,
   Check,
   Award,
+  Music,
+  Palette,
+  Smile,
+  Globe,
+  Star,
+  Film,
 } from 'lucide-react';
 import TalentCard from '../../components/talent/TalentCard';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
@@ -33,6 +39,9 @@ import {
   AVAILABILITY_OPTIONS,
   LANGUAGES_OPTIONS,
   LOCATION_OPTIONS,
+  REGION_FILTERS,
+  EUROPEAN_COUNTRIES,
+  COUNTRY_FLAGS,
 } from '../../data/mockTalentDirectory';
 import {
   talentService,
@@ -47,6 +56,104 @@ import {
 } from '../../utils/paymentAccess';
 
 const PAGE_SIZE = 8;
+
+const COUNTRY_OPTIONS = [
+  'All Countries',
+  'India',
+  'United Kingdom',
+  'France',
+  'Germany',
+  'Italy',
+  'Spain',
+  'Ireland',
+  'Sweden',
+  'USA',
+  'Canada',
+];
+
+const SPOTLIGHT_CATEGORIES = [
+  {
+    id: 'film-stars',
+    title: 'Indian Film Stars',
+    subtitle: 'A-List Leading Stars',
+    category: 'Film Stars',
+    region: 'india',
+    badge: '⭐ Stars',
+    badgeClass: 'bg-amber-100 text-amber-900 border-amber-200',
+    iconBg: 'bg-gradient-to-br from-amber-400 to-yellow-500 text-amber-950',
+    icon: Star,
+  },
+  {
+    id: 'musicians',
+    title: 'Musicians',
+    subtitle: 'Composers & Scores',
+    category: 'Musicians',
+    region: 'all',
+    badge: '🎵 Music',
+    badgeClass: 'bg-purple-100 text-purple-900 border-purple-200',
+    iconBg: 'bg-gradient-to-br from-purple-500 to-indigo-600 text-white',
+    icon: Music,
+  },
+  {
+    id: 'dancers',
+    title: 'Dancers',
+    subtitle: 'Kathak, Bollywood & Ballet',
+    category: 'Dancers',
+    region: 'all',
+    badge: '💃 Dance',
+    badgeClass: 'bg-rose-100 text-rose-900 border-rose-200',
+    iconBg: 'bg-gradient-to-br from-rose-500 to-pink-600 text-white',
+    icon: Sparkles,
+  },
+  {
+    id: 'graphic-designers',
+    title: 'Graphic Designers',
+    subtitle: 'Film Posters & Key Art',
+    category: 'Graphic Designers',
+    region: 'all',
+    badge: '🎨 Key Art',
+    badgeClass: 'bg-sky-100 text-sky-900 border-sky-200',
+    iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600 text-white',
+    icon: Palette,
+  },
+  {
+    id: 'comedians',
+    title: 'Comedians',
+    subtitle: 'Stand-Up & Satirists',
+    category: 'Comedians',
+    region: 'all',
+    badge: '🎭 Comedy',
+    badgeClass: 'bg-emerald-100 text-emerald-900 border-emerald-200',
+    iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white',
+    icon: Smile,
+  },
+  {
+    id: 'europe',
+    title: 'European Talent',
+    subtitle: 'UK, France, Italy, Spain',
+    category: 'All Categories',
+    region: 'europe',
+    badge: '🇪🇺 Europe',
+    badgeClass: 'bg-blue-100 text-blue-900 border-blue-200',
+    iconBg: 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white',
+    icon: Globe,
+  },
+];
+
+const QUICK_CATEGORY_CHIPS = [
+  { id: 'All Categories', label: 'All Talent', icon: '✨' },
+  { id: 'Film Stars', label: 'Indian Film Stars', icon: '🌟' },
+  { id: 'Musicians', label: 'Musicians', icon: '🎵' },
+  { id: 'Dancers', label: 'Dancers', icon: '💃' },
+  { id: 'Graphic Designers', label: 'Graphic Designers', icon: '🎨' },
+  { id: 'Comedians', label: 'Comedians', icon: '🎭' },
+  { id: 'Actors', label: 'Actors', icon: '🎬' },
+  { id: 'Actresses', label: 'Actresses', icon: '👗' },
+  { id: 'Models', label: 'Models', icon: '📸' },
+  { id: 'Voice Artists', label: 'Voice Artists', icon: '🎙️' },
+  { id: 'Presenters', label: 'Presenters', icon: '📺' },
+  { id: 'Creators', label: 'Creators', icon: '🎥' },
+];
 
 const JOB_CATEGORIES = [
   'All Categories',
@@ -78,6 +185,8 @@ const DiscoverTalentPage = () => {
   // Talent Filter States
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [selectedRegion, setSelectedRegion] = useState('all');
+  const [selectedCountry, setSelectedCountry] = useState('All Countries');
   const [selectedLocation, setSelectedLocation] = useState('All Locations');
   const [selectedExperience, setSelectedExperience] = useState('All Experience');
   const [selectedLanguage, setSelectedLanguage] = useState('All Languages');
@@ -186,6 +295,8 @@ const DiscoverTalentPage = () => {
           search: searchQuery,
           category: selectedCategory,
           location: selectedLocation,
+          region: selectedRegion,
+          country: selectedCountry,
           experience: selectedExperience,
           language: selectedLanguage,
           availability: selectedAvailability,
@@ -209,6 +320,8 @@ const DiscoverTalentPage = () => {
     searchQuery,
     selectedCategory,
     selectedLocation,
+    selectedRegion,
+    selectedCountry,
     selectedExperience,
     selectedLanguage,
     selectedAvailability,
@@ -251,6 +364,8 @@ const DiscoverTalentPage = () => {
     if (searchQuery.trim()) count++;
     if (selectedCategory !== 'All Categories') count++;
     if (selectedLocation !== 'All Locations') count++;
+    if (selectedRegion !== 'all') count++;
+    if (selectedCountry !== 'All Countries') count++;
     if (selectedExperience !== 'All Experience') count++;
     if (selectedLanguage !== 'All Languages') count++;
     if (selectedAvailability !== 'All Availability') count++;
@@ -259,6 +374,8 @@ const DiscoverTalentPage = () => {
     searchQuery,
     selectedCategory,
     selectedLocation,
+    selectedRegion,
+    selectedCountry,
     selectedExperience,
     selectedLanguage,
     selectedAvailability,
@@ -278,6 +395,8 @@ const DiscoverTalentPage = () => {
     setSearchQuery('');
     setSelectedCategory('All Categories');
     setSelectedLocation('All Locations');
+    setSelectedRegion('all');
+    setSelectedCountry('All Countries');
     setSelectedExperience('All Experience');
     setSelectedLanguage('All Languages');
     setSelectedAvailability('All Availability');
@@ -423,6 +542,74 @@ const DiscoverTalentPage = () => {
               </span>
             </button>
           </div>
+
+          {/* SPOTLIGHT CATEGORIES SHOWCASE STRIP (Simple UI/UX 1-Click Filters) */}
+          <div className="pt-5 pb-2">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-brand-pink" />
+                <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
+                  Spotlight Roster &amp; Categories
+                </span>
+              </div>
+              <span className="text-xs text-gray-500 hidden sm:inline">
+                Tap any category for instant 1-click discovery
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {SPOTLIGHT_CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                const isSelected =
+                  cat.id === 'europe'
+                    ? selectedRegion === 'europe'
+                    : selectedCategory === cat.category && (cat.region === 'all' || selectedRegion === cat.region);
+
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('talent');
+                      if (cat.id === 'europe') {
+                        setSelectedRegion('europe');
+                        setSelectedCategory('All Categories');
+                        setSelectedCountry('All Countries');
+                        setToastMessage('Showing European talent roster (UK, France, Germany, Italy, Spain, Sweden)!');
+                      } else {
+                        setSelectedCategory(cat.category);
+                        if (cat.region) setSelectedRegion(cat.region);
+                        setToastMessage(`Showing ${cat.title}!`);
+                      }
+                      setVisibleCount(PAGE_SIZE);
+                    }}
+                    className={`p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden specular-top ${
+                      isSelected
+                        ? 'border-brand-pink bg-pink-50/70 shadow-3d-card-hover ring-2 ring-brand-pink/30 -translate-y-0.5'
+                        : 'border-slate-200/90 bg-white hover:border-slate-300 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 mb-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs ${cat.iconBg}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs ${cat.badgeClass}`}>
+                        {cat.badge}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 group-hover:text-brand-pink transition-colors truncate">
+                        {cat.title}
+                      </h4>
+                      <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                        {cat.subtitle}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -512,11 +699,76 @@ const DiscoverTalentPage = () => {
             </div>
           )}
 
-          {/* Sticky Search and Filters Bar for Talent */}
-          <section className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 py-4 shadow-xs mt-4">
+          {/* Search and Filters Bar for Talent */}
+          <section className="bg-white border-y border-gray-100 py-3.5 shadow-2xs mt-3">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
-              {/* Primary Quick Filters Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+              {/* TOP ROW: Simple 1-Click Region Selector & Category Count */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-gray-100/80">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500 hidden sm:inline">
+                    Region:
+                  </span>
+                  <div className="inline-flex p-1 bg-gray-100/90 rounded-xl border border-gray-200/80 shadow-2xs">
+                    {REGION_FILTERS.map((rf) => {
+                      const isSelected = selectedRegion === rf.id;
+                      return (
+                        <button
+                          key={rf.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedRegion(rf.id);
+                            setVisibleCount(PAGE_SIZE);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-white text-brand-navy shadow-xs ring-1 ring-gray-200'
+                              : 'text-gray-600 hover:text-gray-900'
+                          }`}
+                        >
+                          <span className="text-sm">{rf.flag}</span>
+                          <span>{rf.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="text-xs text-gray-600 font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>
+                    Showing <strong className="text-gray-900 font-bold">{filteredTalent.length}</strong>{' '}
+                    {selectedRegion === 'india' ? 'Indian' : selectedRegion === 'europe' ? 'European' : 'Verified'} artists
+                  </span>
+                </div>
+              </div>
+
+              {/* HORIZONTAL CATEGORY CHIPS (Simple UI/UX for Film Stars, Musicians, Dancers, etc.) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                {QUICK_CATEGORY_CHIPS.map((chip) => {
+                  const isSelected = selectedCategory === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory(chip.id);
+                        setVisibleCount(PAGE_SIZE);
+                      }}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-brand-pink text-white shadow-xs'
+                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200/70'
+                      }`}
+                    >
+                      <span className="text-xs">{chip.icon}</span>
+                      <span>{chip.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Primary Search and Filters Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1">
                 {/* Search Input */}
                 <div className="lg:col-span-4 relative">
                   <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -527,7 +779,7 @@ const DiscoverTalentPage = () => {
                       setSearchQuery(e.target.value);
                       setVisibleCount(PAGE_SIZE);
                     }}
-                    placeholder="Search by artist name, skill, or keyword..."
+                    placeholder="Search name, film star, musician, dancer..."
                     className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-pink/30 focus:border-brand-pink bg-white transition-all shadow-2xs"
                   />
                   {searchQuery && (
@@ -559,19 +811,19 @@ const DiscoverTalentPage = () => {
                   </select>
                 </div>
 
-                {/* Location Dropdown */}
+                {/* Country Dropdown */}
                 <div className="lg:col-span-3">
                   <select
-                    value={selectedLocation}
+                    value={selectedCountry}
                     onChange={(e) => {
-                      setSelectedLocation(e.target.value);
+                      setSelectedCountry(e.target.value);
                       setVisibleCount(PAGE_SIZE);
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-pink/30 focus:border-brand-pink transition-all shadow-2xs cursor-pointer"
                   >
-                    {LOCATION_OPTIONS.map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
+                    {COUNTRY_OPTIONS.map((c) => (
+                      <option key={c} value={c}>
+                        {c === 'All Countries' ? '🌍 All Countries' : `${COUNTRY_FLAGS[c] || ''} ${c}`}
                       </option>
                     ))}
                   </select>
@@ -584,6 +836,7 @@ const DiscoverTalentPage = () => {
                     onClick={() => setShowMoreFilters(!showMoreFilters)}
                     className={`flex-1 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer ${
                       showMoreFilters ||
+                      selectedLocation !== 'All Locations' ||
                       selectedLanguage !== 'All Languages' ||
                       selectedAvailability !== 'All Availability' ||
                       selectedExperience !== 'All Experience'
@@ -592,7 +845,7 @@ const DiscoverTalentPage = () => {
                     }`}
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5" />
-                    <span>Filters</span>
+                    <span>More</span>
                     {activeTalentFiltersCount > 0 && (
                       <span className="w-4 h-4 rounded-full bg-brand-pink text-white text-[10px] flex items-center justify-center font-bold">
                         {activeTalentFiltersCount}
@@ -618,7 +871,27 @@ const DiscoverTalentPage = () => {
 
               {/* Secondary "More Filters" Accordion Row */}
               {showMoreFilters && (
-                <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 animate-in fade-in duration-150">
+                <div className="p-4 bg-gray-50/90 rounded-2xl border border-gray-100 grid grid-cols-1 sm:grid-cols-4 gap-3 pt-3 animate-in fade-in duration-150">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] font-bold text-gray-700">
+                      City / Location
+                    </label>
+                    <select
+                      value={selectedLocation}
+                      onChange={(e) => {
+                        setSelectedLocation(e.target.value);
+                        setVisibleCount(PAGE_SIZE);
+                      }}
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-pink/30 focus:border-brand-pink"
+                    >
+                      {LOCATION_OPTIONS.map((loc) => (
+                        <option key={loc} value={loc}>
+                          {loc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="space-y-1">
                     <label className="block text-[11px] font-bold text-gray-700">
                       Experience Level
@@ -684,14 +957,28 @@ const DiscoverTalentPage = () => {
               {/* Active Filter Chips & Counter Bar */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-gray-500 font-medium">
-                    {isLoadingTalent
-                      ? 'Searching roster...'
-                      : `Showing ${filteredTalent.length} performer${filteredTalent.length === 1 ? '' : 's'}`}
-                  </span>
+                  <span className="text-gray-500 font-medium">Active:</span>
+
+                  {selectedRegion !== 'all' && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[11px] font-bold text-blue-800">
+                      <span>{selectedRegion === 'india' ? '🇮🇳 India' : '🇪🇺 Europe'}</span>
+                      <button onClick={() => setSelectedRegion('all')} className="hover:text-blue-950">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+
+                  {selectedCountry !== 'All Countries' && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[11px] font-bold text-blue-800">
+                      <span>{COUNTRY_FLAGS[selectedCountry] || ''} {selectedCountry}</span>
+                      <button onClick={() => setSelectedCountry('All Countries')} className="hover:text-blue-950">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
 
                   {selectedCategory !== 'All Categories' && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 border border-pink-100 text-[11px] font-bold text-brand-pink">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-pink-50 border border-pink-200 text-[11px] font-bold text-brand-pink">
                       <span>{selectedCategory}</span>
                       <button onClick={() => setSelectedCategory('All Categories')}>
                         <X className="w-3 h-3" />
@@ -811,7 +1098,7 @@ const DiscoverTalentPage = () => {
       {activeTab === 'jobs' && (
         <>
           {/* Search & Filter Bar for Published Jobs */}
-          <section className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 py-4 shadow-xs mt-4">
+          <section className="bg-white border-y border-gray-100 py-4 shadow-2xs mt-4">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
                 {/* Search Bar */}

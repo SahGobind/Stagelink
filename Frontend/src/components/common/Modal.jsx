@@ -51,15 +51,15 @@ const Modal = ({
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
     >
       <div
         ref={modalRef}
-        className={`relative w-full ${sizes[size] || sizes.md} max-h-[92vh] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden animate-in zoom-in-95 duration-150`}
+        className={`relative w-full ${sizes[size] || sizes.md} max-h-[92vh] flex flex-col bg-white rounded-2xl sm:rounded-3xl shadow-3d-floating border border-neutral-200/90 overflow-hidden animate-in zoom-in-95 duration-200 specular-top`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-neutral-200 bg-white shrink-0">
-          <h2 id={titleId} className="text-base sm:text-lg font-bold text-black font-serif tracking-tight truncate pr-2">
+        <div className="flex items-center justify-between px-5 sm:px-7 py-4 sm:py-5 border-b border-neutral-100 bg-white/95 backdrop-blur-sm shrink-0">
+          <h2 id={titleId} className="text-base sm:text-xl font-bold text-neutral-950 font-serif tracking-tight truncate pr-2">
             {title}
           </h2>
           {showClose && (

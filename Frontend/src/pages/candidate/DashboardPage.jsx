@@ -8,8 +8,6 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
-  MessageSquare,
-  Bell,
   ChevronRight,
   AlertCircle,
   Eye,
@@ -25,11 +23,9 @@ import ApplicationStatusBadge from '../../components/applications/ApplicationSta
 import EmptyState from '../../components/common/EmptyState';
 import CreateTicketModal from '../../components/support/CreateTicketModal';
 import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../context/NotificationContext';
 import { getCandidateProfile, calculateProfileCompletion } from '../../data/mockCandidates';
 import { getCandidateApplications } from '../../data/mockApplications';
 import { mockOpportunities } from '../../data/mockOpportunities';
-import { mockMessages } from '../../data/mockMessages';
 import { getStoredSupportTickets } from '../../data/mockSupportTickets';
 import { formatDate } from '../../utils/formatters';
 import { candidateService } from '../../services/candidateService';
@@ -38,7 +34,6 @@ import { castingService } from '../../services/castingService';
 
 const DashboardPage = () => {
   const { user } = useAuth();
-  const { notifications } = useNotifications();
 
   // Synchronize candidate profile & applications from storage & MongoDB Atlas
   const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
@@ -123,28 +118,26 @@ const DashboardPage = () => {
 
   // Recent data sets
   const recentApplications = applications.slice(0, 3);
-  const recentMessages = mockMessages.slice(0, 3);
-  const recentNotifications = (notifications || []).slice(0, 4);
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-8 text-left pb-12">
       {/* 1. TOP WELCOME & PROFILE COMPLETION BANNER */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-brand-border shadow-card space-y-6">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-3d-card specular-top space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           {/* Welcome Info */}
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200/80 shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Verified Performer Account</span>
               </span>
-              <span className="text-xs text-gray-400">•</span>
+              <span className="text-xs text-slate-400">•</span>
               <span className="text-xs font-semibold text-brand-text-secondary">
                 {candidate.location || 'London, UK / Los Angeles, CA'}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-brand-navy">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-brand-navy tracking-tight">
               Welcome back, {firstName}! 👋
             </h1>
 
@@ -154,7 +147,7 @@ const DashboardPage = () => {
           </div>
 
           {/* Profile Completion Card / CTAs */}
-          <div className="bg-gray-50/80 rounded-2xl p-5 border border-gray-100 min-w-[280px] sm:min-w-[320px] space-y-3">
+          <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-200/70 shadow-inner-bevel min-w-[280px] sm:min-w-[320px] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-brand-navy">Portfolio Readiness</span>
               <div className="flex items-center gap-1.5">
@@ -168,12 +161,12 @@ const DashboardPage = () => {
             </div>
 
             {/* Progress Meter */}
-            <div className="w-full bg-gray-200/80 h-2 rounded-full overflow-hidden">
+            <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden shadow-inner-pressed">
               <div
                 className={`h-full transition-all duration-500 ease-out rounded-full ${
                   isProfileComplete
-                    ? 'bg-emerald-500'
-                    : 'bg-gradient-to-r from-amber-500 to-brand-navy'
+                    ? 'bg-emerald-500 shadow-2xs'
+                    : 'bg-gradient-to-r from-amber-500 via-rose-500 to-brand-navy shadow-2xs'
                 }`}
                 style={{ width: `${completionPercentage}%` }}
               />
@@ -182,7 +175,7 @@ const DashboardPage = () => {
             {/* Incomplete / Complete Action */}
             {!isProfileComplete ? (
               <div className="space-y-2 pt-1">
-                <p className="text-[11px] text-gray-500 flex items-center gap-1">
+                <p className="text-[11px] text-slate-500 flex items-center gap-1">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span>
                     Missing: {missingSections.map((s) => s.name).join(', ')}
@@ -190,23 +183,23 @@ const DashboardPage = () => {
                 </p>
                 <Link
                   to="/candidate/profile/setup"
-                  className="block w-full text-center py-2 px-3.5 bg-brand-navy hover:opacity-90 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                  className="block w-full text-center py-2.5 px-3.5 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 specular-top transition-all"
                 >
-                  Complete Profile & Portfolio
+                  Complete Profile &amp; Portfolio
                 </Link>
               </div>
             ) : (
               <div className="flex items-center gap-2 pt-1">
                 <Link
                   to="/candidate/profile"
-                  className="flex-1 text-center py-2 px-3 bg-brand-navy hover:opacity-90 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 text-center py-2 px-3 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 specular-top transition-all flex items-center justify-center gap-1.5"
                 >
                   <Eye className="w-3.5 h-3.5" />
                   <span>View My Profile</span>
                 </Link>
                 <Link
                   to="/candidate/profile/edit"
-                  className="py-2 px-3 bg-white border border-gray-200 hover:border-black text-brand-navy text-xs font-bold rounded-xl transition-colors"
+                  className="py-2 px-3 bg-white border border-slate-200 hover:border-slate-900 text-brand-navy text-xs font-bold rounded-xl shadow-2xs hover:shadow-xs active:translate-y-0.5 transition-all"
                 >
                   Edit
                 </Link>
@@ -221,10 +214,10 @@ const DashboardPage = () => {
         {/* Total Applications */}
         <Link
           to="/candidate/applications"
-          className="group bg-white p-5 sm:p-6 rounded-2xl border border-brand-border hover:border-gray-400 shadow-card hover:shadow-card-hover transition-all flex items-center justify-between"
+          className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-slate-400 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-wider font-bold text-gray-400">
+            <p className="text-[11px] uppercase tracking-wider font-bold text-slate-400">
               Total Applications
             </p>
             <p className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
@@ -235,7 +228,7 @@ const DashboardPage = () => {
               <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-gray-50 group-hover:bg-gray-100 flex items-center justify-center text-brand-navy transition-colors shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-slate-50 group-hover:bg-slate-100 flex items-center justify-center text-brand-navy transition-colors shrink-0 shadow-2xs">
             <FileText className="w-6 h-6" />
           </div>
         </Link>
@@ -243,7 +236,7 @@ const DashboardPage = () => {
         {/* Under Review */}
         <Link
           to="/candidate/applications"
-          className="group bg-white p-5 sm:p-6 rounded-2xl border border-brand-border hover:border-sky-300 shadow-card hover:shadow-card-hover transition-all flex items-center justify-between"
+          className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-sky-300 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
             <p className="text-[11px] uppercase tracking-wider font-bold text-sky-700">
@@ -256,7 +249,7 @@ const DashboardPage = () => {
               <span>Audition review active</span>
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 group-hover:bg-sky-100 flex items-center justify-center text-sky-700 transition-colors shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 group-hover:bg-sky-100 flex items-center justify-center text-sky-700 transition-colors shrink-0 shadow-2xs">
             <Clock className="w-6 h-6" />
           </div>
         </Link>
@@ -264,7 +257,7 @@ const DashboardPage = () => {
         {/* Shortlisted */}
         <Link
           to="/candidate/applications"
-          className="group bg-white p-5 sm:p-6 rounded-2xl border border-brand-border hover:border-amber-300 shadow-card hover:shadow-card-hover transition-all flex items-center justify-between"
+          className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-amber-300 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
             <p className="text-[11px] uppercase tracking-wider font-bold text-amber-700">
@@ -277,7 +270,7 @@ const DashboardPage = () => {
               <span>Director considerations</span>
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center text-amber-700 transition-colors shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center text-amber-700 transition-colors shrink-0 shadow-2xs">
             <Trophy className="w-6 h-6" />
           </div>
         </Link>
@@ -285,7 +278,7 @@ const DashboardPage = () => {
         {/* Interview Invitations */}
         <Link
           to="/candidate/applications"
-          className="group bg-white p-5 sm:p-6 rounded-2xl border border-brand-border hover:border-brand-navy shadow-card hover:shadow-card-hover transition-all flex items-center justify-between"
+          className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-slate-900 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
             <p className="text-[11px] uppercase tracking-wider font-bold text-brand-navy">
@@ -298,23 +291,21 @@ const DashboardPage = () => {
               <span>Audition tape callback</span>
             </span>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-black text-white group-hover:opacity-90 flex items-center justify-center transition-colors shrink-0 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-slate-950 text-white group-hover:opacity-90 flex items-center justify-center transition-colors shrink-0 shadow-3d-button specular-top">
             <Sparkles className="w-6 h-6" />
           </div>
         </Link>
       </div>
 
-      {/* 3. MAIN DASHBOARD CONTENT GRID (Applications, Opportunities vs Messages, Notifications) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column (8 cols): Recent Applications & Recommended Opportunities */}
-        <div className="lg:col-span-8 space-y-8">
+      {/* 3. MAIN DASHBOARD CONTENT (Applications, Recommendations & Opportunities) */}
+      <div className="space-y-8">
           {/* Section: Recent Applications */}
-          <div className="bg-white rounded-3xl border border-brand-border p-6 sm:p-8 shadow-card space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-3d-card specular-top space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div>
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-brand-navy" />
-                  <h2 className="text-xl font-bold font-serif text-brand-navy">
+                  <h2 className="text-xl font-bold font-serif text-brand-navy tracking-tight">
                     Recent Applications
                   </h2>
                 </div>
@@ -345,12 +336,12 @@ const DashboardPage = () => {
                 {recentApplications.map((app) => (
                   <div
                     key={app.id}
-                    className="group p-4 sm:p-5 rounded-2xl border border-gray-100 hover:border-gray-300 bg-gray-50/50 hover:bg-white transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="group p-4 sm:p-5 rounded-2xl border border-slate-200/80 hover:border-slate-300 bg-slate-50/50 hover:bg-white shadow-2xs hover:shadow-3d-subtle hover:-translate-y-0.5 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <ApplicationStatusBadge status={app.status} />
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
                           <Calendar className="w-3 h-3" />
                           Applied {formatDate(app.appliedDate)}
                         </span>
@@ -370,7 +361,7 @@ const DashboardPage = () => {
                       </p>
 
                       {app.notes && (
-                        <p className="text-[11px] text-gray-500 italic pt-0.5">
+                        <p className="text-[11px] text-slate-500 italic pt-0.5">
                           Note: {app.notes}
                         </p>
                       )}
@@ -378,7 +369,7 @@ const DashboardPage = () => {
 
                     <Link
                       to={`/candidate/applications/${app.id}`}
-                      className="px-3.5 py-2 bg-white border border-gray-200 hover:border-black rounded-xl text-xs font-bold text-brand-navy shadow-xs flex items-center justify-center gap-1.5 transition-all self-start sm:self-center shrink-0"
+                      className="px-4 py-2 bg-white border border-slate-200 hover:border-slate-900 rounded-xl text-xs font-bold text-brand-navy shadow-2xs hover:shadow-xs active:translate-y-0.5 flex items-center justify-center gap-1.5 transition-all self-start sm:self-center shrink-0"
                     >
                       <span>Application Details</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -395,7 +386,7 @@ const DashboardPage = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <Film className="w-5 h-5 text-brand-navy" />
-                  <h2 className="text-xl font-bold font-serif text-brand-navy">
+                  <h2 className="text-xl font-bold font-serif text-brand-navy tracking-tight">
                     Recommended Casting Calls
                   </h2>
                 </div>
@@ -429,15 +420,16 @@ const DashboardPage = () => {
           </div>
 
           {/* Prominent Browse Opportunities CTA Banner */}
-          <div className="bg-black text-white p-6 sm:p-8 rounded-3xl shadow-card flex flex-col md:flex-row md:items-center justify-between gap-6 border border-neutral-800">
-            <div className="space-y-1.5 max-w-xl">
+          <div className="bg-gradient-to-r from-neutral-950 via-slate-900 to-neutral-950 text-white p-6 sm:p-8 rounded-3xl shadow-3d-floating specular-top flex flex-col md:flex-row md:items-center justify-between gap-6 border border-neutral-800 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="space-y-1.5 max-w-xl relative z-10">
               <div className="flex items-center gap-2">
                 <Compass className="w-4 h-4 text-emerald-400" />
                 <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-400">
                   StageLink Casting Directory
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-bold font-serif">
+              <h3 className="text-xl sm:text-2xl font-bold font-serif tracking-tight">
                 Discover 500+ Open Casting Calls
               </h3>
               <p className="text-xs text-neutral-300 leading-relaxed">
@@ -447,259 +439,43 @@ const DashboardPage = () => {
 
             <Link
               to="/opportunities"
-              className="px-6 py-3.5 bg-white hover:bg-neutral-100 text-black font-bold text-xs rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 shrink-0 self-start md:self-center"
+              className="px-6 py-3.5 bg-white hover:bg-neutral-100 text-neutral-950 font-bold text-xs rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 specular-top transition-all flex items-center justify-center gap-2 shrink-0 self-start md:self-center relative z-10"
             >
               <span>Browse Opportunities</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
-        </div>
 
-        {/* Right Column (4 cols): Recent Messages & Recent Notifications */}
-        <div className="lg:col-span-4 space-y-8">
-          {/* Recent Messages Card */}
-          <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-brand-navy" />
-                <h3 className="text-sm font-bold font-serif text-brand-navy">
-                  Recent Messages
-                </h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/candidate/messages?conversationId=conv-ops"
-                  className="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200 transition-colors flex items-center gap-1"
-                  title="Direct text channel to StageLink Operations"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>Text Operations</span>
-                </Link>
-                <Link
-                  to="/candidate/messages"
-                  className="text-[11px] font-bold text-brand-navy hover:underline"
-                >
-                  Inbox
-                </Link>
-              </div>
+        {/* Help & Support Desk Banner */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-3d-card specular-top flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-pink-50 text-brand-pink flex items-center justify-center shrink-0 shadow-2xs border border-pink-100">
+              <LifeBuoy className="w-5 h-5" />
             </div>
-
-            {recentMessages.length === 0 ? (
-              <EmptyState
-                icon={MessageSquare}
-                title="No messages"
-                description="Conversations with casting directors will appear here."
-              />
-            ) : (
-              <div className="space-y-2.5">
-                {recentMessages.map((conv) => (
-                  <Link
-                    key={conv.id}
-                    to={`/candidate/messages?conversationId=${conv.id}`}
-                    className="block p-3 rounded-2xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="relative shrink-0">
-                        <img
-                          src={conv.participant.avatar}
-                          alt={conv.participant.name}
-                          className="w-10 h-10 rounded-xl object-cover border border-gray-200"
-                        />
-                        {conv.unreadCount > 0 && (
-                          <span className="absolute -top-1 -right-1 w-3 h-3 bg-brand-navy text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white">
-                            {conv.unreadCount}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-bold text-brand-navy truncate">
-                            {conv.participant.name}
-                          </h4>
-                          <span className="text-[10px] text-gray-400 shrink-0">
-                            {conv.lastMessageTime}
-                          </span>
-                        </div>
-
-                        <p className="text-[11px] text-gray-500 font-medium truncate">
-                          {conv.participant.organization || conv.participant.role}
-                        </p>
-
-                        <p className="text-xs text-brand-text-secondary truncate mt-1">
-                          {conv.lastMessage}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Recent Notifications Card */}
-          <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
-              <div className="flex items-center gap-2">
-                <Bell className="w-4 h-4 text-brand-navy" />
-                <h3 className="text-sm font-bold font-serif text-brand-navy">
-                  Recent Notifications
-                </h3>
-              </div>
-              <Link
-                to="/candidate/notifications"
-                className="text-[11px] font-bold text-brand-navy hover:underline"
-              >
-                View All
-              </Link>
-            </div>
-
-            {recentNotifications.length === 0 ? (
-              <EmptyState
-                icon={Bell}
-                title="No notifications"
-                description="You are caught up on all alerts."
-              />
-            ) : (
-              <div className="space-y-2.5">
-                {recentNotifications.map((notif) => (
-                  <Link
-                    key={notif.id}
-                    to="/candidate/notifications"
-                    className={`block p-3 rounded-2xl border transition-all text-left ${
-                      notif.read
-                        ? 'bg-gray-50/50 border-gray-100 hover:border-gray-200'
-                        : 'bg-neutral-50 border-gray-300 shadow-2xs hover:border-black'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <div
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                          notif.type === 'audition'
-                            ? 'bg-black text-white'
-                            : notif.type === 'opportunity'
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-gray-200 text-brand-navy'
-                        }`}
-                      >
-                        {notif.type === 'audition' ? (
-                          <Sparkles className="w-3.5 h-3.5" />
-                        ) : notif.type === 'opportunity' ? (
-                          <Film className="w-3.5 h-3.5" />
-                        ) : (
-                          <Bell className="w-3.5 h-3.5" />
-                        )}
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-bold text-brand-navy truncate">
-                            {notif.title}
-                          </h4>
-                          {!notif.read && (
-                            <span className="w-2 h-2 rounded-full bg-black shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-[11px] text-gray-500 line-clamp-2 mt-0.5 leading-snug">
-                          {notif.message}
-                        </p>
-                        <span className="text-[10px] text-gray-400 block mt-1">
-                          {notif.timestamp}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Profile Shortcuts Card */}
-          <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-4">
-            <h3 className="text-sm font-bold font-serif text-brand-navy">
-              Profile Management Shortcuts
-            </h3>
-            <div className="space-y-2 text-xs font-semibold">
-              <Link
-                to="/candidate/profile"
-                className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-brand-navy transition-colors"
-              >
-                <span>View Public Composite Card</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
-              <Link
-                to="/candidate/profile/edit"
-                className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-brand-navy transition-colors"
-              >
-                <span>Edit Credits, Media & Bio</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
-              <Link
-                to="/candidate/settings"
-                className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-brand-navy transition-colors"
-              >
-                <span>Contact Privacy & Account</span>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold font-serif text-brand-navy">
+                Need Help with Auditions or Submissions?
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                StageLink Operations Desk is available to assist with callback specs, tapes, and account verification.
+              </p>
             </div>
           </div>
-
-          {/* Help & Support Card (Candidate Dashboard Requirement) */}
-          <div className="bg-white rounded-3xl border border-brand-border p-6 shadow-card space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-pink-50 text-brand-pink flex items-center justify-center">
-                  <LifeBuoy className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold font-serif text-brand-navy">
-                    Help &amp; Support
-                  </h3>
-                  <p className="text-[10px] text-gray-400">Operation Team Desk</p>
-                </div>
-              </div>
-              {supportTickets.some((t) => t.unreadForUser) && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-brand-pink border border-pink-200">
-                  New Reply
-                </span>
-              )}
-            </div>
-
-            <p className="text-xs text-gray-500 leading-relaxed">
-              Have a question about an audition callback, self-tape specifications, or composite card verification?
-            </p>
-
-            <div className="space-y-2 pt-1">
-              {/* Option 1: Contact Operation Team */}
-              <button
-                type="button"
-                onClick={() => setIsSupportModalOpen(true)}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-brand-pink hover:bg-rose-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
-                  <LifeBuoy className="w-4 h-4" />
-                  <span>Contact Operation Team</span>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/80" />
-              </button>
-
-              {/* Option 2: My Support Tickets */}
-              <Link
-                to="/candidate/support"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 text-brand-navy font-bold text-xs transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-400 font-mono text-[11px]">#</span>
-                  <span>My Support Tickets</span>
-                  {supportTickets.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-gray-200 text-gray-700 font-bold ml-1">
-                      {supportTickets.length}
-                    </span>
-                  )}
-                </div>
-                <ChevronRight className="w-4 h-4 text-gray-400" />
-              </Link>
-            </div>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsSupportModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-brand-pink hover:bg-rose-700 text-white font-bold text-xs shadow-3d-button-pink hover:shadow-3d-card-hover active:translate-y-0.5 specular-top transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <LifeBuoy className="w-4 h-4" />
+              <span>Contact Operation Team</span>
+            </button>
+            <Link
+              to="/candidate/support"
+              className="px-4 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-brand-navy font-bold text-xs border border-slate-200/80 shadow-2xs hover:shadow-xs active:translate-y-0.5 transition-all"
+            >
+              <span>My Tickets {supportTickets.length > 0 ? `(${supportTickets.length})` : ''}</span>
+            </Link>
           </div>
         </div>
       </div>

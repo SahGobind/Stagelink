@@ -385,13 +385,14 @@ const AdminDashboardPage = () => {
       </div>
 
       {/* Recruiter Welcome & Company Profile Completion Section */}
-      <div className="bg-gradient-to-r from-gray-950 via-neutral-900 to-gray-900 rounded-3xl p-6 sm:p-7 text-white shadow-xl border border-gray-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="space-y-3 max-w-2xl">
+      <div className="bg-gradient-to-r from-neutral-950 via-slate-900 to-neutral-950 rounded-3xl p-6 sm:p-7 text-white shadow-3d-floating specular-top border border-neutral-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="space-y-3 max-w-2xl relative z-10">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-pink/20 text-pink-300 border border-brand-pink/30 px-3 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-pink/20 text-pink-300 border border-brand-pink/30 px-3 py-0.5 rounded-full shadow-2xs">
               Production Workspace
             </span>
-            <span className="text-xs font-semibold text-gray-400">
+            <span className="text-xs font-semibold text-slate-300">
               Profile: {profileCompletion}% Completed
             </span>
           </div>
@@ -400,7 +401,7 @@ const AdminDashboardPage = () => {
             <h2 className="text-xl sm:text-2xl font-bold font-serif text-white tracking-tight">
               Welcome back, {currentUser?.fullName || 'Production Partner'}!
             </h2>
-            <p className="text-xs sm:text-sm text-gray-300 mt-1 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 leading-relaxed">
               {profileForm.companyName
                 ? `Managing productions and auditions for ${profileForm.companyName}.`
                 : 'Manage your production house, announce casting calls, and discover vetted talent.'}
@@ -408,29 +409,29 @@ const AdminDashboardPage = () => {
           </div>
 
           <div className="space-y-1.5 pt-1">
-            <div className="flex justify-between text-[11px] text-gray-400">
+            <div className="flex justify-between text-[11px] text-slate-400">
               <span>Studio Verification &amp; Profile Setup</span>
               <span>{profileCompletion}%</span>
             </div>
-            <div className="w-full bg-neutral-800 rounded-full h-2 max-w-md overflow-hidden border border-white/10">
+            <div className="w-full bg-neutral-800 rounded-full h-2 max-w-md overflow-hidden border border-white/10 shadow-inner-pressed">
               <div
-                className="bg-brand-pink h-2 rounded-full transition-all duration-500"
+                className="bg-brand-pink h-2 rounded-full transition-all duration-500 shadow-2xs"
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 min-w-[200px] relative z-10">
           <Link to="/post-job" className="w-full">
-            <Button size="sm" variant="primary" className="w-full py-2.5 bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold shadow-md space-x-1.5 flex items-center justify-center">
+            <Button size="sm" variant="primary" className="w-full py-2.5 bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold shadow-3d-button-pink hover:shadow-3d-card-hover active:translate-y-0.5 specular-top space-x-1.5 flex items-center justify-center">
               <PlusCircle className="w-4 h-4" />
               <span>Post a Casting Call</span>
             </Button>
           </Link>
 
           <Link to="/admin/talent" className="w-full">
-            <Button size="sm" variant="secondary" className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 space-x-1.5 flex items-center justify-center">
+            <Button size="sm" variant="secondary" className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 shadow-2xs hover:shadow-xs active:translate-y-0.5 space-x-1.5 flex items-center justify-center">
               <Search className="w-4 h-4 text-pink-300" />
               <span>Discover Talent</span>
             </Button>
@@ -439,7 +440,7 @@ const AdminDashboardPage = () => {
           <button
             type="button"
             onClick={() => setIsProfileModalOpen(true)}
-            className="w-full py-2 px-3 text-center text-xs font-semibold text-gray-300 hover:text-white transition-colors cursor-pointer"
+            className="w-full py-2 px-3 text-center text-xs font-semibold text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             Edit Company Details →
           </button>
@@ -449,18 +450,18 @@ const AdminDashboardPage = () => {
       {/* 6 REQUIRED RECRUITER METRIC CARDS */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Metric 1: Total Jobs */}
-        <div className="p-4 bg-white rounded-2xl border border-gray-200 shadow-2xs space-y-1 hover:border-brand-pink/40 transition-colors">
-          <span className="text-[10px] font-bold uppercase text-gray-500 block tracking-wider">
+        <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
+          <span className="text-[10px] font-bold uppercase text-slate-500 block tracking-wider">
             Total Jobs
           </span>
           <p className="text-2xl sm:text-3xl font-extrabold font-serif text-brand-navy">
             {recruiterStats.total}
           </p>
-          <span className="text-[10px] text-gray-400 font-medium">All posted opportunities</span>
+          <span className="text-[10px] text-slate-400 font-medium">All posted opportunities</span>
         </div>
 
         {/* Metric 2: Published Jobs */}
-        <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1 hover:border-emerald-300 transition-colors">
+        <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
           <span className="text-[10px] font-bold uppercase text-emerald-700 block tracking-wider">
             Published Jobs
           </span>
@@ -471,18 +472,18 @@ const AdminDashboardPage = () => {
         </div>
 
         {/* Metric 3: Drafts */}
-        <div className="p-4 bg-white rounded-2xl border border-gray-200 shadow-2xs space-y-1 hover:border-gray-400 transition-colors">
-          <span className="text-[10px] font-bold uppercase text-gray-500 block tracking-wider">
+        <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
+          <span className="text-[10px] font-bold uppercase text-slate-500 block tracking-wider">
             Drafts
           </span>
-          <p className="text-2xl sm:text-3xl font-extrabold font-serif text-gray-700">
+          <p className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-700">
             {recruiterStats.drafts}
           </p>
-          <span className="text-[10px] text-gray-400 font-medium">Saved drafts in progress</span>
+          <span className="text-[10px] text-slate-400 font-medium">Saved drafts in progress</span>
         </div>
 
         {/* Metric 4: Pending Payments */}
-        <div className="p-4 bg-white rounded-2xl border border-amber-100 shadow-2xs space-y-1 hover:border-amber-300 transition-colors">
+        <div className="p-4 bg-white rounded-2xl border border-amber-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
           <span className="text-[10px] font-bold uppercase text-amber-700 block tracking-wider">
             Pending Payments
           </span>
@@ -493,7 +494,7 @@ const AdminDashboardPage = () => {
         </div>
 
         {/* Metric 5: Pending Review */}
-        <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-2xs space-y-1 hover:border-blue-300 transition-colors">
+        <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
           <span className="text-[10px] font-bold uppercase text-blue-700 block tracking-wider">
             Pending Review
           </span>
@@ -504,7 +505,7 @@ const AdminDashboardPage = () => {
         </div>
 
         {/* Metric 6: Total Applications */}
-        <div className="p-4 bg-white rounded-2xl border border-pink-100 shadow-2xs space-y-1 hover:border-pink-300 transition-colors">
+        <div className="p-4 bg-white rounded-2xl border border-pink-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
           <span className="text-[10px] font-bold uppercase text-brand-pink block tracking-wider">
             Total Applications
           </span>
@@ -516,7 +517,7 @@ const AdminDashboardPage = () => {
       </div>
 
       {/* Recruiter Casting Call Actions Table (Surfacing all 8 actions) */}
-      <div className="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-3d-card specular-top overflow-hidden">
         <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-0.5">
             <h2 className="text-base font-bold font-serif text-gray-900">

@@ -19,7 +19,7 @@ from .serializers import (
 )
 from . import repository
 from starcast.db import check_db_connection
-from starcast.utils import handle_db_error, clean_doc
+from starcast.utils import handle_db_error, clean_doc, get_auth_user_from_request
 
 sanitize_ticket_for_user = repository.sanitize_ticket_for_user
 
@@ -31,8 +31,17 @@ class SupportTicketListCreateView(APIView):
     """
 
     def get(self, request):
+        auth_user = get_auth_user_from_request(request)
         role = request.query_params.get("role", "candidate").lower()
         user_id = request.query_params.get("user_id", "")
+
+        # Enforce role isolation: non-staff cannot spoof another role or user_id
+        if auth_user:
+            auth_role = auth_user.get("role", "candidate")
+            if auth_role not in ("admin", "operations", "super_admin"):
+                role = auth_role
+                user_id = auth_user.get("id")
+
         status_filter = request.query_params.get("status", "").lower()
         user_type_filter = request.query_params.get("user_type", "").lower()
         search = request.query_params.get("search", "").strip()

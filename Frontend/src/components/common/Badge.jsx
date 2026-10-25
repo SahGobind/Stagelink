@@ -7,16 +7,17 @@ const Badge = ({
   dot = false,
   className = '',
 }) => {
-  const baseStyles = 'inline-flex items-center font-medium rounded-full transition-colors duration-150';
+  const baseStyles = 'inline-flex items-center font-semibold rounded-full transition-all duration-150 shadow-2xs';
 
   const variants = {
-    default: 'bg-gray-100 text-black border border-gray-200',
-    primary: 'bg-neutral-100 text-black border border-neutral-300',
-    success: 'bg-green-50 text-brand-success border border-brand-success/20',
-    warning: 'bg-amber-50 text-brand-warning border border-brand-warning/20',
-    danger: 'bg-red-50 text-brand-error border border-brand-error/20',
-    info: 'bg-sky-50 text-sky-700 border border-sky-200',
-    neutral: 'bg-black text-white',
+    default: 'bg-slate-100 text-slate-800 border border-slate-200/90 shadow-inner-bevel',
+    primary: 'bg-neutral-100 text-neutral-900 border border-neutral-300/80 shadow-inner-bevel',
+    success: 'bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-inner-bevel',
+    warning: 'bg-amber-50 text-amber-900 border border-amber-200/80 shadow-inner-bevel',
+    danger: 'bg-rose-50 text-rose-800 border border-rose-200/80 shadow-inner-bevel',
+    info: 'bg-sky-50 text-sky-800 border border-sky-200/80 shadow-inner-bevel',
+    neutral: 'bg-neutral-900 text-white border border-neutral-800 shadow-sm',
+    pink: 'bg-rose-50 text-brand-pink border border-rose-200/90 shadow-inner-bevel',
   };
 
   const dotColors = {

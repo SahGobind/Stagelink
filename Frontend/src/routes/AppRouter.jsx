@@ -135,7 +135,7 @@ const AppRouter = () => {
           path="/candidate"
           element={
             <ProtectedRoute>
-              <RoleBasedRoute allowedRoles={['candidate', 'admin']}>
+              <RoleBasedRoute allowedRoles={['candidate', 'talent', 'user', 'admin', 'super_admin']}>
                 <CandidateLayout />
               </RoleBasedRoute>
             </ProtectedRoute>
@@ -156,12 +156,12 @@ const AppRouter = () => {
           <Route path="support/:id" element={<CandidateTicketDetailsPage />} />
         </Route>
 
-        {/* Admin, Recruiter & Operations Routes */}
+        {/* Admin, Recruiter, Operations & Super Admin Routes */}
         <Route
           path="/admin"
           element={
             <ProtectedRoute>
-              <RoleBasedRoute allowedRoles={['admin', 'recruiter', 'operations']}>
+              <RoleBasedRoute allowedRoles={['super_admin', 'admin', 'recruiter', 'operations']}>
                 <AdminLayout />
               </RoleBasedRoute>
             </ProtectedRoute>
@@ -172,19 +172,42 @@ const AppRouter = () => {
           <Route path="candidates" element={<CandidatesPage />} />
           <Route path="candidates/:id" element={<CandidateDetailsPage />} />
           <Route path="opportunities" element={<AdminOpportunitiesPage />} />
-          <Route path="opportunities/create" element={<CreateOpportunityPage />} />
-          <Route path="opportunities/:id/edit" element={<EditOpportunityPage />} />
+          <Route
+            path="opportunities/create"
+            element={
+              <RoleBasedRoute requiredPermissions="opportunity:create">
+                <CreateOpportunityPage />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="opportunities/:id/edit"
+            element={
+              <RoleBasedRoute requiredPermissions="opportunity:update">
+                <EditOpportunityPage />
+              </RoleBasedRoute>
+            }
+          />
           <Route path="opportunities/:id/candidates" element={<RankedCandidatesPage />} />
           <Route path="candidates/ranked" element={<RankedCandidatesPage />} />
           <Route path="applications" element={<AdminApplicationsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
+          <Route
+            path="security"
+            element={
+              <RoleBasedRoute allowedRoles={['super_admin', 'admin']} requiredPermissions={['role:view', 'audit:view']} requireAll={false}>
+                <AdminSettingsPage initialTab="accessControl" />
+              </RoleBasedRoute>
+            }
+          />
+          <Route path="access-control" element={<Navigate to="/admin/security" replace />} />
           <Route path="support" element={<RecruiterSupportPage />} />
           <Route path="support/:id" element={<RecruiterTicketDetailsPage />} />
           <Route
             path="operations/support"
             element={
-              <RoleBasedRoute allowedRoles={['admin', 'operations']}>
+              <RoleBasedRoute allowedRoles={['super_admin', 'admin', 'operations']} requiredPermissions="support:view_all">
                 <OperationsSupportDashboardPage />
               </RoleBasedRoute>
             }

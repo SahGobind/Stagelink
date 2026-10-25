@@ -33,6 +33,7 @@ import { mockOpportunities } from '../../data/mockOpportunities';
 import { getAllApplications } from '../../data/mockApplications';
 import { getCustomOpportunities, getDeletedOpportunityIds } from '../../utils/paymentAccess';
 import { castingService } from '../../services/castingService';
+import PermissionGate from '../../components/common/PermissionGate';
 
 const AdminOpportunitiesPage = () => {
   const navigate = useNavigate();
@@ -311,12 +312,14 @@ const AdminOpportunitiesPage = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/post-job">
-            <Button className="space-x-2 text-xs bg-brand-pink hover:bg-rose-700 text-white shadow-xs font-bold">
-              <PlusCircle className="w-4 h-4" />
-              <span>Announce Work</span>
-            </Button>
-          </Link>
+          <PermissionGate permission="opportunity:create">
+            <Link to="/post-job">
+              <Button className="space-x-2 text-xs bg-brand-pink hover:bg-rose-700 text-white shadow-xs font-bold">
+                <PlusCircle className="w-4 h-4" />
+                <span>Announce Work</span>
+              </Button>
+            </Link>
+          </PermissionGate>
         </div>
       </div>
 
