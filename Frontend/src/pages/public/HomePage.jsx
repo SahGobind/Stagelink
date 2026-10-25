@@ -474,12 +474,9 @@ const HomePage = () => {
         <div className="mt-5">
           <PageContainer>
             <div className="flex items-center justify-between mb-3 text-left">
-              <div className="flex items-center gap-2.5">
-                <Star className="w-5 h-5 text-amber-500 fill-amber-500 shrink-0" />
-                <h3 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
-                  Top Candidate Profiles Casting on StageLink
-                </h3>
-              </div>
+              <h3 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
+                Top Candidate Profiles Casting on StageLink
+              </h3>
               <span className="text-xs font-medium text-neutral-500 hidden sm:inline">
                 Hover card to pause • Direct profile access
               </span>
