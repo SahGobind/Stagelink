@@ -234,42 +234,42 @@ const HomePage = () => {
       {/* 1. HERO SECTION */}
       <section className="relative overflow-hidden bg-white pt-8 pb-10 lg:pt-14 lg:pb-12 border-b border-slate-200/80 cinematic-subtle-glow">
         <PageContainer>
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-6 space-y-6 text-left">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-neutral-900 text-[11px] font-bold uppercase tracking-widest shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-brand-pink shadow-xs" />
-                <span>Premier Casting & Acting Platform</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl font-bold font-serif text-neutral-950 leading-[1.08] tracking-tight">
-                Your Talent. <br />
-                Your Next Role. <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-950 via-neutral-800 to-brand-pink italic font-serif">
-                  New Stories.
-                </span>
-              </h1>
-
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-lg font-medium">
-                StageLink connects aspiring and seasoned performers directly with visionary directors, film productions, OTT series, and commercial casting agencies.
-              </p>
+          {/* Hero Header */}
+          <div className="max-w-3xl text-left space-y-4 mb-8 sm:mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-neutral-900 text-[11px] font-bold uppercase tracking-widest shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-brand-pink shadow-xs" />
+              <span>Premier Casting &amp; Acting Platform</span>
             </div>
 
-            {/* Right Side: TEST YOUR TALENT Feature Card */}
-            <div className="lg:col-span-6 space-y-5 text-left">
-              {/* Feature 1: TEST YOUR TALENT - 3D Floating Showcase Card */}
-              <div className="bg-white/95 rounded-3xl p-7 sm:p-8 border border-slate-200/90 shadow-3d-floating hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 space-y-4 relative overflow-hidden group specular-top">
-                {/* Ambient Rose Light in corner */}
-                <div className="absolute -top-10 -right-10 w-44 h-44 bg-brand-pink/10 rounded-full blur-3xl pointer-events-none" />
+            <h1 className="text-4xl sm:text-6xl font-bold font-serif text-neutral-950 leading-[1.08] tracking-tight">
+              Your Talent. <br />
+              Your Next Role. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-950 via-neutral-800 to-brand-pink italic font-serif">
+                New Stories.
+              </span>
+            </h1>
 
-                <div className="flex items-center justify-between relative z-10">
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl font-medium">
+              StageLink connects aspiring and seasoned performers directly with visionary directors, film productions, OTT series, and commercial casting agencies.
+            </p>
+          </div>
+
+          {/* Dual Action Cards: Join as Performer (Left) & Join as Company & Production (Right) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            {/* Card 1: For Artists & Performers */}
+            <div className="bg-white/95 rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-3d-floating hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 space-y-4 relative overflow-hidden group specular-top flex flex-col justify-between">
+              {/* Ambient Rose Light */}
+              <div className="absolute -top-10 -right-10 w-44 h-44 bg-brand-pink/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neutral-900 to-black text-white flex items-center justify-center shadow-3d-button group-hover:scale-105 transition-transform duration-200">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neutral-900 to-black text-white flex items-center justify-center shadow-3d-button group-hover:scale-105 transition-transform duration-200 shrink-0">
                       <Sparkles className="w-5 h-5 text-rose-300" />
                     </div>
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
-                        For Artists & Performers
+                        For Artists &amp; Performers
                       </span>
                       <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-950">
                         Test Your Talent
@@ -281,11 +281,11 @@ const HomePage = () => {
                   </span>
                 </div>
 
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed relative z-10">
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                   Build your verified profile, submit self-tape auditions, and get discovered by top casting directors.
                 </p>
 
-                <div className="grid grid-cols-2 gap-2.5 py-1 text-[11px] text-slate-700 font-semibold relative z-10">
+                <div className="grid grid-cols-2 gap-2.5 py-1 text-[11px] text-slate-700 font-semibold">
                   <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/70 rounded-xl p-2.5 shadow-2xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                     <span className="truncate">Self-Tape Auditions</span>
@@ -295,63 +295,126 @@ const HomePage = () => {
                     <span className="truncate">Direct Callbacks</span>
                   </div>
                 </div>
+              </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3 relative z-10">
-                  {isAuthenticated ? (
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3 relative z-10">
+                {isAuthenticated ? (
+                  <>
                     <Link
-                      to="/candidate/profile/setup"
-                      className="inline-flex items-center justify-center px-5 py-3 bg-neutral-950 hover:bg-black text-white text-xs font-bold rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 transition-all gap-2"
+                      to="/candidate/dashboard"
+                      className="inline-flex items-center justify-center px-5 py-3 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
                     >
                       <UserPlus className="w-4 h-4" />
-                      <span>Edit Your Profile</span>
+                      <span>Performer Dashboard</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
-                  ) : (
-                    <>
-                      <Link
-                        to="/signup?from=test-your-talent&redirect=/candidate/profile/setup"
-                        className="inline-flex items-center justify-center px-5 py-3 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        <span>Join as Performer</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </Link>
-                      <Link
-                        to="/login?redirect=/candidate/profile/setup"
-                        className="text-xs font-semibold text-slate-600 hover:text-neutral-950 underline underline-offset-4 transition-colors"
-                      >
-                        Already registered? Log In →
-                      </Link>
-                    </>
-                  )}
+                    <Link
+                      to="/candidate/profile"
+                      className="text-xs font-semibold text-slate-600 hover:text-neutral-950 underline underline-offset-4 transition-colors"
+                    >
+                      View Profile →
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/signup?role=candidate&redirect=/candidate/profile/setup"
+                      className="inline-flex items-center justify-center px-5 py-3 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Join as Performer</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      to="/login?role=candidate&redirect=/candidate/dashboard"
+                      className="text-xs font-semibold text-slate-600 hover:text-neutral-950 underline underline-offset-4 transition-colors"
+                    >
+                      Already registered? Log In →
+                    </Link>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Card 2: For Company & Production */}
+            <div className="bg-white/95 rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-3d-floating hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 space-y-4 relative overflow-hidden group specular-top flex flex-col justify-between">
+              {/* Ambient Rose Light */}
+              <div className="absolute -top-10 -right-10 w-44 h-44 bg-brand-pink/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-neutral-900 to-black text-white flex items-center justify-center shadow-3d-button group-hover:scale-105 transition-transform duration-200 shrink-0">
+                      <Building2 className="w-5 h-5 text-rose-300" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block">
+                        For Company &amp; Production
+                      </span>
+                      <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-950">
+                        Cast Top Talent
+                      </h2>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-slate-100/90 border border-slate-200 rounded-full text-[10px] font-bold text-neutral-950 uppercase tracking-wider shadow-2xs">
+                    Studio &amp; Production
+                  </span>
+                </div>
+
+                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                  Post verified casting calls, evaluate candidate self-tapes, and cast performers directly with zero middlemen fees.
+                </p>
+
+                <div className="grid grid-cols-2 gap-2.5 py-1 text-[11px] text-slate-700 font-semibold">
+                  <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/70 rounded-xl p-2.5 shadow-2xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">Direct Casting Calls</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-slate-50/80 border border-slate-200/70 rounded-xl p-2.5 shadow-2xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">Verified Performer Pool</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* 4 Demo Stats Metrics Strip - Floating 3D Tiles */}
-          <div className="mt-8 pt-6 border-t border-slate-200/80">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">5,000+</p>
-                <p className="text-xs text-slate-500 mt-1 font-semibold">Talented Artists</p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">300+</p>
-                <p className="text-xs text-slate-500 mt-1 font-semibold">Production Houses</p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">1,000+</p>
-                <p className="text-xs text-slate-500 mt-1 font-semibold">Casting Opportunities</p>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-0.5 transition-all">
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950">95%</p>
-                <p className="text-xs text-slate-500 mt-1 font-semibold">Success Stories</p>
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center gap-3 relative z-10">
+                {isRecruiter ? (
+                  <>
+                    <Link
+                      to="/post-job"
+                      className="inline-flex items-center justify-center px-5 py-3 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      <span>Post a Casting Call</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      to="/admin/dashboard"
+                      className="text-xs font-semibold text-slate-600 hover:text-neutral-950 underline underline-offset-4 transition-colors"
+                    >
+                      Studio Dashboard →
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/signup?role=recruiter&redirect=/post-job"
+                      className="inline-flex items-center justify-center px-5 py-3 bg-brand-pink hover:bg-brand-pink-hover text-white text-xs font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all gap-2"
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span>Join as Company &amp; Production</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                    <Link
+                      to="/login?role=recruiter&redirect=/admin/dashboard"
+                      className="text-xs font-semibold text-slate-600 hover:text-neutral-950 underline underline-offset-4 transition-colors"
+                    >
+                      Already registered? Log In →
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-3 text-left font-medium">
-              * Platform metrics shown for demonstration purposes.
-            </p>
           </div>
         </PageContainer>
       </section>
