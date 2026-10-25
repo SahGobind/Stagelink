@@ -181,26 +181,26 @@ const HomePage = () => {
   const steps = [
     {
       num: '01',
-      title: 'Create Your Profile',
-      desc: 'Sign up and build your verified professional acting portfolio, headshots, and showreels.',
+      title: 'Create & Post',
+      desc: 'Performers build verified showreels and acting portfolios, while production houses post casting calls with role criteria.',
       icon: UserCheck,
     },
     {
       num: '02',
-      title: 'Discover Opportunities',
-      desc: 'Filter casting calls by production type, character profile, compensation, and location.',
+      title: 'Discover & Match',
+      desc: 'Performers explore curated casting calls, while casting directors scout and filter top matching talent.',
       icon: Search,
     },
     {
       num: '03',
-      title: 'Apply for Roles',
-      desc: 'Submit your tailored pitch, cover notes, and self-tape auditions with a single click.',
+      title: 'Audition & Review',
+      desc: 'Performers submit digital self-tape auditions and tailored pitches, while production teams evaluate submissions with zero middlemen.',
       icon: Send,
     },
     {
       num: '04',
-      title: 'Connect with Casting Teams',
-      desc: 'Receive direct audition callbacks, live screening requests, and casting notifications.',
+      title: 'Connect & Cast',
+      desc: 'Direct communication for audition callbacks, live screening requests, and final role casting between performers and studios.',
       icon: MessageCircle,
     },
   ];
@@ -919,7 +919,7 @@ const HomePage = () => {
               How It Works
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
-              A simple, four-step process to get noticed and start your professional acting journey.
+              A unified casting workflow for performers to get discovered and production houses to cast top verified talent.
             </p>
           </div>
 
