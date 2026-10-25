@@ -49,10 +49,15 @@ const LoginPage = () => {
   const isRedirectToProfile = redirectParam === '/candidate/profile/setup' || fromPath === '/candidate/profile/setup';
   const isRedirectToAdmin = redirectParam === '/admin/dashboard' || fromPath === '/admin/dashboard';
   const isRedirectToPostJob = redirectParam === '/post-job' || fromPath === '/post-job' || roleParam === 'recruiter';
+  const isRedirectToTalent =
+    redirectParam?.startsWith('/talent') ||
+    fromPath?.startsWith('/talent') ||
+    redirectParam?.startsWith('/discover-talent') ||
+    fromPath?.startsWith('/discover-talent');
 
   // Requirement 1: Only two user types on public login: Candidate / Artist & Recruiter / Production Company
   const [userType, setUserType] = useState(() => {
-    if (roleParam === 'recruiter' || isRedirectToPostJob || isRedirectToAdmin) {
+    if (roleParam === 'recruiter' || isRedirectToPostJob || isRedirectToAdmin || isRedirectToTalent) {
       return 'recruiter';
     }
     return 'candidate';

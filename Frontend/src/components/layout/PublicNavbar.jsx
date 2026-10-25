@@ -32,9 +32,15 @@ const PublicNavbar = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const isRecruiter =
+    isAuthenticated &&
+    (user?.role === 'recruiter' ||
+      user?.role === 'admin' ||
+      user?.role === 'super_admin');
+
   const navLinks = [
     { label: 'Casting Calls', path: '/opportunities' },
-    { label: 'Discover Talent', path: '/talent' },
+    ...(isRecruiter ? [{ label: 'Discover Talent', path: '/talent' }] : []),
     { label: 'How It Works', path: '/how-it-works' },
     { label: 'About', path: '/about' },
   ];

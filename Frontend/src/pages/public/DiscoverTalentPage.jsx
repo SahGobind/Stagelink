@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, Navigate } from 'react-router-dom';
 import {
   Search,
   Filter,
@@ -169,8 +169,18 @@ const JOB_CATEGORIES = [
 
 const DiscoverTalentPage = () => {
   const location = useLocation();
-  const { isAuthenticated, user } = useAuth();
-  const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin');
+  const { isAuthenticated, user, loading } = useAuth();
+  const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin' || user?.role === 'super_admin');
+
+  // Discover Talent is exclusively for authenticated Recruiters, Studios, and Admins
+  if (!loading) {
+    if (!isAuthenticated) {
+      return <Navigate to="/login?role=recruiter&redirect=/talent" state={{ from: location }} replace />;
+    }
+    if (!isRecruiter) {
+      return <Navigate to="/opportunities" replace />;
+    }
+  }
 
   // Tab State: 'talent' (Browse Talent Roster) or 'jobs' (Published Casting Calls)
   const [activeTab, setActiveTab] = useState(

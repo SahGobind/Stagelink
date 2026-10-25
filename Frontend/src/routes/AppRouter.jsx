@@ -97,9 +97,36 @@ const AppRouter = () => {
           <Route path="/payment/callback" element={<PaymentCallbackPage />} />
           <Route path="/escrow-payment" element={<PaymentPage />} />
           <Route path="/design-system" element={<DesignSystemPage />} />
-          <Route path="/talent" element={<DiscoverTalentPage />} />
-          <Route path="/discover-talent" element={<DiscoverTalentPage />} />
-          <Route path="/saved-talent" element={<SavedTalentPage />} />
+          <Route
+            path="/talent"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['recruiter', 'admin', 'super_admin']}>
+                  <DiscoverTalentPage />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discover-talent"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['recruiter', 'admin', 'super_admin']}>
+                  <DiscoverTalentPage />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved-talent"
+            element={
+              <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['recruiter', 'admin', 'super_admin']}>
+                  <SavedTalentPage />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/talent/:id" element={<PublicCandidateProfilePage />} />
         </Route>
 

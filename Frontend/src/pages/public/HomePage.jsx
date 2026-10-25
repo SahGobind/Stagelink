@@ -153,7 +153,7 @@ export const TOP_PRODUCTION_COUNTRIES = [
 
 const HomePage = () => {
   const { isAuthenticated, user } = useAuth();
-  const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin');
+  const isRecruiter = isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin' || user?.role === 'super_admin');
 
   // Curated list of top candidate profiles for continuous marquee
   const topCandidateProfiles = [
@@ -613,7 +613,7 @@ const HomePage = () => {
             </div>
 
             <Link
-              to="/talent"
+              to={isRecruiter ? '/talent' : '/login?role=recruiter&redirect=/talent'}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-black hover:text-brand-pink group self-start md:self-end"
             >
               <span>Explore All Verified Talent</span>
@@ -624,7 +624,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {/* 1. Indian Film Stars */}
             <Link
-              to="/talent?category=Film Stars&region=india"
+              to={isRecruiter ? '/talent?category=Film Stars&region=india' : '/login?role=recruiter&redirect=/talent'}
               className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-amber-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
             >
               <div className="space-y-3">
@@ -657,7 +657,7 @@ const HomePage = () => {
 
             {/* 2. Musicians & Composers */}
             <Link
-              to="/talent?category=Musicians"
+              to={isRecruiter ? '/talent?category=Musicians' : '/login?role=recruiter&redirect=/talent'}
               className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-purple-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
             >
               <div className="space-y-3">
@@ -689,7 +689,7 @@ const HomePage = () => {
 
             {/* 3. Dancers & Choreographers */}
             <Link
-              to="/talent?category=Dancers"
+              to={isRecruiter ? '/talent?category=Dancers' : '/login?role=recruiter&redirect=/talent'}
               className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-rose-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
             >
               <div className="space-y-3">
@@ -721,7 +721,7 @@ const HomePage = () => {
 
             {/* 4. Graphic Designers */}
             <Link
-              to="/talent?category=Graphic Designers"
+              to={isRecruiter ? '/talent?category=Graphic Designers' : '/login?role=recruiter&redirect=/talent'}
               className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-sky-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
             >
               <div className="space-y-3">
@@ -753,7 +753,7 @@ const HomePage = () => {
 
             {/* 5. Comedians */}
             <Link
-              to="/talent?category=Comedians"
+              to={isRecruiter ? '/talent?category=Comedians' : '/login?role=recruiter&redirect=/talent'}
               className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-emerald-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
             >
               <div className="space-y-3">
@@ -785,7 +785,7 @@ const HomePage = () => {
 
             {/* 6. European Countries */}
             <Link
-              to="/talent?region=europe"
+              to={isRecruiter ? '/talent?region=europe' : '/login?role=recruiter&redirect=/talent'}
               className="group bg-white p-6 rounded-3xl border border-neutral-200 shadow-subtle hover:border-blue-400 hover:shadow-card transition-all flex flex-col justify-between text-left relative overflow-hidden"
             >
               <div className="space-y-3">
