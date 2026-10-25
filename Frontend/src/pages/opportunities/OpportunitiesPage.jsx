@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   X,
@@ -11,10 +11,6 @@ import {
   ShieldCheck,
   Building2,
   Film,
-  PlusCircle,
-  ArrowRight,
-  Briefcase,
-  Users,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
@@ -348,109 +344,43 @@ const OpportunitiesPage = () => {
         <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-rose-100/35 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32" />
         <div className="absolute bottom-0 left-10 w-96 h-96 bg-amber-50/40 rounded-full blur-3xl pointer-events-none" />
 
-        <PageContainer className="relative z-10 py-2 sm:py-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-4">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200/80 text-brand-pink text-xs font-bold tracking-wide shadow-2xs">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-pink" />
-                </span>
-                <Sparkles className="w-3.5 h-3.5 text-brand-pink" />
-                <span>Verified Casting Directory</span>
-                <span className="text-rose-300">•</span>
-                <span className="text-neutral-700 font-semibold">{allOpportunities.length} Active Auditions</span>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-3xl sm:text-5xl lg:text-5xl font-bold font-serif text-neutral-950 tracking-tight leading-[1.15]">
-                Casting Calls &amp; <span className="text-brand-pink italic font-serif">Auditions</span>
-              </h1>
-
-              {/* Description */}
-              <p className="text-sm sm:text-base text-neutral-600 max-w-2xl font-normal leading-relaxed">
-                Discover verified acting opportunities, lead roles, and casting calls directly from certified production houses across feature films, OTT web series, national commercials, and theatre.
-              </p>
-
-              {/* Trust Badges */}
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-xs text-neutral-600 font-medium">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>100% Certified Productions</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
-                  <CheckCircle2 className="w-4 h-4 text-brand-pink" />
-                  <span>Direct Casting Team Review</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
-                  <Film className="w-4 h-4 text-neutral-700" />
-                  <span>Zero Middlemen Fees</span>
-                </div>
-              </div>
+        <PageContainer className="relative z-10 py-4 sm:py-6">
+          <div className="max-w-3xl space-y-4">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200/80 text-brand-pink text-xs font-bold tracking-wide shadow-2xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-pink" />
+              </span>
+              <Sparkles className="w-3.5 h-3.5 text-brand-pink" />
+              <span>Verified Casting Directory</span>
+              <span className="text-rose-300">•</span>
+              <span className="text-neutral-700 font-semibold">{allOpportunities.length} Active Auditions</span>
             </div>
 
-            {/* Right Card: Production Desk & Quick Actions */}
-            <div className="lg:col-span-5 flex justify-end">
-              <div className="w-full max-w-md bg-white/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-3d-floating specular-top transition-all space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-brand-pink flex items-center justify-center font-bold shadow-2xs border border-rose-100/70">
-                      <Briefcase className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-neutral-950 uppercase tracking-wider">
-                        Production Desk
-                      </h3>
-                      <p className="text-[11px] text-neutral-500">For Casting Directors &amp; Studios</p>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Live Radar
-                  </span>
-                </div>
+            {/* Title */}
+            <h1 className="text-3xl sm:text-5xl lg:text-5xl font-bold font-serif text-neutral-950 tracking-tight leading-[1.15]">
+              Casting Calls &amp; <span className="text-brand-pink italic font-serif">Auditions</span>
+            </h1>
 
-                {/* Mini stats highlights */}
-                <div className="grid grid-cols-2 gap-2.5 text-center">
-                  <div className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/60 shadow-inner-bevel">
-                    <span className="text-xl font-bold font-serif text-neutral-950 block">
-                      {allOpportunities.length}
-                    </span>
-                    <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">
-                      Verified Calls
-                    </span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-rose-50/50 border border-rose-100/60 shadow-inner-bevel">
-                    <span className="text-xl font-bold font-serif text-brand-pink block">
-                      Direct
-                    </span>
-                    <span className="text-[10px] text-neutral-500 font-semibold uppercase tracking-wider">
-                      Studio Auditions
-                    </span>
-                  </div>
-                </div>
+            {/* Description */}
+            <p className="text-sm sm:text-base text-neutral-600 max-w-2xl font-normal leading-relaxed">
+              Discover verified acting opportunities, lead roles, and casting calls directly from certified production houses across feature films, OTT web series, national commercials, and theatre.
+            </p>
 
-                {/* Quick Actions */}
-                <div className="pt-1 space-y-2">
-                  <Link
-                    to="/post-job"
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 specular-top group"
-                  >
-                    <PlusCircle className="w-4 h-4 text-brand-pink group-hover:scale-110 transition-transform" />
-                    <span>Post a Casting Call</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
-                  </Link>
-
-                  <Link
-                    to="/discover-talent"
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:translate-y-0.5"
-                  >
-                    <Users className="w-3.5 h-3.5 text-neutral-500" />
-                    <span>Explore Talent Directory</span>
-                  </Link>
-                </div>
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-xs text-neutral-600 font-medium">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>100% Certified Productions</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
+                <CheckCircle2 className="w-4 h-4 text-brand-pink" />
+                <span>Direct Casting Team Review</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
+                <Film className="w-4 h-4 text-neutral-700" />
+                <span>Zero Middlemen Fees</span>
               </div>
             </div>
           </div>
