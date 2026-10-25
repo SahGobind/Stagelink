@@ -473,10 +473,10 @@ const HomePage = () => {
         {/* Track 2: "Just Niche" - Top Candidate Profiles - Continuous Infinite Marquee */}
         <div className="mt-5">
           <PageContainer>
-            <div className="flex items-center justify-between mb-2 text-left">
-              <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <h3 className="text-sm sm:text-base font-bold font-serif text-black uppercase tracking-wider">
+            <div className="flex items-center justify-between mb-3 text-left">
+              <div className="flex items-center gap-2.5">
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500 shrink-0" />
+                <h3 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
                   Top Candidate Profiles Casting on StageLink
                 </h3>
               </div>
