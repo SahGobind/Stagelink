@@ -4,6 +4,7 @@ const PageContainer = ({
   children,
   className = '',
   maxWidth = '7xl',
+  noPaddingY = false,
 }) => {
   const maxWidths = {
     sm: 'max-w-screen-sm',
@@ -19,8 +20,11 @@ const PageContainer = ({
     full: 'max-w-full',
   };
 
+  const hasCustomPy = className.includes('py-') || className.includes('pt-') || className.includes('pb-') || noPaddingY;
+  const paddingY = hasCustomPy ? '' : 'py-3 sm:py-5';
+
   return (
-    <div className={`w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 ${maxWidths[maxWidth] || maxWidths['7xl']} ${className}`}>
+    <div className={`w-full mx-auto px-4 sm:px-6 lg:px-8 ${paddingY} ${maxWidths[maxWidth] || maxWidths['7xl']} ${className}`}>
       {children}
     </div>
   );

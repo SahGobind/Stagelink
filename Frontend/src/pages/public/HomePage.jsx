@@ -231,8 +231,8 @@ const HomePage = () => {
   return (
     <div>
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-white py-6 sm:py-8 border-b border-slate-200/80 cinematic-subtle-glow">
-        <PageContainer>
+      <section className="relative overflow-hidden bg-white pt-2.5 pb-6 sm:pt-4 sm:pb-8 border-b border-slate-200/80 cinematic-subtle-glow">
+        <PageContainer className="py-0">
           {/* Dual Action Cards: Join as Performer (Left) & Join as Company & Production (Right) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             {/* Card 1: For Artists & Performers */}
@@ -399,8 +399,8 @@ const HomePage = () => {
       </section>
 
       {/* 2. TOP PRODUCTION COUNTRIES/COMPANIES & TOP CANDIDATES (CONTINUOUS SCROLLING MARQUEE) */}
-      <section className="bg-neutral-50/70 py-6 sm:py-8 border-b border-neutral-200 overflow-hidden">
-        <PageContainer className="space-y-6">
+      <section className="bg-neutral-50/70 py-5 sm:py-7 border-b border-neutral-200 overflow-hidden">
+        <PageContainer className="py-0 space-y-5">
           {/* Track 1: Top Production Companies & Countries */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 text-left">
@@ -579,8 +579,8 @@ const HomePage = () => {
       </section>
 
       {/* 3. PLATFORM BENEFITS SECTION */}
-      <section className="py-6 sm:py-8 border-b border-slate-200/80 bg-slate-50/50">
-        <PageContainer>
+      <section className="py-5 sm:py-7 border-b border-slate-200/80 bg-slate-50/50">
+        <PageContainer className="py-0">
           <div className="text-left mb-5 space-y-1">
             <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest block">
               Why Choose StageLink
@@ -611,8 +611,8 @@ const HomePage = () => {
       </section>
 
       {/* 3b. SPOTLIGHT TALENT SHOWCASE: INDIAN FILM STARS, MUSICIANS, DANCERS, GRAPHIC DESIGNERS, COMEDIANS, EUROPE */}
-      <section className="py-6 sm:py-8 bg-neutral-50/60 border-b border-neutral-200">
-        <PageContainer>
+      <section className="py-5 sm:py-7 bg-neutral-50/60 border-b border-neutral-200">
+        <PageContainer className="py-0">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-5 text-left gap-3">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-100 text-brand-pink text-xs font-bold mb-1.5">
@@ -874,8 +874,8 @@ const HomePage = () => {
       )}
 
       {/* 6. HOW IT WORKS (4 STEPS) */}
-      <section className="bg-slate-50/70 py-6 sm:py-8 border-b border-slate-200/80">
-        <PageContainer>
+      <section className="bg-slate-50/70 py-5 sm:py-7 border-b border-slate-200/80">
+        <PageContainer className="py-0">
           <div className="text-left mb-5 space-y-1">
             <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest block">
               The Journey
