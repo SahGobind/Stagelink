@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
   Star,
-  Search,
-  Bell,
   Menu,
   X,
   LogOut,
@@ -12,19 +10,15 @@ import {
   Settings,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useNotifications } from '../../context/NotificationContext';
-import NotificationDropdown from './NotificationDropdown';
 import GlobalSearchModal from '../common/GlobalSearchModal';
 
 const PublicNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuth();
-  const { unreadCount } = useNotifications();
 
   // Global keyboard shortcut for quick search (Ctrl+K or Cmd+K)
   useEffect(() => {
@@ -84,54 +78,6 @@ const PublicNavbar = () => {
 
           {/* Desktop Right Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* Search Icon / Button */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsSearchOpen(true);
-                setIsNotificationsOpen(false);
-                setUserMenuOpen(false);
-              }}
-              className="p-2 text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100/80 transition-all rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs"
-              title="Quick Search (Ctrl + K)"
-              aria-label="Search platform"
-            >
-              <Search className="w-4 h-4" />
-              <span className="hidden xl:inline text-[10px] font-semibold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded border border-neutral-200/80 shadow-2xs">
-                ⌘K
-              </span>
-            </button>
-
-            {/* Notification Bell with Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNotificationsOpen((prev) => !prev);
-                  setUserMenuOpen(false);
-                }}
-                className={`p-2 rounded-xl transition-all relative cursor-pointer shadow-2xs ${
-                  isNotificationsOpen
-                    ? 'text-brand-pink bg-rose-50 border border-rose-200/60 shadow-xs'
-                    : 'text-neutral-600 hover:text-neutral-950 hover:bg-neutral-100/80 hover:shadow-xs'
-                }`}
-                title="Notifications"
-                aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-brand-pink text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 ring-2 ring-white shadow-xs">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-
-              <NotificationDropdown
-                isOpen={isNotificationsOpen}
-                onClose={() => setIsNotificationsOpen(false)}
-              />
-            </div>
-
             {/* User Profile / Production House Dropdown */}
             {isAuthenticated ? (
               <div className="relative">
@@ -187,7 +133,7 @@ const PublicNavbar = () => {
                       to="/post-job"
                       className="flex items-center gap-2.5 px-4 py-2 hover:bg-rose-50 text-brand-pink font-bold transition-colors"
                     >
-                      <PlusCircle className="w-4 h-4" />
+                      <Briefcase className="w-4 h-4" />
                       <span>Post New Casting</span>
                     </Link>
                     <hr className="my-1 border-neutral-100" />
@@ -219,26 +165,6 @@ const PublicNavbar = () => {
 
           {/* Mobile menu trigger */}
           <div className="md:hidden flex items-center space-x-1">
-            <button
-              type="button"
-              onClick={() => setIsSearchOpen(true)}
-              className="p-2 text-gray-700 hover:bg-gray-100 rounded-xl cursor-pointer"
-              title="Search Opportunities & Talent"
-            >
-              <Search className="w-5 h-5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsNotificationsOpen((prev) => !prev)}
-              className="p-2 text-gray-700 hover:bg-gray-100 rounded-xl relative cursor-pointer"
-              title="Notifications"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-pink rounded-full ring-2 ring-white" />
-              )}
-            </button>
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
