@@ -4,13 +4,10 @@ import {
   Search,
   X,
   RotateCcw,
-  Sparkles,
   ChevronDown,
   Filter,
   CheckCircle2,
   ShieldCheck,
-  Building2,
-  Film,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
@@ -337,58 +334,40 @@ const OpportunitiesPage = () => {
   const canLoadMore = visibleCount < totalCount;
 
   return (
-    <div className="bg-slate-50/60 min-h-screen pb-20 space-y-8">
-      {/* 1. HERO HEADER */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-slate-100/70 via-white to-white border-b border-slate-200/80 pt-8 pb-12 sm:pt-12 sm:pb-16 text-left">
-        {/* Subtle decorative background glows */}
-        <div className="absolute top-0 right-0 w-[550px] h-[550px] bg-rose-100/35 rounded-full blur-3xl pointer-events-none -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-10 w-96 h-96 bg-amber-50/40 rounded-full blur-3xl pointer-events-none" />
-
-        <PageContainer className="relative z-10 py-4 sm:py-6">
-          <div className="max-w-3xl space-y-4">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200/80 text-brand-pink text-xs font-bold tracking-wide shadow-2xs">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-pink" />
-              </span>
-              <Sparkles className="w-3.5 h-3.5 text-brand-pink" />
-              <span>Verified Casting Directory</span>
-              <span className="text-rose-300">•</span>
-              <span className="text-neutral-700 font-semibold">{allOpportunities.length} Active Auditions</span>
+    <div className="bg-slate-50/60 min-h-screen pb-20">
+      {/* 1. COMPACT HERO HEADER */}
+      <section className="bg-white border-b border-slate-200/80 py-4 sm:py-5 text-left">
+        <PageContainer>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                  Casting Directory
+                </span>
+                <span className="text-slate-300">•</span>
+                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                  {allOpportunities.length} Active Auditions
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
+                Casting Calls &amp; <span className="text-brand-pink italic font-serif">Auditions</span>
+              </h1>
             </div>
 
-            {/* Title */}
-            <h1 className="text-3xl sm:text-5xl lg:text-5xl font-bold font-serif text-neutral-950 tracking-tight leading-[1.15]">
-              Casting Calls &amp; <span className="text-brand-pink italic font-serif">Auditions</span>
-            </h1>
-
-            {/* Description */}
-            <p className="text-sm sm:text-base text-neutral-600 max-w-2xl font-normal leading-relaxed">
-              Discover verified acting opportunities, lead roles, and casting calls directly from certified production houses across feature films, OTT web series, national commercials, and theatre.
-            </p>
-
-            {/* Trust Badges */}
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-2 text-xs text-neutral-600 font-medium">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            {/* Subtle, minimalist badge */}
+            <div className="flex items-center gap-2 self-start sm:self-auto text-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200/80 text-slate-600 font-medium text-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 <span>100% Certified Productions</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
-                <CheckCircle2 className="w-4 h-4 text-brand-pink" />
-                <span>Direct Casting Team Review</span>
-              </div>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 border border-slate-200/60 shadow-2xs">
-                <Film className="w-4 h-4 text-neutral-700" />
-                <span>Zero Middlemen Fees</span>
-              </div>
+              </span>
             </div>
           </div>
         </PageContainer>
       </section>
 
       {/* 2. SEARCH & FILTER CONTROLS */}
-      <PageContainer className="-mt-8 sm:-mt-10 relative z-20 space-y-6">
+      <PageContainer className="pt-5 sm:pt-6 space-y-6">
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-3d-card specular-top space-y-5">
           {/* Top Search Input */}
           <div className="relative">
