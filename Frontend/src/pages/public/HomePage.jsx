@@ -398,82 +398,98 @@ const HomePage = () => {
         </PageContainer>
       </section>
 
-      {/* 2. TOP PRODUCTION COUNTRIES & TOP CANDIDATES (CONTINUOUS SCROLLING MARQUEE) */}
+      {/* 2. TOP PRODUCTION COUNTRIES/COMPANIES & TOP CANDIDATES (CONTINUOUS SCROLLING MARQUEE) */}
       <section className="bg-neutral-50/70 py-6 sm:py-8 border-b border-neutral-200 overflow-hidden">
-        <PageContainer>
-          {/* Section Header */}
-          <div className="mb-4 text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-1.5">
-              <Globe className="w-3.5 h-3.5" />
-              <span>Global Production Hubs & Discovered Talent</span>
+        <PageContainer className="space-y-6">
+          {/* Track 1: Top Production Companies & Countries */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 text-left">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-1.5">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Global Production Hubs & Discovered Talent</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
+                  Top Production Companies & Countries Casting on StageLink
+                </h2>
+              </div>
+              <span className="text-xs font-medium text-neutral-500 hidden sm:inline">
+                Hover card to pause • Direct opportunity access
+              </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
-              Top Production Countries Casting on StageLink
-            </h2>
-          </div>
-        </PageContainer>
 
-        {/* Track 1: Top Production Countries - Continuous Infinite Marquee */}
-        <div className="relative w-full overflow-hidden my-1">
-          {/* Edge gradient masks */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+            <div className="relative w-full overflow-hidden rounded-2xl py-1">
+              {/* Edge gradient masks */}
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
 
-          <div className="flex animate-marquee-continuous py-2 gap-4 px-4">
-            {[...TOP_PRODUCTION_COUNTRIES, ...TOP_PRODUCTION_COUNTRIES].map((country, index) => (
-              <div
-                key={`country-${index}`}
-                className="w-72 sm:w-80 shrink-0 bg-white p-5 rounded-2xl border border-neutral-200 shadow-subtle hover:shadow-card hover:border-black transition-all text-left flex flex-col justify-between group cursor-pointer"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-3xl leading-none select-none">{country.flag}</span>
-                      <div>
-                        <h3 className="text-base font-bold font-serif text-black group-hover:text-neutral-900 transition-colors">
-                          {country.name}
-                        </h3>
-                        <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider block">
-                          {country.code} • Entertainment Hub
+              <div className="flex animate-marquee-continuous py-2 gap-4 px-1">
+                {[...TOP_PRODUCTION_COUNTRIES, ...TOP_PRODUCTION_COUNTRIES].map((country, index) => (
+                  <div
+                    key={`country-${index}`}
+                    className="w-[270px] sm:w-[310px] md:w-80 shrink-0 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-subtle hover:shadow-card hover:border-black transition-all text-left flex flex-col justify-between group cursor-pointer h-[195px]"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-8 h-6 sm:w-9 sm:h-6.5 rounded bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0 overflow-hidden shadow-2xs relative">
+                            <img
+                              src={`https://flagcdn.com/w80/${country.code.toLowerCase()}.png`}
+                              alt={country.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            <span className="font-black text-[10px] text-neutral-700 select-none -z-10">
+                              {country.code}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-sm sm:text-base font-bold font-serif text-black truncate group-hover:text-neutral-900 transition-colors">
+                              {country.name}
+                            </h3>
+                            <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wider block truncate">
+                              {country.code} • Entertainment Hub
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 bg-neutral-100 text-black text-[10px] font-bold rounded-full border border-neutral-200 shrink-0 whitespace-nowrap">
+                          {country.badge}
                         </span>
                       </div>
+
+                      <p className="text-xs font-medium text-neutral-800 line-clamp-1">
+                        {country.industry}
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
+                        <span className="truncate">{country.hub}</span>
+                      </p>
                     </div>
-                    <span className="px-2.5 py-0.5 bg-neutral-100 text-black text-[10px] font-bold rounded-full border border-neutral-200">
-                      {country.badge}
-                    </span>
+
+                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between mt-auto">
+                      <span className="text-xs font-semibold text-black flex items-center gap-1.5">
+                        <Film className="w-3.5 h-3.5 text-black" />
+                        {country.activeCalls}
+                      </span>
+                      <Link
+                        to={country.link}
+                        className="text-xs font-bold text-black group-hover:underline flex items-center gap-1"
+                      >
+                        <span>View Roles</span>
+                        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </Link>
+                    </div>
                   </div>
-
-                  <p className="text-xs font-medium text-neutral-800 line-clamp-1">
-                    {country.industry}
-                  </p>
-                  <p className="text-[11px] text-neutral-500 mt-1 flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
-                    <span className="truncate">{country.hub}</span>
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-black flex items-center gap-1.5">
-                    <Film className="w-3.5 h-3.5 text-black" />
-                    {country.activeCalls}
-                  </span>
-                  <Link
-                    to={country.link}
-                    className="text-xs font-bold text-black group-hover:underline flex items-center gap-1"
-                  >
-                    <span>View Roles</span>
-                    <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                  </Link>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-        {/* Track 2: "Just Niche" - Top Candidate Profiles - Continuous Infinite Marquee */}
-        <div className="mt-5">
-          <PageContainer>
-            <div className="flex items-center justify-between mb-3 text-left">
+          {/* Track 2: Top Candidate Profiles / Performers */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between text-left">
               <h3 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
                 Top Candidate Profiles Casting on StageLink
               </h3>
@@ -481,86 +497,85 @@ const HomePage = () => {
                 Hover card to pause • Direct profile access
               </span>
             </div>
-          </PageContainer>
 
-          <div className="relative w-full overflow-hidden my-2">
-            {/* Edge gradient masks */}
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+            <div className="relative w-full overflow-hidden rounded-2xl py-1">
+              {/* Edge gradient masks */}
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
 
-            <div className="flex animate-marquee-continuous-reverse py-2 gap-4 px-4">
-              {[...topCandidateProfiles, ...topCandidateProfiles].map((talent, index) => (
-                <div
-                  key={`candidate-${talent.id}-${index}`}
-                  className="w-72 sm:w-80 shrink-0 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-subtle hover:shadow-card hover:border-black transition-all text-left flex flex-col justify-between group cursor-pointer"
-                >
-                  <div>
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="relative shrink-0">
-                        <img
-                          src={talent.avatar || FALLBACK_TALENT_AVATAR}
-                          alt={talent.fullName}
-                          onError={(e) => {
-                            e.currentTarget.src = FALLBACK_TALENT_AVATAR;
-                          }}
-                          className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl object-cover border border-neutral-200 shadow-2xs"
-                        />
-                        {talent.isFilmStar && (
-                          <span className="absolute -bottom-1 -right-1 bg-amber-400 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
-                            ★
-                          </span>
-                        )}
+              <div className="flex animate-marquee-continuous-reverse py-2 gap-4 px-1">
+                {[...topCandidateProfiles, ...topCandidateProfiles].map((talent, index) => (
+                  <div
+                    key={`candidate-${talent.id}-${index}`}
+                    className="w-[270px] sm:w-[310px] md:w-80 shrink-0 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-subtle hover:shadow-card hover:border-black transition-all text-left flex flex-col justify-between group cursor-pointer h-[195px]"
+                  >
+                    <div>
+                      <div className="flex items-start gap-2.5 sm:gap-3 mb-2.5">
+                        <div className="relative shrink-0">
+                          <img
+                            src={talent.avatar || FALLBACK_TALENT_AVATAR}
+                            alt={talent.fullName}
+                            onError={(e) => {
+                              e.currentTarget.src = FALLBACK_TALENT_AVATAR;
+                            }}
+                            className="w-12 h-12 sm:w-13 sm:h-13 rounded-xl object-cover border border-neutral-200 shadow-2xs"
+                          />
+                          {talent.isFilmStar && (
+                            <span className="absolute -bottom-1 -right-1 bg-amber-400 text-black text-[9px] font-black rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                              ★
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-sm sm:text-base font-bold font-serif text-black truncate group-hover:text-neutral-900 transition-colors">
+                              {talent.fullName}
+                            </h4>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md truncate max-w-[170px] ${
+                                talent.isFilmStar
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                  : 'bg-neutral-100 text-neutral-800 border border-neutral-200'
+                              }`}
+                            >
+                              {talent.isFilmStar ? '⭐ Film Star' : talent.category}
+                            </span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm sm:text-base font-bold font-serif text-black truncate group-hover:text-neutral-900 transition-colors">
-                            {talent.fullName}
-                          </h4>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                              talent.isFilmStar
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                : 'bg-neutral-100 text-neutral-800 border border-neutral-200'
-                            }`}
-                          >
-                            {talent.isFilmStar ? '⭐ Film Star' : talent.category}
-                          </span>
-                        </div>
+                      <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed min-h-[32px]">
+                        {talent.headline}
+                      </p>
+
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-neutral-500">
+                        <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
+                        <span className="truncate">{talent.location}</span>
                       </div>
                     </div>
 
-                    <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed min-h-[32px]">
-                      {talent.headline}
-                    </p>
-
-                    <div className="mt-2.5 flex items-center gap-1 text-[11px] text-neutral-500">
-                      <MapPin className="w-3 h-3 text-neutral-400 shrink-0" />
-                      <span className="truncate">{talent.location}</span>
+                    <div className="pt-3 border-t border-neutral-100 flex items-center justify-between mt-auto">
+                      <span className="text-[11px] font-medium text-neutral-500">
+                        {talent.experienceYears ? `${talent.experienceYears} Exp` : talent.experienceLevel || 'Verified'}
+                      </span>
+                      <Link
+                        to={`/talent/${talent.id}`}
+                        className="text-xs font-bold text-black group-hover:underline flex items-center gap-1"
+                      >
+                        <span>View Profile</span>
+                        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                      </Link>
                     </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between">
-                    <span className="text-[11px] font-medium text-neutral-500">
-                      {talent.experienceYears ? `${talent.experienceYears} Exp` : talent.experienceLevel || 'Verified'}
-                    </span>
-                    <Link
-                      to={`/talent/${talent.id}`}
-                      className="text-xs font-bold text-black group-hover:underline flex items-center gap-1"
-                    >
-                      <span>View Profile</span>
-                      <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-
+        </PageContainer>
       </section>
 
       {/* 3. PLATFORM BENEFITS SECTION */}
