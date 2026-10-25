@@ -40,7 +40,8 @@ const PublicNavbar = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-slate-200/75 shadow-3d-subtle transition-all duration-300">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white/95 backdrop-blur-xl border-b border-slate-200/80 shadow-3d-subtle transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo with 3D Pink Star Emblem */}
@@ -204,7 +205,10 @@ const PublicNavbar = () => {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
       />
-    </header>
+      </header>
+      {/* Spacer so page content never overlaps behind fixed navbar */}
+      <div className="h-16 w-full shrink-0" aria-hidden="true" />
+    </>
   );
 };
 
