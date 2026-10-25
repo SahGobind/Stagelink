@@ -229,9 +229,9 @@ const HomePage = () => {
   ];
 
   return (
-    <div className="pb-16">
+    <div>
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-white pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12 border-b border-slate-200/80 cinematic-subtle-glow">
+      <section className="relative overflow-hidden bg-white py-6 sm:py-8 border-b border-slate-200/80 cinematic-subtle-glow">
         <PageContainer>
           {/* Dual Action Cards: Join as Performer (Left) & Join as Company & Production (Right) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
@@ -399,22 +399,22 @@ const HomePage = () => {
       </section>
 
       {/* 2. TOP PRODUCTION COUNTRIES & TOP CANDIDATES (CONTINUOUS SCROLLING MARQUEE) */}
-      <section className="bg-neutral-50/70 py-12 border-b border-neutral-200 overflow-hidden">
+      <section className="bg-neutral-50/70 py-6 sm:py-8 border-b border-neutral-200 overflow-hidden">
         <PageContainer>
           {/* Section Header */}
-          <div className="mb-8 text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-2">
+          <div className="mb-4 text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-200/80 text-black text-[11px] font-bold uppercase tracking-wider mb-1.5">
               <Globe className="w-3.5 h-3.5" />
               <span>Global Production Hubs & Discovered Talent</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
               Top Production Countries Casting on StageLink
             </h2>
           </div>
         </PageContainer>
 
         {/* Track 1: Top Production Countries - Continuous Infinite Marquee */}
-        <div className="relative w-full overflow-hidden my-3">
+        <div className="relative w-full overflow-hidden my-1">
           {/* Edge gradient masks */}
           <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-r from-neutral-50 via-neutral-50/80 to-transparent z-10" />
           <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-28 bg-gradient-to-l from-neutral-50 via-neutral-50/80 to-transparent z-10" />
@@ -471,9 +471,9 @@ const HomePage = () => {
         </div>
 
         {/* Track 2: "Just Niche" - Top Candidate Profiles - Continuous Infinite Marquee */}
-        <div className="mt-8">
+        <div className="mt-5">
           <PageContainer>
-            <div className="flex items-center justify-between mb-3 text-left">
+            <div className="flex items-center justify-between mb-2 text-left">
               <div className="flex items-center gap-2">
                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
                 <h3 className="text-sm sm:text-base font-bold font-serif text-black uppercase tracking-wider">
@@ -567,13 +567,13 @@ const HomePage = () => {
       </section>
 
       {/* 3. PLATFORM BENEFITS SECTION */}
-      <section className="py-14 border-b border-slate-200/80 bg-slate-50/50">
+      <section className="py-6 sm:py-8 border-b border-slate-200/80 bg-slate-50/50">
         <PageContainer>
-          <div className="text-left mb-10 space-y-1.5">
+          <div className="text-left mb-5 space-y-1">
             <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest block">
               Why Choose StageLink
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-950 tracking-tight">
               A Casting Platform Built Around You
             </h2>
           </div>
@@ -599,15 +599,15 @@ const HomePage = () => {
       </section>
 
       {/* 3b. SPOTLIGHT TALENT SHOWCASE: INDIAN FILM STARS, MUSICIANS, DANCERS, GRAPHIC DESIGNERS, COMEDIANS, EUROPE */}
-      <section className="py-12 bg-neutral-50/60 border-b border-neutral-200">
+      <section className="py-6 sm:py-8 bg-neutral-50/60 border-b border-neutral-200">
         <PageContainer>
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 text-left gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-5 text-left gap-3">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-100 text-brand-pink text-xs font-bold mb-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 border border-pink-100 text-brand-pink text-xs font-bold mb-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Featured Performer Showcase</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
+              <h2 className="text-xl sm:text-2xl font-bold font-serif text-black tracking-tight">
                 Discover Artists Across Creative Disciplines &amp; Countries
               </h2>
               <p className="text-xs text-neutral-600 mt-1 max-w-xl">
@@ -909,13 +909,13 @@ const HomePage = () => {
       )}
 
       {/* 6. HOW IT WORKS (4 STEPS) */}
-      <section className="bg-slate-50/70 py-14 border-b border-slate-200/80">
+      <section className="bg-slate-50/70 py-6 sm:py-8 border-b border-slate-200/80">
         <PageContainer>
-          <div className="text-left mb-10 space-y-1.5">
+          <div className="text-left mb-5 space-y-1">
             <span className="text-xs font-bold text-neutral-900 uppercase tracking-widest block">
               The Journey
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-950 tracking-tight">
               How It Works
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium">
