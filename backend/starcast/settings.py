@@ -17,25 +17,16 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', os.getenv('SECRET_KEY', 'starcast-de
 
 DEBUG = os.getenv('DJANGO_DEBUG', os.getenv('DEBUG', 'True')).lower() in ('true', '1', 't')
 
-# Allowed Hosts: dynamically populated from environment and cloud platform configs
-env_allowed_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', os.getenv('ALLOWED_HOSTS', ''))
+# Allowed Hosts: dynamically populated from environment or permissive for cloud platforms
+env_allowed_hosts = os.getenv('DJANGO_ALLOWED_HOSTS', os.getenv('ALLOWED_HOSTS', '*'))
 if env_allowed_hosts:
     ALLOWED_HOSTS = [host.strip() for host in env_allowed_hosts.split(',') if host.strip()]
 else:
-    ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'testserver']
+    ALLOWED_HOSTS = ['*']
 
-for default_host in ['localhost', '127.0.0.1', '0.0.0.0', 'testserver']:
-    if default_host not in ALLOWED_HOSTS:
+for default_host in ['localhost', '127.0.0.1', '0.0.0.0', 'testserver', '.onrender.com']:
+    if default_host not in ALLOWED_HOSTS and '*' not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(default_host)
-
-# Automatically allow Render external hostname if provided by Render environment
-render_external_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-if render_external_hostname and render_external_hostname not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(render_external_hostname)
-
-# Always allow Render subdomain pattern (.onrender.com matches any Render service URL)
-if '.onrender.com' not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append('.onrender.com')
 
 # Application definition
 # NOTE: database-backed apps (django.contrib.auth, contenttypes, sessions, admin) are intentionally omitted.
@@ -147,25 +138,35 @@ REST_FRAMEWORK = {
 }
 
 # CORS configuration for React frontend
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 't') or DEBUG
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
+
+DEFAULT_CORS_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://stagelink-nv45.vercel.app',
+    'https://stagelink-nv45-r142trfqq-gobind-sahs-projects.vercel.app',
+    'https://stagelink-b6ls-e17276pa-gobind-sahs-projects.vercel.app',
+]
 
 env_cors_origins = os.getenv('CORS_ALLOWED_ORIGINS', '')
 if env_cors_origins:
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in env_cors_origins.split(',') if origin.strip()]
+    CORS_ALLOWED_ORIGINS = list(set(
+        DEFAULT_CORS_ORIGINS + [origin.strip() for origin in env_cors_origins.split(',') if origin.strip()]
+    ))
 else:
-    CORS_ALLOWED_ORIGINS = [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:3000',
-        'https://stagelink-nv45.vercel.app',
-        'https://stagelink-nv45-r142trfqq-gobind-sahs-projects.vercel.app',
-        'https://stagelink-b6ls-e17276pa-gobind-sahs-projects.vercel.app',
-    ]
+    CORS_ALLOWED_ORIGINS = DEFAULT_CORS_ORIGINS
 
-# Automatically allow Vercel preview deployments and Render services
+if FRONTEND_URL and FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+
+# Automatically allow ALL Vercel deployments (production, branch & preview) and Render services
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https:\/\/stagelink.*\.vercel\.app$",
-    r"^https:\/\/.*\.onrender\.com$",
+    r"^https?:\/\/.*\.vercel\.app$",
+    r"^https?:\/\/.*\.onrender\.com$",
+    r"^http:\/\/localhost(:\d+)?$",
+    r"^http:\/\/127\.0\.0\.1(:\d+)?$",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -190,15 +191,22 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # CSRF configuration for trusted cross-origin requests
+DEFAULT_CSRF_ORIGINS = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'https://*.vercel.app',
+    'https://*.onrender.com',
+]
+
 env_csrf_origins = os.getenv('CSRF_TRUSTED_ORIGINS', '')
 if env_csrf_origins:
-    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env_csrf_origins.split(',') if origin.strip()]
+    CSRF_TRUSTED_ORIGINS = list(set(
+        DEFAULT_CSRF_ORIGINS + [origin.strip() for origin in env_csrf_origins.split(',') if origin.strip()]
+    ))
 else:
-    CSRF_TRUSTED_ORIGINS = [
-        'http://localhost:5173',
-        'http://127.0.0.1:5173',
-        'http://localhost:3000',
-        'https://*.vercel.app',
-        'https://*.onrender.com',
-        'https://stagelink-nv45.vercel.app',
-    ]
+    CSRF_TRUSTED_ORIGINS = DEFAULT_CSRF_ORIGINS
+
+if FRONTEND_URL and FRONTEND_URL not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(FRONTEND_URL)
