@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
-import { OPPORTUNITY_CATEGORIES, mockOpportunities } from '../../data/mockOpportunities';
+import { mockOpportunities } from '../../data/mockOpportunities';
 import { mockTalentProfiles, FALLBACK_TALENT_AVATAR } from '../../data/mockTalentDirectory';
 import { useAuth } from '../../context/AuthContext';
 
@@ -824,54 +824,7 @@ const HomePage = () => {
       {/* 4 & 5. OPPORTUNITIES (ONLY ACCESSIBLE AFTER REGISTRATION & LOGIN) */}
       {isAuthenticated && (
         <>
-          {/* 4. EXPLORE OPPORTUNITIES (CATEGORY ROW) */}
-          <section>
-            <PageContainer>
-              <div className="flex items-end justify-between mb-8">
-                <div className="text-left">
-                  <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black tracking-tight">
-                    Explore Opportunities
-                  </h2>
-                  <p className="text-xs text-neutral-600 mt-1">
-                    Find roles that match your talent and passion across all entertainment mediums.
-                  </p>
-                </div>
-                <Link
-                  to="/opportunities"
-                  className="text-xs font-bold text-black hover:text-neutral-700 flex items-center gap-1 group"
-                >
-                  <span>View All</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
 
-              {/* Category Cards Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                {OPPORTUNITY_CATEGORIES.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    to={`/opportunities?category=${cat.id}`}
-                    className="group bg-white rounded-2xl border border-neutral-200 overflow-hidden hover:shadow-card-hover transition-all duration-300 flex flex-col"
-                  >
-                    <div className="aspect-4/3 w-full overflow-hidden bg-neutral-100">
-                      <img
-                        src={cat.image}
-                        alt={cat.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    <div className="p-3 text-left space-y-0.5">
-                      <h3 className="text-xs font-bold text-black group-hover:underline transition-colors">
-                        {cat.name}
-                      </h3>
-                      <p className="text-[10px] text-neutral-600 truncate">{cat.description}</p>
-                      <p className="text-[10px] text-black font-semibold pt-1">{cat.count}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </PageContainer>
-          </section>
 
           {/* 5. FEATURED CASTINGS */}
           <section>
