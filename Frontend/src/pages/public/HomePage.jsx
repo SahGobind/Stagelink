@@ -232,28 +232,8 @@ const HomePage = () => {
   return (
     <div className="pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-white pt-8 pb-10 lg:pt-14 lg:pb-12 border-b border-slate-200/80 cinematic-subtle-glow">
+      <section className="relative overflow-hidden bg-white pt-6 pb-8 sm:pt-8 sm:pb-10 lg:pt-10 lg:pb-12 border-b border-slate-200/80 cinematic-subtle-glow">
         <PageContainer>
-          {/* Hero Header */}
-          <div className="max-w-3xl text-left space-y-4 mb-8 sm:mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100/90 border border-slate-200/90 text-neutral-900 text-[11px] font-bold uppercase tracking-widest shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-brand-pink shadow-xs" />
-              <span>Premier Casting &amp; Acting Platform</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-6xl font-bold font-serif text-neutral-950 leading-[1.08] tracking-tight">
-              Your Talent. <br />
-              Your Next Role. <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-neutral-950 via-neutral-800 to-brand-pink italic font-serif">
-                New Stories.
-              </span>
-            </h1>
-
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl font-medium">
-              StageLink connects aspiring and seasoned performers directly with visionary directors, film productions, OTT series, and commercial casting agencies.
-            </p>
-          </div>
-
           {/* Dual Action Cards: Join as Performer (Left) & Join as Company & Production (Right) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
             {/* Card 1: For Artists & Performers */}

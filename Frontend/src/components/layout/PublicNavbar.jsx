@@ -8,7 +8,6 @@ import {
   X,
   LogOut,
   ChevronDown,
-  PlusCircle,
   Briefcase,
   Settings,
 } from 'lucide-react';
@@ -85,19 +84,6 @@ const PublicNavbar = () => {
 
           {/* Desktop Right Actions */}
           <div className="hidden md:flex items-center space-x-3">
-            {/* Announce Work Action */}
-            <Link
-              to={
-                isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin')
-                  ? '/post-job'
-                  : '/signup?role=recruiter&redirect=/post-job'
-              }
-              className="px-3.5 py-1.5 rounded-xl border border-rose-200/90 text-brand-pink bg-rose-50/70 hover:bg-rose-100/80 text-xs font-bold transition-all shadow-2xs hover:shadow-xs active:translate-y-0.5 inline-flex items-center gap-1.5"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Announce Work</span>
-            </Link>
-
             {/* Search Icon / Button */}
             <button
               type="button"
@@ -283,18 +269,6 @@ const PublicNavbar = () => {
                 {link.label}
               </Link>
             ))}
-            <Link
-              to={
-                isAuthenticated && (user?.role === 'recruiter' || user?.role === 'admin')
-                  ? '/post-job'
-                  : '/signup?role=recruiter&redirect=/post-job'
-              }
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2.5 rounded-xl text-sm font-bold text-brand-pink bg-pink-50 flex items-center gap-2"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Announce Work</span>
-            </Link>
           </nav>
         </div>
       )}
