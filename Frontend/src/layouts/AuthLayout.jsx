@@ -5,7 +5,7 @@ import PublicFooter from '../components/layout/PublicFooter';
 
 const AuthLayout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-[#fafafc]">
+    <div className="min-h-screen flex flex-col bg-[#111214] text-neutral-100">
       <PublicNavbar />
       <main className="flex-1 py-6 sm:py-10">
         <Outlet />

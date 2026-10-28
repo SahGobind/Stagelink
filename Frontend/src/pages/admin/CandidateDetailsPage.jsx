@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
@@ -288,13 +289,7 @@ const CandidateDetailsPage = () => {
       {/* Top Navigation & Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-xs">
-          <Link
-            to="/admin/candidates"
-            className="inline-flex items-center text-gray-500 hover:text-brand-pink font-medium transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-            <span>Performer Directory</span>
-          </Link>
+          <BackButton fallback="/admin/candidates" label="Performer Directory" variant="light" />
           <ChevronRight className="w-3 h-3 text-gray-400" />
           <span className="text-gray-400 font-mono">ID: {candidate.id}</span>
           <ChevronRight className="w-3 h-3 text-gray-400" />

@@ -14,6 +14,7 @@ import {
   Briefcase,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import { useAuth } from '../../context/AuthContext';
 
 const HowItWorksPage = () => {
@@ -99,17 +100,20 @@ const HowItWorksPage = () => {
   ];
 
   return (
-    <div className="space-y-16 sm:space-y-24 pb-20 text-left">
+    <div className="space-y-16 sm:space-y-24 pb-20 text-left bg-[#111214] text-neutral-100">
       {/* 1. HERO SECTION */}
-      <section className="bg-white pt-10 pb-14 border-b border-neutral-200">
+      <section className="bg-[#18191C]/60 pt-10 pb-14 border-b border-neutral-800/80">
         <PageContainer maxWidth="lg" className="space-y-4">
-          <span className="text-xs font-bold text-black uppercase tracking-widest block">
+          <div>
+            <BackButton fallback="/" variant="dark" />
+          </div>
+          <span className="text-xs font-bold text-[#FA5A36] uppercase tracking-widest block">
             The Process
           </span>
-          <h1 className="text-3xl sm:text-5xl font-bold font-serif text-black tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-bold font-sans text-white tracking-tight leading-tight">
             How StageLink Works
           </h1>
-          <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl">
+          <p className="text-sm sm:text-base text-neutral-400 leading-relaxed max-w-2xl">
             A transparent, modern casting platform tailored for both performers seeking breakthrough roles and production teams discovering top talent.
           </p>
         </PageContainer>
@@ -119,13 +123,13 @@ const HowItWorksPage = () => {
       <section>
         <PageContainer maxWidth="lg">
           <div className="mb-10 space-y-2">
-            <span className="text-xs font-bold text-black uppercase tracking-widest block">
-              For Artists & Performers
+            <span className="text-xs font-bold text-[#FA5A36] uppercase tracking-widest block">
+              For Artists &amp; Performers
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black">
+            <h2 className="text-2xl sm:text-3xl font-bold font-sans text-white">
               Your 4-Step Journey to Getting Cast
             </h2>
-            <p className="text-xs text-neutral-600">
+            <p className="text-xs text-neutral-400">
               Everything you need to showcase your talent, submit auditions, and track your callbacks.
             </p>
           </div>
@@ -136,19 +140,19 @@ const HowItWorksPage = () => {
               return (
                 <div
                   key={step.num}
-                  className="bg-white p-8 rounded-3xl border border-neutral-200 shadow-subtle relative flex flex-col justify-between"
+                  className="bg-[#18191C] p-8 rounded-3xl border border-neutral-800 shadow-xl relative flex flex-col justify-between"
                 >
-                  <span className="text-3xl font-serif font-bold text-neutral-300 absolute top-6 right-6">
+                  <span className="text-3xl font-sans font-bold text-[#FA5A36]/30 absolute top-6 right-6">
                     {step.num}
                   </span>
                   <div>
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-black mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#FA5A36] mb-4">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <h3 className="text-base font-bold font-serif text-black mb-2">
+                    <h3 className="text-base font-bold font-sans text-white mb-2">
                       {step.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
                       {step.desc}
                     </p>
                   </div>
@@ -160,7 +164,7 @@ const HowItWorksPage = () => {
           <div className="mt-8 pt-4 flex items-center gap-4">
             <Link
               to="/signup?redirect=/candidate/profile/setup"
-              className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+              className="inline-flex items-center justify-center px-6 py-3.5 bg-[#FA5A36] hover:bg-[#E64825] text-white text-xs font-semibold rounded-full shadow-md transition-colors gap-2"
             >
               <span>Create Performer Profile</span>
               <ArrowRight className="w-4 h-4" />
@@ -170,16 +174,16 @@ const HowItWorksPage = () => {
       </section>
 
       {/* 3. FOR CASTING TEAMS & DIRECTORS */}
-      <section className="bg-neutral-50/50 py-14 border-y border-neutral-200">
+      <section className="bg-[#0E0F12] py-14 border-y border-neutral-800">
         <PageContainer maxWidth="lg">
           <div className="mb-10 space-y-2">
-            <span className="text-xs font-bold text-black uppercase tracking-widest block">
-              For Casting Teams & Studios
+            <span className="text-xs font-bold text-[#FA5A36] uppercase tracking-widest block">
+              For Casting Teams &amp; Studios
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black">
+            <h2 className="text-2xl sm:text-3xl font-bold font-sans text-white">
               How Production Houses Cast with StageLink
             </h2>
-            <p className="text-xs text-neutral-600">
+            <p className="text-xs text-neutral-400">
               Find, evaluate, and cast talent faster with streamlined digital audition workflows.
             </p>
           </div>
@@ -190,19 +194,19 @@ const HowItWorksPage = () => {
               return (
                 <div
                   key={step.num}
-                  className="bg-white p-8 rounded-3xl border border-neutral-200 shadow-subtle relative flex flex-col justify-between"
+                  className="bg-[#18191C] p-8 rounded-3xl border border-neutral-800 shadow-xl relative flex flex-col justify-between"
                 >
-                  <span className="text-3xl font-serif font-bold text-neutral-300 absolute top-6 right-6">
+                  <span className="text-3xl font-sans font-bold text-[#FA5A36]/30 absolute top-6 right-6">
                     {step.num}
                   </span>
                   <div>
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 flex items-center justify-center text-black mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-[#FA5A36] mb-4">
                       <Icon className="w-6 h-6" />
                     </div>
-                    <h3 className="text-base font-bold font-serif text-black mb-2">
+                    <h3 className="text-base font-bold font-sans text-white mb-2">
                       {step.title}
                     </h3>
-                    <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
                       {step.desc}
                     </p>
                   </div>
@@ -214,7 +218,7 @@ const HowItWorksPage = () => {
           <div className="mt-8 pt-4 flex flex-wrap items-center gap-4">
             <Link
               to={isRecruiter ? '/post-job' : '/signup?role=recruiter&redirect=/post-job'}
-              className="inline-flex items-center justify-center px-6 py-3.5 bg-black hover:bg-neutral-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors gap-2"
+              className="inline-flex items-center justify-center px-6 py-3.5 bg-[#FA5A36] hover:bg-[#E64825] text-white text-xs font-semibold rounded-full shadow-md transition-colors gap-2"
             >
               <Briefcase className="w-4 h-4" />
               <span>Post a Job / Casting Call</span>
@@ -222,7 +226,7 @@ const HowItWorksPage = () => {
             </Link>
             <Link
               to="/signup?role=recruiter&redirect=/post-job"
-              className="inline-flex items-center justify-center px-6 py-3.5 bg-white hover:bg-neutral-100 text-black border border-neutral-300 text-xs font-bold rounded-xl transition-colors"
+              className="inline-flex items-center justify-center px-6 py-3.5 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 text-xs font-semibold rounded-full transition-colors"
             >
               <span>Register as Casting Team</span>
             </Link>
@@ -231,13 +235,13 @@ const HowItWorksPage = () => {
       </section>
 
       {/* 4. FREQUENTLY ASKED QUESTIONS */}
-      <section>
+      <section className="py-14 sm:py-20">
         <PageContainer maxWidth="lg">
           <div className="mb-10 space-y-2">
-            <span className="text-xs font-bold text-black uppercase tracking-widest block">
+            <span className="text-xs font-bold text-[#FA5A36] uppercase tracking-widest block">
               Got Questions?
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold font-serif text-black">
+            <h2 className="text-2xl sm:text-3xl font-bold font-sans text-white">
               Frequently Asked Questions
             </h2>
           </div>
@@ -248,21 +252,21 @@ const HowItWorksPage = () => {
               return (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl border border-neutral-200 overflow-hidden transition-all duration-150"
+                  className="bg-[#18191C] rounded-2xl border border-neutral-800 overflow-hidden transition-all duration-150"
                 >
                   <button
                     onClick={() => setActiveFaq(isOpen ? null : idx)}
-                    className="w-full p-5 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-black hover:underline transition-colors"
+                    className="w-full p-5 text-left flex items-center justify-between text-xs sm:text-sm font-semibold text-white hover:text-[#FA5A36] transition-colors"
                   >
                     <span>{faq.q}</span>
                     <ChevronDown
-                      className={`w-4 h-4 text-neutral-400 transition-transform duration-200 shrink-0 ml-4 ${
-                        isOpen ? 'rotate-180 text-black' : ''
+                      className={`w-4 h-4 text-neutral-500 transition-transform duration-200 shrink-0 ml-4 ${
+                        isOpen ? 'rotate-180 text-[#FA5A36]' : ''
                       }`}
                     />
                   </button>
                   {isOpen && (
-                    <div className="px-5 pb-5 pt-0 text-xs sm:text-sm text-neutral-600 leading-relaxed border-t border-neutral-100 mt-1">
+                    <div className="px-5 pb-5 pt-0 text-xs sm:text-sm text-neutral-400 leading-relaxed border-t border-neutral-800/80 mt-1">
                       {faq.a}
                     </div>
                   )}

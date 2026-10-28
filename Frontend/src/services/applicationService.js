@@ -8,12 +8,30 @@ import {
   getAllApplications,
   saveCandidateApplication,
   updateApplicationStatus,
+  addApplicationInternalNote,
 } from '../data/mockApplications';
 import { apiRequest } from './api';
 
 const STORAGE_KEY_APPS = 'starcast_all_applications';
 
 export const applicationService = {
+  /**
+   * Retrieve all applications across the casting pipeline
+   */
+  getAll: async () => {
+    try {
+      const res = await apiRequest('/api/applications/');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+          return data.results;
+        }
+      }
+    } catch {
+      // offline fallback
+    }
+    return getAllApplications();
+  },
   /**
    * Check if candidate has already applied to an opportunity
    */
@@ -202,11 +220,42 @@ export const applicationService = {
         method: 'PATCH',
         body: JSON.stringify({ status: newStatus, note: recruiterNote }),
       });
+
+      // If audition/interview schedule provided, dispatch invite endpoint as well
+      if (newStatus === 'interview' && extraDetails?.interviewDetails) {
+        const d = extraDetails.interviewDetails;
+        await apiRequest(`/api/applications/${applicationId}/invite-audition/`, {
+          method: 'POST',
+          body: JSON.stringify({
+            date: d.date,
+            time: d.time,
+            mode: d.mode,
+            instructions: d.notes || recruiterNote,
+          }),
+        });
+      }
     } catch {
-      // fallback
+      // offline fallback
     }
 
     const updated = updateApplicationStatus(applicationId, newStatus, recruiterNote, extraDetails);
+    return { success: true, updated };
+  },
+
+  /**
+   * Record internal recruiter / casting team note on an application
+   */
+  addInternalNote: async (applicationId, noteText, author = 'StageLink Admin') => {
+    try {
+      await apiRequest(`/api/applications/${applicationId}/status/`, {
+        method: 'PATCH',
+        body: JSON.stringify({ note: noteText }),
+      });
+    } catch {
+      // offline fallback
+    }
+
+    const updated = addApplicationInternalNote(applicationId, noteText, author);
     return { success: true, updated };
   },
 };

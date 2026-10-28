@@ -65,7 +65,7 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
       : opportunity.compensationType || 'Negotiable';
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200/85 hover:border-slate-300 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden specular-top">
+    <div className="bg-[#18191C] rounded-3xl border border-neutral-800 hover:border-[#FA5A36]/40 shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group h-full relative overflow-hidden">
       <div>
         {/* Card Image Banner with Badges & Save Control */}
         <div className="relative aspect-[16/10] w-full overflow-hidden bg-neutral-950">
@@ -80,22 +80,22 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-neutral-950 via-neutral-900 to-black p-4 flex flex-col justify-end relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-pink/15 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FA5A36]/15 rounded-full blur-2xl pointer-events-none" />
               <div className="relative z-10 space-y-0.5">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block truncate">
                   {opportunity.productionCompany || 'StageLink Studio'}
                 </span>
-                <p className="text-white font-bold text-xs font-serif line-clamp-1">
+                <p className="text-white font-bold text-xs font-sans line-clamp-1">
                   {opportunity.title}
                 </p>
               </div>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
 
           {/* Badges: Project Category + Type + Status */}
           <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 items-center max-w-[80%]">
-            <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-neutral-950 text-[11px] font-bold rounded-full shadow-xs border border-white/60">
+            <span className="px-3 py-1 bg-white/95 backdrop-blur-md text-neutral-950 text-[11px] font-bold rounded-full shadow-xs border border-white/60">
               {opportunity.productionCategory || opportunity.category || 'Film & TV'}
             </span>
             {(opportunity.productionType || opportunity.type) && (
@@ -119,11 +119,11 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
               toggleSaveOpportunity(opportunity.id);
             }}
             aria-label={isSaved ? 'Remove from saved' : 'Save opportunity'}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 backdrop-blur-md hover:bg-black/65 border border-white/20 flex items-center justify-center text-white transition-all transform hover:scale-105 active:scale-90 shadow-sm cursor-pointer"
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-md hover:bg-black/75 border border-white/20 flex items-center justify-center text-white transition-all transform hover:scale-105 active:scale-90 shadow-sm cursor-pointer"
           >
             <Heart
               className={`w-4 h-4 transition-colors ${
-                isSaved ? 'fill-brand-pink text-brand-pink drop-shadow-xs' : 'text-white'
+                isSaved ? 'fill-[#FA5A36] text-[#FA5A36] drop-shadow-xs' : 'text-white'
               }`}
             />
           </button>
@@ -134,24 +134,24 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
           {/* Production Company + Verified Badge */}
           <div className="flex items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-1.5 truncate">
-              <Building2 className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-              <span className="font-semibold text-neutral-900 truncate">
+              <Building2 className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <span className="font-semibold text-neutral-200 truncate">
                 {opportunity.productionCompany || 'Certified Production House'}
               </span>
             </div>
             {isVerifiedCompany && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-full text-[10px] font-bold shrink-0 shadow-2xs"
+                className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 rounded-full text-[10px] font-bold shrink-0 shadow-2xs"
                 title="Verified Production Company"
               >
-                <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
                 <span>Verified</span>
               </span>
             )}
           </div>
 
           {/* Casting Title */}
-          <h3 className="text-base font-bold text-neutral-950 font-sans tracking-tight group-hover:text-brand-pink transition-colors line-clamp-1">
+          <h3 className="text-base font-bold text-white font-sans tracking-tight group-hover:text-[#FA5A36] transition-colors line-clamp-1">
             {opportunity.title}
           </h3>
 
@@ -160,27 +160,27 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
             {talentList.slice(0, 3).map((talent, idx) => (
               <span
                 key={idx}
-                className="px-2.5 py-0.5 rounded-full bg-rose-50/80 text-brand-pink border border-rose-200/70 text-[10px] font-bold shadow-2xs"
+                className="px-2.5 py-0.5 rounded-full bg-[#FA5A36]/10 text-[#FA5A36] border border-[#FA5A36]/30 text-[10px] font-bold shadow-2xs"
               >
                 {talent}
               </span>
             ))}
             {talentList.length > 3 && (
-              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-semibold border border-slate-200/60">
+              <span className="px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 text-[10px] font-semibold border border-neutral-700">
                 +{talentList.length - 3} more
               </span>
             )}
           </div>
 
           {/* Metadata Grid: Location, Shoot Date, Deadline, Openings */}
-          <div className="space-y-1.5 text-xs text-slate-500 pt-1">
+          <div className="space-y-1.5 text-xs text-neutral-400 pt-1">
             <div className="flex items-center justify-between text-[11px]">
-              <span className="flex items-center text-slate-700 truncate">
-                <MapPin className="w-3.5 h-3.5 text-neutral-900 mr-1 shrink-0" />
+              <span className="flex items-center text-neutral-300 truncate">
+                <MapPin className="w-3.5 h-3.5 text-[#FA5A36] mr-1 shrink-0" />
                 <span className="truncate">{opportunity.location || 'Pan-India / Flexible'}</span>
               </span>
-              <span className="flex items-center gap-1 text-slate-500 font-mono text-[10px] shrink-0">
-                <Users className="w-3 h-3 text-slate-400" />
+              <span className="flex items-center gap-1 text-neutral-400 font-mono text-[10px] shrink-0">
+                <Users className="w-3 h-3 text-neutral-400" />
                 <span>
                   {opportunity.artistsNeeded
                     ? `${opportunity.artistsNeeded} Opening${opportunity.artistsNeeded > 1 ? 's' : ''}`
@@ -191,8 +191,8 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
 
             {/* Job Opening Period Window */}
             {(opportunity.jobOpeningRange || (opportunity.openingStartDate && opportunity.openingEndDate)) && (
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-lg font-medium shadow-2xs">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-300 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-0.5 rounded-lg font-medium shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                 <span className="truncate">
                   Opening: {opportunity.openingStartDate && opportunity.openingEndDate
                     ? `${opportunity.openingStartDate} – ${opportunity.openingEndDate}`
@@ -201,13 +201,13 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
               </div>
             )}
 
-            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+            <div className="flex items-center justify-between text-[10px] text-neutral-400 pt-0.5">
               <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-slate-400" />
+                <Calendar className="w-3 h-3 text-neutral-400" />
                 <span>Shoot: {opportunity.shootDate || 'Flexible / TBD'}</span>
               </span>
-              <span className="flex items-center gap-1 text-amber-800 font-semibold">
-                <Clock className="w-3 h-3 text-amber-600" />
+              <span className="flex items-center gap-1 text-amber-400 font-semibold">
+                <Clock className="w-3 h-3 text-amber-400" />
                 <span>
                   Due:{' '}
                   {opportunity.applicationDeadline ||
@@ -220,13 +220,13 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
           </div>
 
           {/* Compensation + Rate Unit */}
-          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-[11px]">
-            <span className="inline-flex items-center gap-1 font-bold text-neutral-950 bg-neutral-100 border border-neutral-200/80 px-2.5 py-0.5 rounded-lg shadow-inner-bevel truncate">
-              <Banknote className="w-3.5 h-3.5 text-neutral-950 shrink-0" />
+          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-neutral-800 text-[11px]">
+            <span className="inline-flex items-center gap-1 font-bold text-white bg-neutral-800/90 border border-neutral-700/80 px-2.5 py-0.5 rounded-lg truncate">
+              <Banknote className="w-3.5 h-3.5 text-neutral-300 shrink-0" />
               <span className="truncate">{compensationDisplay}</span>
             </span>
 
-            <span className="text-[10px] text-slate-400 font-medium shrink-0">
+            <span className="text-[10px] text-neutral-400 font-medium shrink-0">
               {opportunity.compensationType || 'Paid Role'}
             </span>
           </div>
@@ -237,16 +237,16 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
       <div className="p-4 sm:p-5 pt-0 grid grid-cols-2 gap-2">
         <Link
           to={`/opportunities/${opportunity.id}`}
-          className="inline-flex items-center justify-center py-2.5 px-3 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-200/90 text-xs font-bold rounded-xl shadow-2xs hover:shadow-subtle active:translate-y-0.5 transition-all text-center"
+          className="inline-flex items-center justify-center py-2.5 px-3 bg-neutral-800/90 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold rounded-full shadow-2xs hover:shadow-subtle active:translate-y-0.5 transition-all text-center"
         >
           View Details
         </Link>
         <Link
           to={`/opportunities/${opportunity.id}?apply=true`}
-          className={`inline-flex items-center justify-center py-2.5 px-3 text-xs font-bold rounded-xl transition-all duration-200 text-center active:translate-y-0.5 ${
+          className={`inline-flex items-center justify-center py-2.5 px-3 text-xs font-bold rounded-full transition-all duration-200 text-center active:translate-y-0.5 ${
             isClosed
-              ? 'bg-slate-200 text-slate-500 cursor-not-allowed pointer-events-none'
-              : 'bg-brand-pink hover:bg-brand-pink-hover text-white shadow-3d-button-pink hover:shadow-3d-pink'
+              ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed pointer-events-none'
+              : 'bg-[#FA5A36] hover:bg-[#E64825] text-white shadow-md'
           }`}
         >
           <span>{isClosed ? 'Closed' : 'Apply Now'}</span>

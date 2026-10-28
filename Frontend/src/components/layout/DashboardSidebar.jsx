@@ -103,13 +103,13 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
       <div className="space-y-6">
         {/* Brand */}
         <Link to="/" className="flex items-center space-x-2.5 px-3 group focus-visible:outline-none">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 via-brand-pink to-brand-pink-hover flex items-center justify-center text-white shadow-3d-button-pink group-hover:scale-105 transition-transform duration-200">
-            <Sparkles className="w-5 h-5 fill-current drop-shadow-xs" />
+          <div className="w-9 h-9 rounded-xl bg-[#FA5A36] flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform duration-200">
+            S
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-bold tracking-tight text-neutral-950 font-serif">Stage<span className="text-brand-pink">Link</span></span>
-            <span className="text-[9px] uppercase tracking-widest text-brand-pink font-bold -mt-0.5">
-              {isSuperAdminUser ? 'Governance Suite' : isOperationsUser ? 'Operations Desk' : (isAdminUser || isRecruiterUser) ? 'Studio Suite' : 'Performer Portal'}
+            <span className="text-lg font-bold tracking-tight text-neutral-950 font-sans">StageLink</span>
+            <span className="text-[9px] uppercase tracking-widest text-[#FA5A36] font-bold -mt-0.5">
+              {isSuperAdminUser ? 'Governance Suite' : isOperationsUser ? 'Operations Desk' : (isAdminUser || isRecruiterUser) ? 'Casting Director Suite' : 'Candidate Portal'}
             </span>
           </div>
         </Link>

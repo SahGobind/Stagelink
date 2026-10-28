@@ -8,8 +8,10 @@ import {
   Filter,
   CheckCircle2,
   ShieldCheck,
+  ArrowLeft,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
 import EmptyState from '../../components/common/EmptyState';
 import { mockOpportunities } from '../../data/mockOpportunities';
@@ -334,31 +336,35 @@ const OpportunitiesPage = () => {
   const canLoadMore = visibleCount < totalCount;
 
   return (
-    <div className="bg-slate-50/60 min-h-screen pb-20">
+    <div className="bg-[#111214] text-neutral-100 min-h-screen pb-20">
       {/* 1. COMPACT HERO HEADER */}
-      <section className="bg-white border-b border-slate-200/80 py-4 sm:py-5 text-left">
+      <section className="bg-[#18191C]/60 border-b border-neutral-800/80 py-4 sm:py-5 text-left">
         <PageContainer>
+          <div className="mb-3">
+            <BackButton fallback="/" variant="dark" />
+          </div>
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-neutral-400">
                   Casting Directory
                 </span>
-                <span className="text-slate-300">•</span>
-                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                <span className="text-neutral-700">•</span>
+                <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
                   {allOpportunities.length} Active Auditions
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
-                Casting Calls &amp; <span className="text-brand-pink italic font-serif">Auditions</span>
+              <h1 className="text-2xl sm:text-3xl font-bold font-sans text-white tracking-tight">
+                Casting Calls &amp; <span className="text-[#FA5A36] font-sans">Auditions</span>
               </h1>
             </div>
 
             {/* Subtle, minimalist badge */}
             <div className="flex items-center gap-2 self-start sm:self-auto text-xs">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200/80 text-slate-600 font-medium text-xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-neutral-300 font-medium text-xs">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                 <span>100% Certified Productions</span>
               </span>
             </div>
@@ -368,23 +374,23 @@ const OpportunitiesPage = () => {
 
       {/* 2. SEARCH & FILTER CONTROLS */}
       <PageContainer className="pt-5 sm:pt-6 space-y-6">
-        <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-3d-card specular-top space-y-5">
+        <div className="bg-[#18191C]/90 backdrop-blur-xl rounded-3xl p-5 sm:p-6 border border-neutral-800 shadow-xl space-y-5">
           {/* Top Search Input */}
           <div className="relative">
-            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-4 h-4 text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Search by title, production company, character, skill, or keyword..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-10 py-3.5 bg-slate-50/70 border border-slate-200 rounded-2xl text-xs sm:text-sm text-brand-navy placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white shadow-inner-bevel transition-all"
+              className="w-full pl-11 pr-10 py-3.5 bg-neutral-900 border border-neutral-800 rounded-2xl text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] transition-all"
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
                 aria-label="Clear search text"
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-brand-navy p-1 cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white p-1 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -395,7 +401,7 @@ const OpportunitiesPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
             {/* Filter 1: Project Type */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Project Category
               </label>
               <div className="relative">
@@ -409,237 +415,237 @@ const OpportunitiesPage = () => {
                       setSearchParams({});
                     }
                   }}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {projectTypeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 2: Talent Category */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Talent Category
               </label>
               <div className="relative">
                 <select
                   value={selectedTalentCategory}
                   onChange={(e) => setSelectedTalentCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {talentCategoryOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 3: Location */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Location &amp; Country
               </label>
               <div className="relative">
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {locationOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 4: Experience */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Experience Level
               </label>
               <div className="relative">
                 <select
                   value={selectedExperience}
                   onChange={(e) => setSelectedExperience(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {experienceOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 5: Language */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Language
               </label>
               <div className="relative">
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {languageOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 6: Compensation Type */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Compensation Type
               </label>
               <div className="relative">
                 <select
                   value={selectedCompensationType}
                   onChange={(e) => setSelectedCompensationType(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {compensationTypeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 7: Application Deadline */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Application Deadline
               </label>
               <div className="relative">
                 <select
                   value={selectedDeadline}
                   onChange={(e) => setSelectedDeadline(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
                   {deadlineOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
+                    <option key={opt.value} value={opt.value} className="bg-neutral-900 text-white">
                       {opt.label}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
 
             {/* Filter 8: Sorting */}
             <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-brand-text-secondary mb-1">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-neutral-400 mb-1">
                 Sort Listings
               </label>
               <div className="relative">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-gray-50/70 border border-brand-border rounded-xl text-xs text-brand-navy font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink cursor-pointer"
+                  className="w-full px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-xs text-neutral-200 font-medium appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] cursor-pointer"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="relevant">Most Relevant</option>
-                  <option value="deadline">Expiring Soonest</option>
+                  <option value="newest" className="bg-neutral-900 text-white">Newest First</option>
+                  <option value="relevant" className="bg-neutral-900 text-white">Most Relevant</option>
+                  <option value="deadline" className="bg-neutral-900 text-white">Expiring Soonest</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           </div>
 
           {/* Active Filter Chips & Clear Action */}
           {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 text-xs text-left">
-              <span className="text-brand-text-secondary font-medium mr-1">Active Filters:</span>
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-800 text-xs text-left">
+              <span className="text-neutral-400 font-medium mr-1">Active Filters:</span>
 
               {search && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Search: "{search}"
                   <button onClick={() => setSearch('')} aria-label="Remove search filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedProjectType && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Type: {projectTypeOptions.find((p) => p.value === selectedProjectType)?.label}
                   <button onClick={() => setSelectedProjectType('')} aria-label="Remove type filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedTalentCategory && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Talent: {talentCategoryOptions.find((t) => t.value === selectedTalentCategory)?.label}
                   <button onClick={() => setSelectedTalentCategory('')} aria-label="Remove talent filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedLocation && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Location: {selectedLocation}
                   <button onClick={() => setSelectedLocation('')} aria-label="Remove location filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedExperience && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Experience: {selectedExperience}
                   <button onClick={() => setSelectedExperience('')} aria-label="Remove experience filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedLanguage && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Language: {selectedLanguage}
                   <button onClick={() => setSelectedLanguage('')} aria-label="Remove language filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedCompensationType && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Comp: {selectedCompensationType}
                   <button onClick={() => setSelectedCompensationType('')} aria-label="Remove compensation filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
 
               {selectedDeadline && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-pink-50 text-brand-pink text-xs font-semibold">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FA5A36]/15 text-[#FA5A36] border border-[#FA5A36]/30 text-xs font-semibold">
                   Deadline: {selectedDeadline}
                   <button onClick={() => setSelectedDeadline('')} aria-label="Remove deadline filter">
-                    <X className="w-3 h-3 hover:text-rose-700" />
+                    <X className="w-3 h-3 hover:text-white" />
                   </button>
                 </span>
               )}
@@ -647,7 +653,7 @@ const OpportunitiesPage = () => {
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-brand-pink ml-auto font-medium cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-[#FA5A36] ml-auto font-medium cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset All Filters</span>
@@ -657,16 +663,16 @@ const OpportunitiesPage = () => {
         </div>
 
         {/* 3. LISTINGS RESULTS HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-brand-text-secondary text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-neutral-400 text-left">
           <div>
-            Showing <strong className="text-black font-bold">{displayedOpportunities.length}</strong> of{' '}
-            <strong className="text-black font-bold">{totalCount}</strong> published casting call
+            Showing <strong className="text-white font-bold">{displayedOpportunities.length}</strong> of{' '}
+            <strong className="text-white font-bold">{totalCount}</strong> published casting call
             {totalCount !== 1 ? 's' : ''}
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 text-[11px] font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="inline-flex items-center gap-1 text-emerald-300 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-800/60 text-[11px] font-semibold">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span>Verified &amp; Published Only</span>
             </span>
           </div>
@@ -694,7 +700,7 @@ const OpportunitiesPage = () => {
             <button
               type="button"
               onClick={() => setVisibleCount((prev) => prev + 6)}
-              className="px-8 py-3.5 bg-white hover:bg-slate-50 text-slate-900 border border-slate-300 hover:border-slate-900 text-xs font-bold rounded-2xl shadow-3d-subtle hover:shadow-3d-card active:translate-y-0.5 specular-top transition-all cursor-pointer"
+              className="px-8 py-3 bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-700 text-xs font-semibold rounded-full shadow-md active:translate-y-0.5 transition-all cursor-pointer"
             >
               Load More Casting Calls ({totalCount - visibleCount} remaining)
             </button>

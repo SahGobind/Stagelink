@@ -46,7 +46,6 @@ const LoginPage = () => {
   const roleParam = searchParams.get('role');
   const isRegistered = searchParams.get('registered') === 'true';
   const registeredEmail = searchParams.get('email') || '';
-  const isRedirectToProfile = redirectParam === '/candidate/profile/setup' || fromPath === '/candidate/profile/setup';
   const isRedirectToAdmin = redirectParam === '/admin/dashboard' || fromPath === '/admin/dashboard';
   const isRedirectToPostJob = redirectParam === '/post-job' || fromPath === '/post-job' || roleParam === 'recruiter';
   const isRedirectToTalent =
@@ -159,63 +158,16 @@ const LoginPage = () => {
         {/* Subtle Ambient Glow */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-brand-pink/5 rounded-full blur-3xl pointer-events-none" />
 
-        {/* User Type Switcher: Only Candidate / Artist & Recruiter / Production Company */}
-        <div className="flex p-1.5 bg-slate-100/90 rounded-2xl mb-6 border border-slate-200/70 shadow-inner-bevel">
-          <button
-            type="button"
-            onClick={() => {
-              setUserType('candidate');
-              setServerError('');
-            }}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              userType === 'candidate'
-                ? 'bg-white text-neutral-950 shadow-3d-subtle border border-slate-200/80'
-                : 'text-slate-500 hover:text-neutral-950'
-            }`}
-          >
-            <User className={`w-4 h-4 ${userType === 'candidate' ? 'text-brand-pink' : ''}`} />
-            <span>Candidate / Artist</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setUserType('recruiter');
-              setServerError('');
-            }}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-              userType === 'recruiter'
-                ? 'bg-white text-neutral-950 shadow-3d-subtle border border-slate-200/80'
-                : 'text-slate-500 hover:text-neutral-950'
-            }`}
-          >
-            <Building2 className={`w-4 h-4 ${userType === 'recruiter' ? 'text-brand-pink' : ''}`} />
-            <span>Recruiter / Studio</span>
-          </button>
-        </div>
-
         {/* Header */}
         <div className="space-y-1.5 mb-6">
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
-            {userType === 'recruiter' ? 'Welcome Back, Studio' : 'Welcome Back'}
+            Welcome Back
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
-            {userType === 'recruiter'
-              ? 'Log in to your Studio / Production account to announce casting calls and review talent.'
-              : 'Log in to your Candidate account to explore casting calls and track applications.'}
+            Log in to your account to explore casting calls, manage auditions, and continue your journey.
           </p>
         </div>
 
-        {/* Test Your Talent Returning Performer Banner */}
-        {isRedirectToProfile && userType === 'candidate' && (
-          <div className="mb-5 p-3.5 bg-black text-white rounded-2xl flex items-center gap-3 shadow-xs">
-            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-xs shrink-0">
-              ★
-            </div>
-            <p className="text-xs text-neutral-300">
-              Log in to continue directly to <strong className="text-white">Create / Complete Your Performer Profile</strong>.
-            </p>
-          </div>
-        )}
 
         {/* Production Returning Studio Banner */}
         {(isRedirectToAdmin || isRedirectToPostJob) && userType === 'recruiter' && (
@@ -356,7 +308,7 @@ const LoginPage = () => {
             disabled={loading}
             className="w-full py-3.5 bg-neutral-950 hover:bg-black text-white text-sm font-bold rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 mt-3 cursor-pointer"
           >
-            <span>{loading ? 'Signing in...' : userType === 'recruiter' ? 'Sign In as Recruiter' : 'Sign In as Candidate'}</span>
+            <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </form>
@@ -365,10 +317,10 @@ const LoginPage = () => {
         <div className="text-center text-xs text-brand-text-secondary mt-6 pt-4 border-t border-gray-100">
           Don't have an account?{' '}
           <Link
-            to={`/signup?role=${userType}${redirectParam ? `&redirect=${encodeURIComponent(redirectParam)}` : ''}`}
+            to={`/signup${redirectParam ? `?redirect=${encodeURIComponent(redirectParam)}` : ''}`}
             className="font-bold text-brand-pink hover:underline"
           >
-            Sign Up as {userType === 'recruiter' ? 'Recruiter' : 'Candidate'}
+            Sign Up here
           </Link>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   LayoutList,
@@ -22,19 +22,22 @@ import {
   Eye,
   Sparkles,
   ArrowRight,
+  Filter,
+  X,
 } from 'lucide-react';
 
 import PageContainer from '../../components/layout/PageContainer';
 import Button from '../../components/common/Button';
+import BackButton from '../../components/common/BackButton';
 import Modal from '../../components/common/Modal';
 import Avatar from '../../components/common/Avatar';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
 import ScoreBadge from '../../components/ranking/ScoreBadge';
 import ScoreBreakdownModal from '../../components/ranking/ScoreBreakdownModal';
-import CandidateCard from '../../components/ranking/CandidateCard';
 import { formatDate } from '../../utils/formatters';
 import { calculateCandidateMatchScore } from '../../services/scoringEngine';
 import { rankingService } from '../../services/rankingService';
+import { applicationService } from '../../services/applicationService';
 import { mockCandidates } from '../../data/mockCandidates';
 import ProductionFeedbackModal from '../../components/feedback/ProductionFeedbackModal';
 import ProductionFeedbackCard from '../../components/feedback/ProductionFeedbackCard';
@@ -56,6 +59,17 @@ const KANBAN_COLUMNS = [
   { key: 'not_selected', label: 'Not Selected', color: 'border-rose-300 bg-rose-50/30', badgeVariant: 'danger' },
 ];
 
+// Quick Status Filter Tabs
+const STATUS_TABS = [
+  { key: 'all', label: 'All Submissions' },
+  { key: 'applied', label: 'Applied' },
+  { key: 'under_review', label: 'Under Review' },
+  { key: 'shortlisted', label: 'Shortlisted' },
+  { key: 'interview', label: 'Interview Callbacks' },
+  { key: 'selected', label: 'Selected' },
+  { key: 'not_selected', label: 'Not Selected' },
+];
+
 // Helper to normalize status into one of the 6 canonical columns
 const normalizeStatus = (status) => {
   if (status === 'submitted' || status === 'applied') return 'applied';
@@ -73,7 +87,7 @@ const AdminApplicationsPage = () => {
 
   // State
   const [applications, setApplications] = useState(() => getAllApplications());
-  const [viewMode, setViewMode] = useState('kanban'); // 'table' | 'kanban'
+  const [viewMode, setViewMode] = useState('table'); // default table view
   const [notification, setNotification] = useState(null);
 
   // Filters
@@ -156,8 +170,36 @@ const AdminApplicationsPage = () => {
     });
   }, [applications]);
 
+  // Initial database/API fetch & sync
+  useEffect(() => {
+    let isMounted = true;
+    applicationService.getAll().then((data) => {
+      if (isMounted && data && Array.isArray(data) && data.length > 0) {
+        setApplications(data);
+      }
+    }).catch(() => {
+      // offline fallback
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Sync latest applications
-  const refreshApplications = () => {
+  const refreshApplications = async () => {
+    try {
+      const fresh = await applicationService.getAll();
+      if (fresh && Array.isArray(fresh) && fresh.length > 0) {
+        setApplications(fresh);
+        if (selectedApp) {
+          const updatedCurr = fresh.find((a) => a.id === selectedApp.id);
+          if (updatedCurr) setSelectedApp(updatedCurr);
+        }
+        return;
+      }
+    } catch {
+      // fallback
+    }
     const fresh = getAllApplications();
     setApplications(fresh);
     if (selectedApp) {
@@ -170,6 +212,15 @@ const AdminApplicationsPage = () => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
   };
+
+  // Status counts for quick filter pills
+  const statusCounts = useMemo(() => {
+    const counts = { all: applications.length };
+    KANBAN_COLUMNS.forEach((col) => {
+      counts[col.key] = applications.filter((a) => normalizeStatus(a.status) === col.key).length;
+    });
+    return counts;
+  }, [applications]);
 
   // Distinct Filter Options
   const uniqueOpportunities = useMemo(() => {
@@ -239,7 +290,7 @@ const AdminApplicationsPage = () => {
   };
 
   // Status Change Handlers
-  const handleDirectStatusChange = (app, newStatus, optionalNote = '') => {
+  const handleDirectStatusChange = async (app, newStatus, optionalNote = '') => {
     if (newStatus === 'selected' || newStatus === 'not_selected') {
       // Trigger confirmation modal for final decision
       setDecisionApp(app);
@@ -257,17 +308,17 @@ const AdminApplicationsPage = () => {
     }
 
     // Normal transition (under_review, shortlisted, applied)
-    updateApplicationStatus(app.id, newStatus, optionalNote);
-    refreshApplications();
+    await applicationService.updateStatus(app.id, newStatus, optionalNote);
+    await refreshApplications();
     showToast(`Updated ${app.candidateName}’s status to "${newStatus.replace('_', ' ')}".`);
   };
 
   // Confirm Final Decision (Selected or Not Selected)
-  const handleConfirmDecision = () => {
+  const handleConfirmDecision = async () => {
     if (!decisionApp || !decisionType) return;
 
-    updateApplicationStatus(decisionApp.id, decisionType, decisionNote);
-    refreshApplications();
+    await applicationService.updateStatus(decisionApp.id, decisionType, decisionNote);
+    await refreshApplications();
     setIsConfirmDecisionOpen(false);
 
     showToast(
@@ -280,7 +331,7 @@ const AdminApplicationsPage = () => {
   };
 
   // Confirm Interview Invitation
-  const handleConfirmInterview = () => {
+  const handleConfirmInterview = async () => {
     if (!interviewApp) return;
 
     const interviewPayload = {
@@ -293,26 +344,26 @@ const AdminApplicationsPage = () => {
       notes: `Audition interview scheduled for ${interviewDate} (${interviewMode}).`,
     };
 
-    updateApplicationStatus(
+    await applicationService.updateStatus(
       interviewApp.id,
       'interview',
       `Audition interview arranged for ${interviewDate}.`,
       interviewPayload
     );
-    refreshApplications();
+    await refreshApplications();
     setIsInterviewModalOpen(false);
     showToast(`Interview recorded for ${interviewApp.candidateName} on ${interviewDate}.`);
     setInterviewApp(null);
   };
 
   // Add Internal Note in Details Drawer
-  const handleAddInternalNote = (e) => {
+  const handleAddInternalNote = async (e) => {
     e.preventDefault();
     if (!selectedApp || !newNoteText.trim()) return;
 
-    addApplicationInternalNote(selectedApp.id, newNoteText.trim(), 'StageLink Admin');
+    await applicationService.addInternalNote(selectedApp.id, newNoteText.trim(), 'StageLink Admin');
     setNewNoteText('');
-    refreshApplications();
+    await refreshApplications();
     showToast('Internal casting note recorded.');
   };
 
@@ -352,14 +403,19 @@ const AdminApplicationsPage = () => {
         </div>
       )}
 
-      {/* Header & View Switcher */}
+      {/* Top Navigation & Back Button */}
+      <div className="flex items-center justify-between">
+        <BackButton to="/admin/candidates" label="Back to Candidates" />
+      </div>
+
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200">
         <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <h1 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy tracking-tight">
               Application & Audition Management
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-800 text-xs font-bold border border-neutral-200">
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200">
               {filteredApplications.length} Submissions
             </span>
           </div>
@@ -367,63 +423,70 @@ const AdminApplicationsPage = () => {
             Audit performer self-tapes, move candidates through casting stages, record callbacks, and track hiring decisions.
           </p>
         </div>
+      </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-3">
-          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 shadow-2xs">
+      {/* Quick Status Filter Tabs (Pills) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {STATUS_TABS.map((tab) => {
+          const isActive = selectedStatus === tab.key;
+          const count = statusCounts[tab.key] || 0;
+          return (
             <button
+              key={tab.key}
               type="button"
-              onClick={() => setViewMode('kanban')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                viewMode === 'kanban'
-                  ? 'bg-white text-brand-navy shadow-3d-button specular-top'
-                  : 'text-slate-500 hover:text-slate-900'
+              onClick={() => setSelectedStatus(tab.key)}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-brand-navy text-white shadow-xs scale-[1.02]'
+                  : 'bg-white border border-slate-200/90 text-slate-600 hover:border-slate-300 hover:text-slate-900 hover:bg-slate-50'
               }`}
             >
-              <Kanban className="w-3.5 h-3.5" />
-              <span>Kanban Board</span>
+              <span>{tab.label}</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                  isActive
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {count}
+              </span>
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                viewMode === 'table'
-                  ? 'bg-white text-brand-navy shadow-3d-button specular-top'
-                  : 'text-slate-500 hover:text-slate-900'
-              }`}
-            >
-              <LayoutList className="w-3.5 h-3.5" />
-              <span>Table View</span>
-            </button>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
       {/* FILTERS TOOLBAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-3d-card specular-top space-y-3">
-        {/* Row 1: Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by candidate name, role title, or opportunity..."
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-brand-navy placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white shadow-inner-bevel transition-all"
-          />
-        </div>
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+        {/* Row 1: Search & Filter Dropdowns */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
+          {/* Search */}
+          <div className="md:col-span-5 relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search candidate name, role, or opportunity..."
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs text-brand-navy placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white transition-all"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-        {/* Row 2: Dropdown Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          {/* Opportunity */}
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-neutral-600 uppercase tracking-wider">
-              Opportunity
-            </label>
+          {/* Opportunity Dropdown */}
+          <div className="md:col-span-3">
             <select
               value={selectedOpportunity}
               onChange={(e) => setSelectedOpportunity(e.target.value)}
-              className="w-full p-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
+              className="w-full py-2.5 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
             >
               <option value="all">All Opportunities</option>
               {uniqueOpportunities.map((opp) => (
@@ -434,15 +497,12 @@ const AdminApplicationsPage = () => {
             </select>
           </div>
 
-          {/* Location */}
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-neutral-600 uppercase tracking-wider">
-              Location
-            </label>
+          {/* Location Dropdown */}
+          <div className="md:col-span-2">
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
-              className="w-full p-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
+              className="w-full py-2.5 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
             >
               <option value="all">All Locations</option>
               {uniqueLocations.filter((l) => l !== 'all').map((loc) => (
@@ -453,34 +513,12 @@ const AdminApplicationsPage = () => {
             </select>
           </div>
 
-          {/* Status */}
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-neutral-600 uppercase tracking-wider">
-              Stage / Status
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full p-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Stages</option>
-              {KANBAN_COLUMNS.map((col) => (
-                <option key={col.key} value={col.key}>
-                  {col.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Date Filter */}
-          <div className="space-y-1">
-            <label className="block text-[11px] font-bold text-neutral-600 uppercase tracking-wider">
-              Application Date
-            </label>
+          {/* Date Range Dropdown */}
+          <div className="md:col-span-2">
             <select
               value={selectedDateRange}
               onChange={(e) => setSelectedDateRange(e.target.value)}
-              className="w-full p-2.5 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
+              className="w-full py-2.5 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-medium text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
             >
               <option value="all">All Time</option>
               <option value="7">Last 7 Days</option>
@@ -490,16 +528,19 @@ const AdminApplicationsPage = () => {
           </div>
         </div>
 
-        {/* Reset */}
+        {/* Reset Filter Button */}
         {isFiltering && (
-          <div className="flex justify-end pt-1">
+          <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-100">
+            <span className="text-slate-500">
+              Filtered to <strong className="text-brand-navy">{filteredApplications.length}</strong> matching candidates
+            </span>
             <button
               type="button"
               onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-brand-pink font-semibold transition-colors"
+              className="inline-flex items-center gap-1 text-brand-pink hover:text-brand-pink-dark font-semibold transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Active Filters</span>
+              <span>Reset Filters</span>
             </button>
           </div>
         )}
@@ -604,7 +645,7 @@ const AdminApplicationsPage = () => {
                             </span>
                             <div className="flex items-center gap-1.5">
                               <ScoreBadge
-                                score={app.match_score}
+                                score={app.match_score?.total_score ?? app.match_score}
                                 size="sm"
                                 onClick={() => {
                                   setSelectedScoreApp(app);
@@ -718,7 +759,7 @@ const AdminApplicationsPage = () => {
                       {/* Match Score */}
                       <td className="py-3 px-3">
                         <ScoreBadge
-                          score={app.match_score}
+                          score={app.match_score?.total_score ?? app.match_score}
                           size="sm"
                           onClick={() => {
                             setSelectedScoreApp(app);
@@ -750,7 +791,7 @@ const AdminApplicationsPage = () => {
                           onChange={(e) =>
                             handleDirectStatusChange(app, e.target.value)
                           }
-                          className="px-2 py-1 text-[11px] font-semibold rounded-lg border border-neutral-200 bg-neutral-50 text-neutral-700 hover:bg-white focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
+                          className="px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border border-slate-200 bg-white text-slate-800 hover:border-slate-300 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer shadow-2xs"
                         >
                           <option value="applied">Applied</option>
                           <option value="under_review">Under Review</option>
@@ -763,25 +804,25 @@ const AdminApplicationsPage = () => {
 
                       {/* Actions */}
                       <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedApp(app);
                               setIsDetailsOpen(true);
                             }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-neutral-200 hover:border-neutral-400 bg-white text-brand-navy text-[11px] font-semibold shadow-2xs hover:bg-neutral-50 transition-all"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-white text-brand-navy text-[11px] font-semibold shadow-2xs hover:bg-slate-50 transition-all cursor-pointer"
                           >
-                            <Eye className="w-3.5 h-3.5 text-neutral-500" />
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
                             <span>Details</span>
                           </button>
 
                           <Link
                             to={`/admin/messages?candidateId=${app.candidateId}`}
-                            className="p-1 rounded-lg text-neutral-400 hover:text-brand-pink hover:bg-neutral-100 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-brand-pink hover:bg-slate-100 transition-colors"
                             title="Direct Platform Message"
                           >
-                            <MessageSquare className="w-4 h-4" />
+                            <MessageSquare className="w-3.5 h-3.5" />
                           </Link>
                         </div>
                       </td>
@@ -858,7 +899,7 @@ const AdminApplicationsPage = () => {
                   </span>
                   <div className="flex items-center gap-2.5">
                     <ScoreBadge
-                      score={selectedApp.match_score}
+                      score={selectedApp.match_score?.total_score ?? selectedApp.match_score}
                       size="md"
                       onClick={() => {
                         setSelectedScoreApp(selectedApp);

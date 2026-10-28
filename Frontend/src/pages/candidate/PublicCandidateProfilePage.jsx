@@ -41,6 +41,7 @@ import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/common/Toast';
 import CandidateAccessLock from '../../components/common/CandidateAccessLock';
 import InviteToCastingModal from '../../components/talent/InviteToCastingModal';
+import BackButton from '../../components/common/BackButton';
 import { talentService, EVENT_SAVED_TALENT_CHANGED } from '../../services/talentService';
 import { FALLBACK_TALENT_AVATAR } from '../../data/mockTalentDirectory';
 import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
@@ -598,13 +599,7 @@ const PublicCandidateProfilePage = () => {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-8 pb-24 relative z-10 space-y-6">
         {/* Top Breadcrumb Navigation */}
         <div className="flex items-center justify-between pb-1">
-          <Link
-            to="/talent"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-neutral-600 hover:text-black transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Back to Discover Talent</span>
-          </Link>
+          <BackButton fallback="/talent" label="Back to Discover Talent" variant="light" />
           <div className="hidden sm:flex items-center gap-2 text-xs text-neutral-400">
             <span>StageLink</span>
             <span>/</span>

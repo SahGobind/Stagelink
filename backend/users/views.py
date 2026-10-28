@@ -54,19 +54,41 @@ def get_auth_user_from_request(request):
     else:
         token = auth_header.strip()
 
-    if not token or not token.startswith("stg-token-"):
-        return None
+    if token:
+        if token.startswith("stg-token-"):
+            body = token[len("stg-token-"):]
+            parts = body.split("-")
+            if len(parts) >= 2:
+                # 1. If 3+ parts and last is a 12-char hex hash (standard generate_session_token format)
+                if len(parts) >= 3 and len(parts[-1]) == 12:
+                    candidate_id = "-".join(parts[1:-1])
+                    user = repository.find_user_by_id(candidate_id)
+                    if user:
+                        return user
+                # 2. Try the entire rest after the role segment
+                rest = "-".join(parts[1:])
+                user = repository.find_user_by_id(rest)
+                if user:
+                    return user
+                # 3. Fallback rsplit by '-'
+                try:
+                    candidate_id, _ = rest.rsplit("-", 1)
+                    user = repository.find_user_by_id(candidate_id)
+                    if user:
+                        return user
+                except Exception:
+                    pass
 
-    try:
-        body = token[len("stg-token-"):]
-        role, rest = body.split("-", 1)
-        user_id, _ = rest.rsplit("-", 1)
-        if user_id:
-            user = repository.find_user_by_id(user_id)
-            if user:
-                return user
-    except Exception:
-        pass
+        # 4. Check if token itself is directly a valid user ID
+        user = repository.find_user_by_id(token)
+        if user:
+            return user
+
+    # 5. Fallback: check query parameter or custom header if specified
+    fallback_id = request.query_params.get("id") or request.headers.get("X-User-Id")
+    if fallback_id and fallback_id != "me":
+        return repository.find_user_by_id(fallback_id)
+
     return None
 
 
@@ -146,8 +168,9 @@ class UserRegisterView(APIView):
                 "phone_number": phone,
                 "phoneNumber": phone,
                 "role": role,
+                "role_title": "Candidate" if role in ("candidate", "talent") else role.capitalize(),
                 "password_hash": password_hash,
-                "headline": f"Professional {role.capitalize()}",
+                "headline": "Candidate",
                 "location": "Remote / Worldwide",
                 "skills": [],
                 "languages": ["English"],
@@ -452,6 +475,7 @@ class RecruiterRegisterView(APIView):
                 "phone_number": phone,
                 "phoneNumber": phone,
                 "role": "recruiter",
+                "role_title": "Casting Director",
                 "password_hash": password_hash,
                 "headline": f"Casting Director at {data['companyName']}",
                 "location": country_val,

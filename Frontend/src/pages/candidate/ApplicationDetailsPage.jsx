@@ -20,6 +20,7 @@ import {
   Quote,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import ApplicationStatusBadge from '../../components/applications/ApplicationStatusBadge';
@@ -123,13 +124,7 @@ const ApplicationDetailsPage = () => {
   return (
     <PageContainer maxWidth="lg" className="space-y-6 text-left">
       <div className="flex items-center justify-between">
-        <Link
-          to="/candidate/applications"
-          className="inline-flex items-center text-xs font-semibold text-gray-500 hover:text-brand-pink transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          <span>Back to My Applications</span>
-        </Link>
+        <BackButton fallback="/candidate/applications" label="Back to My Applications" variant="light" />
 
         {canWithdraw && (
           <button

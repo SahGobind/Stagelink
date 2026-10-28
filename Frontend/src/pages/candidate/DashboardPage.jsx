@@ -11,7 +11,6 @@ import {
   ChevronRight,
   AlertCircle,
   Eye,
-  Compass,
   Briefcase,
   ShieldCheck,
   Film,
@@ -129,7 +128,7 @@ const DashboardPage = () => {
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200/80 shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Verified Performer Account</span>
+                <span>Verified Candidate Account</span>
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-xs font-semibold text-brand-text-secondary">
@@ -417,33 +416,6 @@ const DashboardPage = () => {
                 ))}
               </div>
             )}
-          </div>
-
-          {/* Prominent Browse Opportunities CTA Banner */}
-          <div className="bg-gradient-to-r from-neutral-950 via-slate-900 to-neutral-950 text-white p-6 sm:p-8 rounded-3xl shadow-3d-floating specular-top flex flex-col md:flex-row md:items-center justify-between gap-6 border border-neutral-800 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="space-y-1.5 max-w-xl relative z-10">
-              <div className="flex items-center gap-2">
-                <Compass className="w-4 h-4 text-emerald-400" />
-                <span className="text-[11px] uppercase font-bold tracking-wider text-emerald-400">
-                  StageLink Casting Directory
-                </span>
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold font-serif tracking-tight">
-                Discover 500+ Open Casting Calls
-              </h3>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Filter by feature film, OTT web series, commercial campaigns, and West End stage repertory to find your next breakthrough project.
-              </p>
-            </div>
-
-            <Link
-              to="/opportunities"
-              className="px-6 py-3.5 bg-white hover:bg-neutral-100 text-neutral-950 font-bold text-xs rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 specular-top transition-all flex items-center justify-center gap-2 shrink-0 self-start md:self-center relative z-10"
-            >
-              <span>Browse Opportunities</span>
-              <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
 
         {/* Help & Support Desk Banner */}

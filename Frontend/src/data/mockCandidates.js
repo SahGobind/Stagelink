@@ -1113,7 +1113,7 @@ const getSeededProfileForUser = (user) => {
     country: locationCountry,
     dateOfBirth: user.dateOfBirth || '2000-01-01',
     age: user.dateOfBirth ? Math.max(16, new Date().getFullYear() - new Date(user.dateOfBirth).getFullYear()) : 24,
-    gender: 'Other',
+    gender: user.gender || 'Female',
     contactEmail: user.email || '',
     phone: user.phoneNumber || user.phone || '',
     avatar: user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
@@ -1159,7 +1159,10 @@ export const getCandidatesList = () => {
 
 export const updateCandidateInList = (id, updates) => {
   const currentList = getCandidatesList();
-  const updatedList = currentList.map((c) => (c.id === id ? { ...c, ...updates } : c));
+  const exists = currentList.some((c) => c.id === id);
+  const updatedList = exists
+    ? currentList.map((c) => (c.id === id ? { ...c, ...updates } : c))
+    : [{ ...updates, id }, ...currentList];
   try {
     localStorage.setItem(CANDIDATES_LIST_STORAGE_KEY, JSON.stringify(updatedList));
   } catch {

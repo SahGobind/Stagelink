@@ -328,10 +328,10 @@ const AdminDashboardPage = () => {
           <div className="flex items-center gap-2 flex-wrap">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-neutral-100 text-brand-navy text-[11px] font-bold uppercase tracking-wider">
               <Building2 className="w-3.5 h-3.5 text-brand-pink" />
-              <span>{profileForm.companyName || 'Production Recruiter'}</span>
+              <span>{profileForm.companyName || 'Casting Director'}</span>
             </div>
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Verified
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-pink-50 text-brand-pink border border-pink-200">
+              Casting Director
             </span>
             <button
               type="button"
@@ -343,7 +343,7 @@ const AdminDashboardPage = () => {
             </button>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900 tracking-tight">
-            Recruiter Dashboard
+            Casting Director Dashboard
           </h1>
           <p className="text-xs text-gray-500">
             Overview of your active casting calls, applicant pipeline, and opportunities.
@@ -390,7 +390,7 @@ const AdminDashboardPage = () => {
         <div className="space-y-3 max-w-2xl relative z-10">
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-pink/20 text-pink-300 border border-brand-pink/30 px-3 py-0.5 rounded-full shadow-2xs">
-              Production Workspace
+              Casting Director Workspace
             </span>
             <span className="text-xs font-semibold text-slate-300">
               Profile: {profileCompletion}% Completed
@@ -544,7 +544,7 @@ const AdminDashboardPage = () => {
                 <th className="py-3.5 px-4">Category</th>
                 <th className="py-3.5 px-4">Applications</th>
                 <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-5 text-right">Recruiter Actions</th>
+                <th className="py-3.5 px-5 text-right">Casting Director Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

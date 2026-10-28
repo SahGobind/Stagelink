@@ -222,7 +222,7 @@ const SignUpPage = () => {
                 Account Created Successfully!
               </h2>
               <p className="text-xs sm:text-sm text-brand-text-secondary max-w-md mx-auto">
-                Your Production Company account for <strong className="text-gray-900 font-semibold">{registrationSuccess.companyName}</strong> has been registered in StageLink.
+                Your Casting Director account for <strong className="text-gray-900 font-semibold">{registrationSuccess.companyName}</strong> has been registered in StageLink.
               </p>
             </div>
 
@@ -246,7 +246,7 @@ const SignUpPage = () => {
                 to={`/login?role=recruiter&email=${encodeURIComponent(registrationSuccess.email)}`}
                 className="w-full py-3.5 px-6 bg-brand-pink hover:bg-brand-pink-hover text-white text-sm font-bold rounded-xl shadow-3d-button-pink hover:shadow-3d-pink active:translate-y-0.5 transition-all flex items-center justify-center gap-2"
               >
-                <span>Go to Recruiter Login</span>
+                <span>Go to Casting Director Login</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
@@ -270,8 +270,20 @@ const SignUpPage = () => {
           </div>
         ) : (
           <>
+            {/* Heading */}
+            <div className="space-y-1.5 mb-5">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-pink bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/70 shadow-2xs">
+                  {activeTab === 'recruiter' ? 'Step 1 of 5 — Casting Director Registration' : 'Candidate Registration'}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
+                {activeTab === 'recruiter' ? 'Register as Company / Casting Director' : 'Register as Candidate'}
+              </h2>
+            </div>
+
             {/* Role Switcher Tabs */}
-            <div className="flex p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/70 shadow-inner-bevel">
+            <div className="flex p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/70 shadow-inner-bevel mb-6">
               <button
                 type="button"
                 onClick={() => {
@@ -285,7 +297,7 @@ const SignUpPage = () => {
                 }`}
               >
                 <User className={`w-4 h-4 ${activeTab === 'candidate' ? 'text-brand-pink' : ''}`} />
-                <span>Candidate / Artist</span>
+                <span>Candidate</span>
               </button>
               <button
                 type="button"
@@ -300,25 +312,8 @@ const SignUpPage = () => {
                 }`}
               >
                 <Building2 className={`w-4 h-4 ${activeTab === 'recruiter' ? 'text-brand-pink' : ''}`} />
-                <span>Recruiter / Studio</span>
+                <span>Company / Casting Director</span>
               </button>
-            </div>
-
-            {/* Heading */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-pink bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200/70 shadow-2xs">
-                  {activeTab === 'recruiter' ? 'Step 1 of 5 — Recruiter Onboarding' : 'Performer Portal'}
-                </span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-950 tracking-tight">
-                {activeTab === 'recruiter' ? 'Create Your Recruiter & Studio Account' : 'Create Your Performer Account'}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 leading-relaxed font-medium">
-                {activeTab === 'recruiter'
-                  ? 'Register your production house or casting agency to announce casting calls, review fees, and manage auditions.'
-                  : 'Begin your acting journey with verified casting calls and auditions.'}
-              </p>
             </div>
 
 
@@ -330,25 +325,25 @@ const SignUpPage = () => {
           </div>
         )}
 
-        {/* ================= RECRUITER REGISTRATION FORM ================= */}
+        {/* ================= RECRUITER / CASTING DIRECTOR REGISTRATION FORM ================= */}
         {activeTab === 'recruiter' && (
           <form
             onSubmit={recruiterForm.handleSubmit(onRecruiterSubmit)}
             className="space-y-4"
             noValidate
           >
-            {/* Recruiter Full Name */}
+            {/* Casting Director Full Name */}
             <Input
-              label="Recruiter Full Name"
+              label="Casting Director Full Name"
               placeholder="e.g. Marcus Sterling"
               required
               error={recruiterForm.formState.errors.fullName?.message}
               {...recruiterForm.register('fullName')}
             />
 
-            {/* Production Company Name */}
+            {/* Company / Production Name */}
             <Input
-              label="Production Company Name"
+              label="Company / Production Name"
               placeholder="e.g. Apex Vision Studios / Silverline Pictures"
               required
               error={recruiterForm.formState.errors.companyName?.message}
@@ -445,12 +440,12 @@ const SignUpPage = () => {
               {isSubmitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Registering Studio Account...</span>
+                  <span>Registering Casting Director Account...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Register Production Account</span>
+                  <span>Register as Casting Director</span>
                 </>
               )}
             </button>
@@ -556,11 +551,11 @@ const SignUpPage = () => {
               className="w-full py-3.5 bg-neutral-950 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-3d-button hover:shadow-3d-card-hover active:translate-y-0.5 transition-all mt-3 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isSubmitting ? (
-                <span>Creating Account...</span>
+                <span>Creating Candidate Account...</span>
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>Create Performer Account</span>
+                  <span>Create Candidate Account</span>
                 </>
               )}
             </button>

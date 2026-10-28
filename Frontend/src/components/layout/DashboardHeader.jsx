@@ -91,14 +91,27 @@ const DashboardHeader = ({ title, subtitle }) => {
               <div className="hidden md:block text-left leading-tight">
                 <p className="text-xs font-bold text-neutral-950">{user?.fullName || 'Member'}</p>
                 <p className="text-[10px] text-brand-pink font-semibold uppercase tracking-wider mt-0.5">
-                  {user?.role || 'Guest'}
+                  {user?.role === 'recruiter' || user?.role === 'production_company'
+                    ? 'Casting Director'
+                    : user?.role === 'candidate' || user?.role === 'talent'
+                    ? 'Candidate'
+                    : user?.role?.replace('_', ' ') || 'Guest'}
                 </p>
               </div>
             </button>
           }
         >
           <div className="px-4 py-2 border-b border-gray-100">
-            <p className="text-xs font-bold text-brand-navy">{user?.fullName}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-bold text-brand-navy truncate">{user?.fullName}</p>
+              <span className="text-[10px] font-bold text-brand-pink uppercase tracking-wider shrink-0">
+                {user?.role === 'recruiter' || user?.role === 'production_company'
+                  ? 'Casting Director'
+                  : user?.role === 'candidate' || user?.role === 'talent'
+                  ? 'Candidate'
+                  : user?.role?.replace('_', ' ')}
+              </span>
+            </div>
             <p className="text-[11px] text-brand-text-secondary truncate">{user?.email}</p>
           </div>
           <div className="py-1">

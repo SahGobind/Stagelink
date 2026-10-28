@@ -18,6 +18,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api/support`
   : '/api/support';
 
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 3000) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return res;
+  } finally {
+    clearTimeout(id);
+  }
+};
+
 export const normalizeTicket = (t) => {
   if (!t) return t;
   return {
@@ -83,7 +97,7 @@ export const supportService = {
       if (search) params.append('search', search);
       if (category && category !== 'all') params.append('category', category);
 
-      const res = await fetch(`${API_BASE_URL}/tickets/?${params.toString()}`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/?${params.toString()}`, {
         headers: { Accept: 'application/json' },
       });
 
@@ -170,7 +184,7 @@ export const supportService = {
    */
   getTicketById: async (ticketId, { role = 'candidate', userId = '' } = {}) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/?role=${role}&user_id=${userId}`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/?role=${role}&user_id=${userId}`, {
         headers: { Accept: 'application/json' },
       });
       if (res.ok) {
@@ -247,7 +261,7 @@ export const supportService = {
     let createdTicket = null;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/tickets/`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -339,7 +353,7 @@ export const supportService = {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/reply/`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/reply/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -427,7 +441,7 @@ export const supportService = {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/note/`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/note/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -479,7 +493,7 @@ export const supportService = {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -548,7 +562,7 @@ export const supportService = {
    */
   reopenTicket: async (ticketId, { user }) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/reopen/`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/reopen/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -598,7 +612,7 @@ export const supportService = {
    */
   getMetrics: async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/metrics/?role=operations`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/metrics/?role=operations`, {
         headers: { Accept: 'application/json' },
       });
       if (res.ok) {

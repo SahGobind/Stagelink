@@ -66,7 +66,7 @@ export const candidateService = {
    * Fetch candidate profile by ID from MongoDB Atlas backend
    */
   getById: async (id) => {
-    const targetId = !id || id === 'me' ? 'cand-aanya' : id;
+    const targetId = id && id !== 'cand-aanya' ? id : (user?.id || id || 'me');
 
     try {
       const res = await apiRequest(`/api/users/profile/?id=${encodeURIComponent(targetId)}`);
@@ -104,8 +104,8 @@ export const candidateService = {
       console.warn('Failed to load candidate profile from backend:', err);
     }
 
-    if (!id || id === 'me' || id === 'cand-1' || id === 'cand-aanya') {
-      return getCandidateProfile();
+    if (!id || id === 'me' || id === 'cand-1') {
+      return getCandidateProfile(user);
     }
     return getCandidateById(id);
   },
@@ -114,7 +114,7 @@ export const candidateService = {
    * Update candidate profile on MongoDB Atlas backend
    */
   updateProfile: async (id, data, user) => {
-    const targetId = id || user?.id || 'cand-aanya';
+    const targetId = id || user?.id || 'me';
 
     const res = await apiRequest(`/api/users/profile/?id=${encodeURIComponent(targetId)}`, {
       method: 'PUT',
@@ -142,7 +142,7 @@ export const candidateService = {
    * Validate and publish candidate profile to MongoDB Atlas backend
    */
   publishProfile: async (id, data, user) => {
-    const targetId = id || user?.id || 'cand-aanya';
+    const targetId = id || user?.id || 'me';
 
     const res = await apiRequest(`/api/users/profile/publish/?id=${encodeURIComponent(targetId)}`, {
       method: 'POST',
@@ -177,7 +177,7 @@ export const candidateService = {
    * Unpublish candidate profile (take offline from Discover Talent)
    */
   unpublishProfile: async (id, user) => {
-    const targetId = id || user?.id || 'cand-aanya';
+    const targetId = id || user?.id || 'me';
 
     const res = await apiRequest(`/api/users/profile/unpublish/?id=${encodeURIComponent(targetId)}`, {
       method: 'POST',

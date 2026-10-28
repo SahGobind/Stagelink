@@ -27,6 +27,7 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import Textarea from '../../components/common/Textarea';
@@ -282,20 +283,23 @@ const OpportunityDetailsPage = () => {
   return (
     <div className="bg-gray-50/50 min-h-screen py-6 sm:py-10 pb-24 text-left">
       <PageContainer maxWidth="lg" className="space-y-6">
-        {/* 1. BREADCRUMB NAVIGATION */}
-        <nav aria-label="Breadcrumb" className="flex items-center space-x-2 text-xs text-brand-text-secondary">
-          <Link to="/" className="hover:text-black transition-colors font-medium">
-            Home
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-          <Link to="/opportunities" className="hover:text-black transition-colors font-medium">
-            Casting Calls
-          </Link>
-          <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-          <span className="text-brand-navy font-semibold truncate max-w-xs sm:max-w-md">
-            {opportunity.title}
-          </span>
-        </nav>
+        <div className="flex items-center justify-between gap-4">
+          <BackButton fallback="/opportunities" label="Back to Opportunities" variant="light" />
+          {/* 1. BREADCRUMB NAVIGATION */}
+          <nav aria-label="Breadcrumb" className="hidden sm:flex items-center space-x-2 text-xs text-brand-text-secondary">
+            <Link to="/" className="hover:text-black transition-colors font-medium">
+              Home
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+            <Link to="/opportunities" className="hover:text-black transition-colors font-medium">
+              Casting Calls
+            </Link>
+            <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+            <span className="text-brand-navy font-semibold truncate max-w-xs sm:max-w-md">
+              {opportunity.title}
+            </span>
+          </nav>
+        </div>
 
         {/* Closed / Expired Alert Banner */}
         {isClosed && (

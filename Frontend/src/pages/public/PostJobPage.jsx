@@ -14,6 +14,7 @@ import {
   Info,
 } from 'lucide-react';
 import Toast from '../../components/common/Toast';
+import BackButton from '../../components/common/BackButton';
 import { useAuth } from '../../context/AuthContext';
 import { saveCustomOpportunity, setPostingPaymentCompleted } from '../../utils/paymentAccess';
 import { apiRequest } from '../../services/api';
@@ -209,8 +210,11 @@ const PostJobPage = () => {
 
   const [productionCompany, setProductionCompany] = useState(initialCompany);
   const [productionCategory, setProductionCategory] = useState('Film & TV');
+  const [customProductionCategory, setCustomProductionCategory] = useState('');
   const [productionType, setProductionType] = useState('Feature Film');
+  const [customProductionType, setCustomProductionType] = useState('');
   const [selectedTalents, setSelectedTalents] = useState(['Background Talent']);
+  const [customTalentNeeded, setCustomTalentNeeded] = useState('');
   const todayIso = new Date().toISOString().split('T')[0];
   const defaultEndIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
@@ -342,8 +346,17 @@ const PostJobPage = () => {
     if (!productionType) {
       errs.productionType = 'Please select a job / production type.';
     }
+    if (productionCategory === 'Other' && !customProductionCategory.trim()) {
+      errs.customProductionCategory = 'Please specify the production category.';
+    }
+    if (productionType === 'Other' && !customProductionType.trim()) {
+      errs.customProductionType = 'Please specify the job / production type.';
+    }
     if (selectedTalents.length === 0) {
       errs.talents = 'Please select at least one talent needed.';
+    }
+    if (selectedTalents.includes('Other') && !customTalentNeeded.trim()) {
+      errs.customTalentNeeded = 'Please specify other talent needed.';
     }
     if (!artistsNeeded || Number(artistsNeeded) < 1) {
       errs.artistsNeeded = 'Artists needed must be at least 1.';
@@ -386,10 +399,22 @@ const PostJobPage = () => {
       ? `From ${openingStartDate} (Open)`
       : 'Open for submissions';
 
-    const computedTitle = `${productionCompany} — ${productionType} (${selectedTalents.join(', ')})`;
-    const fallbackCover = getCategoryFallbackImage(productionCategory, productionType);
+    const resolvedProductionCategory =
+      productionCategory === 'Other' && customProductionCategory.trim()
+        ? customProductionCategory.trim()
+        : productionCategory;
+    const resolvedProductionType =
+      productionType === 'Other' && customProductionType.trim()
+        ? customProductionType.trim()
+        : productionType;
+    const resolvedTalents = selectedTalents.map((t) =>
+      t === 'Other' && customTalentNeeded.trim() ? customTalentNeeded.trim() : t
+    );
 
-    const cleanCategorySlug = (productionCategory || 'other')
+    const computedTitle = `${productionCompany} — ${resolvedProductionType} (${resolvedTalents.join(', ')})`;
+    const fallbackCover = getCategoryFallbackImage(resolvedProductionCategory, resolvedProductionType);
+
+    const cleanCategorySlug = (resolvedProductionCategory || 'other')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
@@ -400,12 +425,16 @@ const PostJobPage = () => {
       : 'Competitive / To be discussed';
 
     const categoryWiseDetails = {
-      primaryCategory: productionCategory,
+      primaryCategory: resolvedProductionCategory,
       categorySlug: cleanCategorySlug,
-      productionType: productionType,
-      jobType: productionType,
-      type: productionType,
-      talentCategory: selectedTalents,
+      productionType: resolvedProductionType,
+      jobType: resolvedProductionType,
+      type: resolvedProductionType,
+      talentCategory: resolvedTalents,
+      selectedTalents,
+      customTalentNeeded: customTalentNeeded.trim(),
+      customProductionCategory: customProductionCategory.trim(),
+      customProductionType: customProductionType.trim(),
       artistsNeeded: Number(artistsNeeded) || 1,
       compensationPerTalent: cleanCompensation,
       compensationType: compAmountNum > 0 ? 'Paid' : 'Standard / To be discussed',
@@ -416,21 +445,21 @@ const PostJobPage = () => {
       shootSchedule: computedShootDate,
       openingSchedule: openingRangeText,
       categoryTags: [
-        productionCategory,
-        productionType,
-        ...selectedTalents,
+        resolvedProductionCategory,
+        resolvedProductionType,
+        ...resolvedTalents,
         compAmountNum > 0 ? 'Paid' : 'Open',
       ],
     };
 
     const categoryBreakdown = {
       production: {
-        category: productionCategory,
-        type: productionType,
+        category: resolvedProductionCategory,
+        type: resolvedProductionType,
         company: productionCompany.trim(),
       },
       talent: {
-        categories: selectedTalents,
+        categories: resolvedTalents,
         totalCount: Number(artistsNeeded) || 1,
       },
       compensation: {
@@ -452,23 +481,27 @@ const PostJobPage = () => {
       title: computedTitle,
       productionCompany: productionCompany.trim(),
       companyName: productionCompany.trim(),
-      category: productionCategory,
-      productionCategory: productionCategory,
+      category: resolvedProductionCategory,
+      productionCategory: resolvedProductionCategory,
+      customProductionCategory: customProductionCategory.trim(),
       categorySlug: cleanCategorySlug,
-      productionType: productionType,
-      jobType: productionType,
-      type: productionType,
-      talentNeeded: selectedTalents,
-      talents: selectedTalents,
+      productionType: resolvedProductionType,
+      customProductionType: customProductionType.trim(),
+      jobType: resolvedProductionType,
+      type: resolvedProductionType,
+      talentNeeded: resolvedTalents,
+      talents: resolvedTalents,
+      selectedTalents,
+      customTalentNeeded: customTalentNeeded.trim(),
       categoryWise: categoryWiseDetails,
       category_wise: categoryWiseDetails,
       category_breakdown: categoryBreakdown,
       categoryTags: categoryWiseDetails.categoryTags,
-      roles: selectedTalents.map((roleName) => ({
+      roles: resolvedTalents.map((roleName) => ({
         roleName,
         characterName: roleName,
         category: roleName,
-        spots: Math.max(1, Math.floor(Number(artistsNeeded) / selectedTalents.length)),
+        spots: Math.max(1, Math.floor(Number(artistsNeeded) / resolvedTalents.length)),
         pay: cleanCompensation,
         description: requirements.trim() || 'Refer to requirements',
       })),
@@ -544,14 +577,7 @@ const PostJobPage = () => {
       <div className="max-w-6xl mx-auto space-y-6 text-left">
         {/* Top Back Navigation */}
         <div>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-black font-medium transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>Back</span>
-          </button>
+          <BackButton fallback="/" variant="light" />
         </div>
 
         {/* Page Header */}
@@ -607,6 +633,33 @@ const PostJobPage = () => {
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
+
+                {/* Custom Production Category input box when Other is chosen */}
+                {productionCategory === 'Other' && (
+                  <div className="mt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                      Please specify production category <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customProductionCategory}
+                      onChange={(e) => {
+                        setCustomProductionCategory(e.target.value);
+                        if (errors.customProductionCategory) {
+                          setErrors((prev) => ({ ...prev, customProductionCategory: undefined }));
+                        }
+                      }}
+                      placeholder="Enter your custom production category..."
+                      className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all ${
+                        errors.customProductionCategory ? 'border-red-500' : 'border-gray-200 focus:border-black'
+                      }`}
+                      autoFocus
+                    />
+                    {errors.customProductionCategory && (
+                      <p className="text-[11px] text-red-500 mt-1">{errors.customProductionCategory}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* 3. Job / production type (All 32 Categories from User Screenshots) */}
@@ -617,7 +670,7 @@ const PostJobPage = () => {
                   </label>
                   <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Category: {productionCategory}
+                    Category: {productionCategory === 'Other' && customProductionCategory.trim() ? customProductionCategory.trim() : productionCategory}
                   </span>
                 </div>
                 <div className="relative">
@@ -634,6 +687,33 @@ const PostJobPage = () => {
                   </select>
                   <ChevronDown className="w-4 h-4 text-gray-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
+
+                {/* Custom Job / Production Type input box when Other is chosen */}
+                {productionType === 'Other' && (
+                  <div className="mt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                      Please specify job / production type <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customProductionType}
+                      onChange={(e) => {
+                        setCustomProductionType(e.target.value);
+                        if (errors.customProductionType) {
+                          setErrors((prev) => ({ ...prev, customProductionType: undefined }));
+                        }
+                      }}
+                      placeholder="Enter your custom job / production type..."
+                      className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all ${
+                        errors.customProductionType ? 'border-red-500' : 'border-gray-200 focus:border-black'
+                      }`}
+                      autoFocus
+                    />
+                    {errors.customProductionType && (
+                      <p className="text-[11px] text-red-500 mt-1">{errors.customProductionType}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* 4. Talent Needed (User-friendly Multi-Select Dropdown) */}
@@ -820,6 +900,33 @@ const PostJobPage = () => {
 
                 {errors.talents && (
                   <p className="text-[11px] text-red-500">{errors.talents}</p>
+                )}
+
+                {/* Custom Talent Needed input box when Other is chosen */}
+                {selectedTalents.includes('Other') && (
+                  <div className="mt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                      Please specify other talent needed <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customTalentNeeded}
+                      onChange={(e) => {
+                        setCustomTalentNeeded(e.target.value);
+                        if (errors.customTalentNeeded) {
+                          setErrors((prev) => ({ ...prev, customTalentNeeded: undefined }));
+                        }
+                      }}
+                      placeholder="Enter talent type (e.g. Acrobat, Puppeteer, Drone Operator)..."
+                      className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs sm:text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-black/10 transition-all ${
+                        errors.customTalentNeeded ? 'border-red-500' : 'border-gray-200 focus:border-black'
+                      }`}
+                      autoFocus
+                    />
+                    {errors.customTalentNeeded && (
+                      <p className="text-[11px] text-red-500 mt-1">{errors.customTalentNeeded}</p>
+                    )}
+                  </div>
                 )}
               </div>
 

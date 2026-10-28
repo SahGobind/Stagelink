@@ -45,6 +45,16 @@ const InstagramIcon = ({ className = 'w-4 h-4' }) => (
   </svg>
 );
 
+const LinkedInIcon = ({ className = 'w-4 h-4' }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.64 1.64 0 1 0 0-3.28 1.64 1.64 0 0 0 0 3.28m1.39 9.74v-8.37H5.07v8.37h2.78z" />
+  </svg>
+);
+
 const getYouTubeEmbedUrl = (url) => {
   if (!url) return null;
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
@@ -69,6 +79,7 @@ const PROJECT_TYPES = [
   'Music Videos',
   'Fashion Shoots',
   'Theatre',
+  'Other',
 ];
 
 const SUGGESTED_SKILLS = [
@@ -86,7 +97,7 @@ const SUGGESTED_SKILLS = [
 const ProfileSetupPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const candidate = getCandidateProfile(user);
 
   const stepFromQuery = parseInt(searchParams.get('step') || '1', 10);
@@ -104,11 +115,17 @@ const ProfileSetupPage = () => {
   const [selectedCategories, setSelectedCategories] = useState(
     candidate.categories || ['Actor']
   );
+  const [customCategory, setCustomCategory] = useState(
+    candidate.customCategory || candidate.otherCategory || ''
+  );
   const [profilePhoto, setProfilePhoto] = useState(
     candidate.avatar || user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'
   );
   const [dateOfBirth, setDateOfBirth] = useState(candidate.dateOfBirth || user?.dateOfBirth || '2000-01-01');
   const [gender, setGender] = useState(candidate.gender || 'Female');
+  const [customGender, setCustomGender] = useState(
+    candidate.customGender || candidate.otherGender || ''
+  );
   const [country, setCountry] = useState(candidate.country || (user?.location?.includes(',') ? user.location.split(',')[1].trim() : 'India'));
   const [city, setCity] = useState(candidate.city || (user?.location ? user.location.split(',')[0].trim() : 'Mumbai'));
 
@@ -169,16 +186,21 @@ const ProfileSetupPage = () => {
     ''
   );
 
+  // LinkedIn state
+  const [linkedin, setLinkedin] = useState(
+    candidate.linkedin ||
+    candidate.portfolio?.linkedin ||
+    candidate.social_links?.linkedin ||
+    candidate.socialLinks?.linkedin ||
+    ''
+  );
+
   // Step 4: Casting Preferences
   const [preferredProjects, setPreferredProjects] = useState(
-    candidate.preferredProjectTypes || [
-      'Films',
-      'OTT / Web Series',
-      'Advertisements',
-      'Music Videos',
-      'Fashion Shoots',
-      'Theatre',
-    ]
+    candidate.preferredProjectTypes || ['Films']
+  );
+  const [customProjectType, setCustomProjectType] = useState(
+    candidate.customProjectType || candidate.otherProjectType || ''
   );
   const [availableForAuditions, setAvailableForAuditions] = useState(true);
   const [travelInternationally, setTravelInternationally] = useState(true);
@@ -192,9 +214,19 @@ const ProfileSetupPage = () => {
         if (isMounted && profile) {
           if (profile.fullName) setFullName(profile.fullName);
           if (profile.categories && profile.categories.length > 0) setSelectedCategories(profile.categories);
+          if (profile.customCategory || profile.otherCategory) {
+            setCustomCategory(profile.customCategory || profile.otherCategory);
+          }
           if (profile.avatar) setProfilePhoto(profile.avatar);
           if (profile.headline) setHeadline(profile.headline);
           if (profile.bio) setBio(profile.bio);
+          if (profile.gender) setGender(profile.gender);
+          if (profile.customGender || profile.otherGender) {
+            setCustomGender(profile.customGender || profile.otherGender);
+          }
+          if (profile.customProjectType || profile.otherProjectType) {
+            setCustomProjectType(profile.customProjectType || profile.otherProjectType);
+          }
           if (profile.skills && profile.skills.length > 0) setSkills(profile.skills);
           if (profile.languages && profile.languages.length > 0) setLanguages(profile.languages);
           if (profile.location) {
@@ -211,6 +243,9 @@ const ProfileSetupPage = () => {
           if (profile.instagram || profile.portfolio?.instagram || profile.social_links?.instagram) {
             setInstagram(profile.instagram || profile.portfolio?.instagram || profile.social_links?.instagram || '');
           }
+          if (profile.linkedin || profile.portfolio?.linkedin || profile.social_links?.linkedin || profile.socialLinks?.linkedin) {
+            setLinkedin(profile.linkedin || profile.portfolio?.linkedin || profile.social_links?.linkedin || profile.socialLinks?.linkedin || '');
+          }
           if (profile.portfolio?.showreel?.url) {
             setVideoUrl(profile.portfolio.showreel.url);
             if (profile.portfolio.showreel.fileName) {
@@ -223,23 +258,8 @@ const ProfileSetupPage = () => {
     return () => { isMounted = false; };
   }, [user?.id]);
 
-  const toggleCategory = (cat) => {
-    if (selectedCategories.includes(cat)) {
-      if (selectedCategories.length > 1) {
-        setSelectedCategories(selectedCategories.filter((c) => c !== cat));
-      }
-    } else {
-      setSelectedCategories([...selectedCategories, cat]);
-    }
-  };
 
-  const toggleProjectType = (type) => {
-    if (preferredProjects.includes(type)) {
-      setPreferredProjects(preferredProjects.filter((t) => t !== type));
-    } else {
-      setPreferredProjects([...preferredProjects, type]);
-    }
-  };
+
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -288,6 +308,17 @@ const ProfileSetupPage = () => {
       .trim()
       .replace(/^https?:\/\/(www\.)?instagram\.com\//i, '')
       .replace(/^@/, '')
+      .replace(/\/$/, '')
+      .trim();
+  };
+
+  const cleanLinkedInHandle = (raw) => {
+    if (!raw) return '';
+    return raw
+      .trim()
+      .replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//i, '')
+      .replace(/^https?:\/\/(www\.)?linkedin\.com\/pub\//i, '')
+      .replace(/^in\//i, '')
       .replace(/\/$/, '')
       .trim();
   };
@@ -405,17 +436,31 @@ const ProfileSetupPage = () => {
   const buildProfilePayload = () => {
     const handle = cleanInstagramHandle(instagram);
     const formattedInsta = handle ? `@${handle}` : '';
+    const linkedinHandle = cleanLinkedInHandle(linkedin);
+    const formattedLinkedIn = linkedinHandle ? `https://linkedin.com/in/${linkedinHandle}` : '';
+
+    const finalCategories = selectedCategories.map((c) =>
+      c === 'Other' && customCategory.trim() ? customCategory.trim() : c
+    );
+    const finalGender = gender === 'Other' && customGender.trim() ? customGender.trim() : gender;
+    const finalPreferredProjects = preferredProjects.map((p) =>
+      p === 'Other' && customProjectType.trim() ? customProjectType.trim() : p
+    );
 
     return {
       fullName,
       full_name: fullName,
-      categories: selectedCategories,
-      category: selectedCategories[0] || 'Actor',
-      headline: headline || selectedCategories.join(' • '),
+      categories: finalCategories,
+      selectedCategories,
+      customCategory: customCategory.trim(),
+      category: finalCategories[0] || 'Actor',
+      headline: headline || finalCategories.join(' • '),
       avatar: profilePhoto,
       dateOfBirth,
       date_of_birth: dateOfBirth,
-      gender,
+      gender: finalGender,
+      selectedGender: gender,
+      customGender: customGender.trim(),
       country,
       city,
       location: `${city}, ${country}`,
@@ -432,20 +477,26 @@ const ProfileSetupPage = () => {
       bodyType,
       hairColor,
       eyeColor,
-      preferredProjectTypes: preferredProjects,
+      preferredProjectTypes: finalPreferredProjects,
+      selectedProjectTypes: preferredProjects,
+      customProjectType: customProjectType.trim(),
       instagram: formattedInsta,
+      linkedin: formattedLinkedIn,
       social_links: {
         ...(candidate.social_links || {}),
         instagram: formattedInsta,
+        linkedin: formattedLinkedIn,
       },
       socialLinks: {
         ...(candidate.socialLinks || {}),
         instagram: formattedInsta,
+        linkedin: formattedLinkedIn,
       },
       portfolio: {
         ...candidate.portfolio,
         headshots,
         instagram: formattedInsta,
+        linkedin: formattedLinkedIn,
         showreel: {
           ...candidate.portfolio?.showreel,
           url: videoUrl,
@@ -458,6 +509,26 @@ const ProfileSetupPage = () => {
   };
 
   const handleSaveAndNext = async () => {
+    // Validate Step 1 custom entries
+    if (currentStep === 1) {
+      if (selectedCategories.includes('Other') && !customCategory.trim()) {
+        setToastMessage('Please enter your specific profession in the Other category box.');
+        return;
+      }
+      if (gender === 'Other' && !customGender.trim()) {
+        setToastMessage('Please specify your gender in the Other gender box.');
+        return;
+      }
+    }
+
+    // Validate Step 4 custom entries
+    if (currentStep === 4) {
+      if (preferredProjects.includes('Other') && !customProjectType.trim()) {
+        setToastMessage('Please specify your other preferred project type.');
+        return;
+      }
+    }
+
     const payload = buildProfilePayload();
 
     if (currentStep < 5) {
@@ -475,7 +546,15 @@ const ProfileSetupPage = () => {
       setMissingErrors([]);
 
       try {
-        await candidateService.publishProfile(user?.id, payload, user);
+        const result = await candidateService.publishProfile(user?.id, payload, user);
+        if (updateUser) {
+          updateUser({
+            ...payload,
+            is_published: true,
+            isPublished: true,
+            status: 'active',
+          });
+        }
         setIsSaving(false);
         setToastMessage('Profile published successfully! Your talent card is now live on Discover Talent.');
         setTimeout(() => navigate('/candidate/profile'), 1000);
@@ -619,25 +698,37 @@ const ProfileSetupPage = () => {
                       <label className="block text-xs font-bold text-gray-800 mb-2">
                         Professional Category <span className="text-brand-pink">*</span>
                       </label>
-                      <div className="flex flex-wrap gap-2">
-                        {CATEGORIES.map((cat) => {
-                          const isSelected = selectedCategories.includes(cat);
-                          return (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => toggleCategory(cat)}
-                              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                isSelected
-                                  ? 'bg-brand-pink text-white shadow-xs'
-                                  : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'
-                              }`}
-                            >
+                      <div className="relative">
+                        <select
+                          value={selectedCategories[0] || 'Actor'}
+                          onChange={(e) => setSelectedCategories([e.target.value])}
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 bg-white appearance-none pr-10 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all cursor-pointer"
+                        >
+                          {CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat}>
                               {cat}
-                            </button>
-                          );
-                        })}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                       </div>
+
+                      {/* Custom Category Input Box when Other is selected */}
+                      {selectedCategories.includes('Other') && (
+                        <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                            Please specify other category <span className="text-brand-pink">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={customCategory}
+                            onChange={(e) => setCustomCategory(e.target.value)}
+                            placeholder="Enter your profession (e.g. Comedian, Stunt Performer, Magician)..."
+                            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all bg-white shadow-2xs"
+                            autoFocus
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -711,6 +802,23 @@ const ProfileSetupPage = () => {
                         );
                       })}
                     </div>
+
+                    {/* Custom Gender Input Box when Other is selected */}
+                    {gender === 'Other' && (
+                      <div className="mt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                          Please specify gender <span className="text-brand-pink">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={customGender}
+                          onChange={(e) => setCustomGender(e.target.value)}
+                          placeholder="Enter your gender (e.g. Non-Binary, Transgender, Self-describe)..."
+                          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all bg-white shadow-2xs"
+                          autoFocus
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -947,30 +1055,32 @@ const ProfileSetupPage = () => {
             )}
 
 
-            {/* STEP 3: Photos, Videos & Instagram */}
+            {/* STEP 3: Photos, Videos & Instagram (Easy & Simple Streamlined Layout) */}
             {currentStep === 3 && (
-              <div className="space-y-8 animate-in fade-in duration-200">
+              <div className="space-y-6 animate-in fade-in duration-200">
                 {/* 1. PHOTO GALLERY & HEADSHOTS */}
-                <div className="bg-white rounded-3xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-5">
+                <div className="bg-white rounded-3xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-pink-50 border border-pink-100 text-brand-pink flex items-center justify-center">
-                          <Camera className="w-4 h-4" />
-                        </div>
-                        <h3 className="text-sm font-bold text-gray-900">
-                          Photo Gallery & Headshots
-                        </h3>
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700">
-                          {headshots.length} uploaded
-                        </span>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-pink-50 border border-pink-100 text-brand-pink flex items-center justify-center shrink-0">
+                        <Camera className="w-4.5 h-4.5" />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1 pl-10">
-                        Upload high-resolution headshots, portrait and full-length production photos.
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-gray-900">
+                            Photo Gallery & Headshots
+                          </h3>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-700">
+                            {headshots.length} uploaded
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          High-resolution headshots, portrait and full-body production photos.
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start sm:self-auto pl-10 sm:pl-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       <input
                         type="file"
                         ref={photoInputRef}
@@ -985,7 +1095,7 @@ const ProfileSetupPage = () => {
                       <button
                         type="button"
                         onClick={() => photoInputRef.current?.click()}
-                        className="px-3.5 py-2 rounded-xl bg-brand-pink hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
+                        className="px-3.5 py-2 rounded-xl bg-brand-pink hover:bg-rose-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                       >
                         <Upload className="w-3.5 h-3.5" />
                         <span>Upload Photos</span>
@@ -993,7 +1103,7 @@ const ProfileSetupPage = () => {
                       <button
                         type="button"
                         onClick={() => setShowPhotoUrlInput(!showPhotoUrlInput)}
-                        className="px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors"
+                        className="px-3 py-2 rounded-xl border border-gray-200 hover:border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors cursor-pointer"
                       >
                         {showPhotoUrlInput ? 'Close Link' : '+ Add via URL'}
                       </button>
@@ -1002,7 +1112,7 @@ const ProfileSetupPage = () => {
 
                   {/* Optional Image URL Input Bar */}
                   {showPhotoUrlInput && (
-                    <div className="p-3 bg-pink-50/40 border border-pink-100 rounded-2xl flex flex-col sm:flex-row items-center gap-2">
+                    <div className="p-3 bg-pink-50/40 border border-pink-100 rounded-2xl flex flex-col sm:flex-row items-center gap-2 animate-in fade-in duration-150">
                       <input
                         type="url"
                         value={photoUrlInput}
@@ -1026,159 +1136,156 @@ const ProfileSetupPage = () => {
                     </div>
                   )}
 
-                  {/* Drag and Drop Zone */}
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDraggingPhotos(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      setIsDraggingPhotos(false);
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDraggingPhotos(false);
-                      handlePhotoFiles(e.dataTransfer.files);
-                    }}
-                    onClick={() => photoInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all ${
-                      isDraggingPhotos
-                        ? 'border-brand-pink bg-pink-50/60 scale-[0.99]'
-                        : 'border-gray-200 hover:border-gray-300 bg-gray-50/40 hover:bg-gray-50/80'
-                    }`}
-                  >
-                    <div className="w-10 h-10 mx-auto rounded-2xl bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-brand-pink mb-2">
-                      <Upload className="w-5 h-5" />
-                    </div>
-                    <p className="text-xs font-bold text-gray-800">
-                      Drag & drop your photos here, or <span className="text-brand-pink underline">browse files</span>
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-1">
-                      JPG, PNG or WebP • Recommended: Portrait close-up, side profile & full body shots
-                    </p>
-                  </div>
+                  {/* Gallery Grid with Integrated Add Photo Tile */}
+                  <div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {headshots.map((url, i) => (
+                        <div
+                          key={i}
+                          className="relative group aspect-3/4 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-2xs transition-all hover:shadow-md"
+                        >
+                          <img
+                            src={url}
+                            alt={`Headshot ${i + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+                            }}
+                          />
 
-                  {/* Headshots Gallery Grid */}
-                  {headshots.length > 0 ? (
-                    <div>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
-                          Active Gallery ({headshots.length})
-                        </span>
-                        <span className="text-[11px] text-gray-400">
-                          Tip: Star a photo to make it your Primary Headshot
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                        {headshots.map((url, i) => (
-                          <div
-                            key={i}
-                            className="relative group aspect-3/4 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shadow-2xs transition-all hover:shadow-md"
-                          >
-                            <img
-                              src={url}
-                              alt={`Headshot ${i + 1}`}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
-                              }}
-                            />
+                          {/* Primary Badge */}
+                          {i === 0 && (
+                            <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-bold flex items-center gap-1 shadow-xs z-10">
+                              <Star className="w-2.5 h-2.5 fill-white" />
+                              <span>Primary</span>
+                            </div>
+                          )}
 
-                            {/* Primary Badge */}
-                            {i === 0 && (
-                              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-brand-pink text-white text-[10px] font-bold flex items-center gap-1 shadow-xs z-10">
-                                <Star className="w-2.5 h-2.5 fill-white" />
-                                <span>Primary</span>
-                              </div>
-                            )}
-
-                            {/* Action Buttons Overlay */}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                              <div className="flex justify-end gap-1.5">
-                                {i !== 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSetPrimaryHeadshot(i);
-                                    }}
-                                    className="p-1.5 rounded-xl bg-white/90 hover:bg-white text-gray-800 shadow-sm transition-colors"
-                                    title="Set as Primary Profile Photo"
-                                  >
-                                    <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                                  </button>
-                                )}
+                          {/* Action Buttons Overlay */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                            <div className="flex justify-end gap-1.5">
+                              {i !== 0 && (
                                 <button
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleRemoveHeadshot(i);
+                                    handleSetPrimaryHeadshot(i);
                                   }}
-                                  className="p-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
-                                  title="Remove Photo"
+                                  className="p-1.5 rounded-xl bg-white/90 hover:bg-white text-gray-800 shadow-sm transition-colors cursor-pointer"
+                                  title="Set as Primary Profile Photo"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                                 </button>
-                              </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveHeadshot(i);
+                                }}
+                                className="p-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors cursor-pointer"
+                                title="Remove Photo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
 
-                              <div className="flex items-center justify-between text-white text-[11px] font-medium px-1">
-                                <span>#{i + 1}</span>
-                                {i === 0 && <span className="text-[10px] text-pink-200">Avatar</span>}
-                              </div>
+                            <div className="flex items-center justify-between text-white text-[11px] font-medium px-1">
+                              <span>#{i + 1}</span>
+                              {i === 0 && <span className="text-[10px] text-pink-200">Avatar</span>}
                             </div>
                           </div>
-                        ))}
+                        </div>
+                      ))}
+
+                      {/* Integrated + Add Photo / Drop Card */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => photoInputRef.current?.click()}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingPhotos(true);
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          setIsDraggingPhotos(false);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingPhotos(false);
+                          handlePhotoFiles(e.dataTransfer.files);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            photoInputRef.current?.click();
+                          }
+                        }}
+                        className={`aspect-3/4 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 p-3 text-center cursor-pointer transition-all ${
+                          isDraggingPhotos
+                            ? 'border-brand-pink bg-pink-50/70 scale-[0.98]'
+                            : 'border-gray-200 hover:border-brand-pink bg-gray-50/60 hover:bg-pink-50/30'
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-brand-pink">
+                          <Plus className="w-5 h-5" />
+                        </div>
+                        <span className="text-xs font-bold text-gray-800">Add Photo</span>
+                        <span className="text-[10px] text-gray-400">browse or drop</span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="py-6 text-center text-xs text-gray-400">
-                      No headshots uploaded yet. Please add at least 1 photo.
-                    </div>
-                  )}
+
+                    <p className="text-[11px] text-gray-400 mt-2.5 flex items-center gap-1.5">
+                      <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                      <span>Tip: The first image is your main profile headshot. Star any photo to make it Primary.</span>
+                    </p>
+                  </div>
                 </div>
 
-                {/* 2. PERFORMANCE REEL & VIDEO UPLOAD */}
-                <div className="bg-white rounded-3xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-5">
+                {/* 2. PERFORMANCE REEL & VIDEO */}
+                <div className="bg-white rounded-3xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-pink-50 border border-pink-100 text-brand-pink flex items-center justify-center">
-                          <Film className="w-4 h-4" />
-                        </div>
-                        <h3 className="text-sm font-bold text-gray-900">
-                          Performance Reel & Video
-                        </h3>
-                        {videoUrl && (
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Video Attached
-                          </span>
-                        )}
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-pink-50 border border-pink-100 text-brand-pink flex items-center justify-center shrink-0">
+                        <Film className="w-4.5 h-4.5" />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1 pl-10">
-                        Upload your acting showreel, dramatic scene callback, or introduction self-tape.
-                      </p>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-bold text-gray-900">
+                            Performance Reel & Video
+                          </h3>
+                          {videoUrl && (
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Attached
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Paste a video link or upload your acting reel.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Mode Toggle Tabs */}
-                    <div className="flex items-center bg-gray-100 p-1 rounded-xl self-start sm:self-auto pl-10 sm:pl-0">
+                    <div className="flex items-center bg-gray-100 p-1 rounded-xl shrink-0">
                       <button
                         type="button"
                         onClick={() => setVideoMode('upload')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                           videoMode === 'upload'
                             ? 'bg-white text-gray-900 shadow-2xs'
                             : 'text-gray-500 hover:text-gray-900'
                         }`}
                       >
                         <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Video</span>
+                        <span>Upload File</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setVideoMode('url')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                           videoMode === 'url'
                             ? 'bg-white text-gray-900 shadow-2xs'
                             : 'text-gray-500 hover:text-gray-900'
@@ -1192,7 +1299,7 @@ const ProfileSetupPage = () => {
 
                   {/* Mode 1: Video File Upload */}
                   {videoMode === 'upload' && (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <input
                         type="file"
                         ref={videoInputRef}
@@ -1209,15 +1316,15 @@ const ProfileSetupPage = () => {
                         <div className="p-4 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-3">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-10 h-10 rounded-xl bg-pink-100 text-brand-pink flex items-center justify-center shrink-0">
-                                <Film className="w-5 h-5" />
+                              <div className="w-9 h-9 rounded-xl bg-pink-100 text-brand-pink flex items-center justify-center shrink-0">
+                                <Film className="w-4.5 h-4.5" />
                               </div>
                               <div className="min-w-0">
                                 <p className="text-xs font-bold text-gray-900 truncate">
                                   {videoFileName || 'Uploaded Performance Reel'}
                                 </p>
                                 <p className="text-[11px] text-gray-500">
-                                  {videoFileSize || 'Video file ready for casting review'}
+                                  {videoFileSize || 'Video ready for casting review'}
                                 </p>
                               </div>
                             </div>
@@ -1225,14 +1332,14 @@ const ProfileSetupPage = () => {
                               <button
                                 type="button"
                                 onClick={() => videoInputRef.current?.click()}
-                                className="px-3 py-1.5 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                className="px-3 py-1.5 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
                               >
                                 Replace
                               </button>
                               <button
                                 type="button"
                                 onClick={handleRemoveVideo}
-                                className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors"
+                                className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                                 title="Remove Video"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1242,11 +1349,11 @@ const ProfileSetupPage = () => {
 
                           {/* Video Player Preview */}
                           {videoUrl && (
-                            <div className="pt-2">
+                            <div className="pt-1">
                               <video
                                 controls
                                 src={videoUrl}
-                                className="w-full rounded-xl aspect-video bg-black max-h-72 object-contain"
+                                className="w-full rounded-xl aspect-video bg-black max-h-64 object-contain"
                               />
                             </div>
                           )}
@@ -1268,20 +1375,20 @@ const ProfileSetupPage = () => {
                             if (file) handleVideoFileUpload(file);
                           }}
                           onClick={() => videoInputRef.current?.click()}
-                          className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
+                          className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all ${
                             isDraggingVideo
                               ? 'border-brand-pink bg-pink-50/60 scale-[0.99]'
                               : 'border-gray-200 hover:border-gray-300 bg-gray-50/40 hover:bg-gray-50/80'
                           }`}
                         >
-                          <div className="w-12 h-12 mx-auto rounded-2xl bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-brand-pink mb-3">
-                            <Upload className="w-6 h-6" />
+                          <div className="w-10 h-10 mx-auto rounded-xl bg-white border border-gray-200 shadow-2xs flex items-center justify-center text-brand-pink mb-2">
+                            <Upload className="w-5 h-5" />
                           </div>
                           <p className="text-xs font-bold text-gray-800">
-                            Click to upload video file or drag and drop
+                            Click to select video or drag & drop
                           </p>
-                          <p className="text-[11px] text-gray-400 mt-1">
-                            MP4, WebM or QuickTime MOV • Maximum recommended 100MB
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            MP4, WebM or QuickTime MOV (Max 100MB)
                           </p>
                         </div>
                       )}
@@ -1290,12 +1397,9 @@ const ProfileSetupPage = () => {
 
                   {/* Mode 2: Video URL Input */}
                   {videoMode === 'url' && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-800 mb-2">
-                          Showreel / Audition Video URL
-                        </label>
-                        <div className="relative">
+                    <div className="space-y-3">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <div className="relative flex-1">
                           <input
                             type="url"
                             value={videoUrl}
@@ -1304,22 +1408,31 @@ const ProfileSetupPage = () => {
                               setVideoFile(null);
                               setVideoFileName('');
                             }}
-                            placeholder="https://www.youtube.com/watch?v=... or https://...mp4"
-                            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink"
+                            placeholder="Paste YouTube, Vimeo or MP4 link (e.g. https://www.youtube.com/watch?v=...)"
+                            className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink shadow-2xs"
                           />
                           {videoUrl && (
                             <button
                               type="button"
                               onClick={() => setVideoUrl('')}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                             >
                               <X className="w-4 h-4" />
                             </button>
                           )}
                         </div>
-                        <p className="text-[11px] text-gray-400 mt-1.5">
-                          Paste your YouTube, Vimeo, Google Drive video or direct MP4 link.
-                        </p>
+
+                        {videoUrl && (
+                          <a
+                            href={videoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3.5 py-2.5 rounded-xl border border-pink-200 hover:border-brand-pink text-brand-pink text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shrink-0 bg-pink-50/50"
+                          >
+                            <span>Open</span>
+                            <ExternalLink className="w-3 h-3 text-pink-400" />
+                          </a>
+                        )}
                       </div>
 
                       {/* Video Link Preview */}
@@ -1327,22 +1440,14 @@ const ProfileSetupPage = () => {
                         <div className="p-3 bg-gray-50 border border-gray-200 rounded-2xl space-y-2">
                           <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
                             <span>Video Preview</span>
-                            <a
-                              href={videoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-brand-pink hover:underline flex items-center gap-1 text-[11px]"
-                            >
-                              <span>Open in new tab</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
+                            <span className="text-[11px] text-gray-400">Ready for review</span>
                           </div>
 
                           {getYouTubeEmbedUrl(videoUrl) ? (
                             <iframe
                               src={getYouTubeEmbedUrl(videoUrl)}
                               title="YouTube Showreel Preview"
-                              className="w-full rounded-xl aspect-video max-h-72 bg-black border-0"
+                              className="w-full rounded-xl aspect-video max-h-64 bg-black border-0"
                               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                               allowFullScreen
                             />
@@ -1350,7 +1455,7 @@ const ProfileSetupPage = () => {
                             <video
                               controls
                               src={videoUrl}
-                              className="w-full rounded-xl aspect-video bg-black max-h-72 object-contain"
+                              className="w-full rounded-xl aspect-video bg-black max-h-64 object-contain"
                             />
                           )}
                         </div>
@@ -1359,31 +1464,18 @@ const ProfileSetupPage = () => {
                   )}
                 </div>
 
-                {/* 3. INSTAGRAM ID & PROFILE */}
+                {/* 3. SOCIAL & PROFESSIONAL PROFILES (Instagram & LinkedIn) */}
                 <div className="bg-white rounded-3xl border border-gray-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-2xs">
-                          <InstagramIcon className="w-4 h-4" />
-                        </div>
-                        <h3 className="text-sm font-bold text-gray-900">
-                          Instagram Profile
-                        </h3>
-                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-pink-50 text-brand-pink border border-pink-100">
-                          Portfolio Boost
-                        </span>
+                  {/* Instagram Profile */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-2xs shrink-0">
+                        <InstagramIcon className="w-4 h-4" />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1 pl-10">
-                        Connect your Instagram ID so casting directors and brands can see your latest looks, audience reach, and reels.
-                      </p>
+                      <h3 className="text-sm font-bold text-gray-900">
+                        Instagram Profile
+                      </h3>
                     </div>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-50/50 via-purple-50/30 to-amber-50/30 border border-pink-100/80 space-y-3">
-                    <label className="block text-xs font-bold text-gray-800">
-                      Instagram Username / Profile ID
-                    </label>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                       <div className="relative flex-1">
@@ -1407,7 +1499,7 @@ const ProfileSetupPage = () => {
                           href={`https://instagram.com/${cleanInstagramHandle(instagram)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-4 py-2.5 rounded-xl bg-white border border-pink-200 hover:border-brand-pink text-brand-pink text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-2xs shrink-0"
+                          className="px-4 py-2.5 rounded-xl bg-white border border-pink-200 hover:border-brand-pink text-brand-pink text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-2xs shrink-0 cursor-pointer"
                         >
                           <InstagramIcon className="w-3.5 h-3.5" />
                           <span>View @{cleanInstagramHandle(instagram)}</span>
@@ -1415,12 +1507,48 @@ const ProfileSetupPage = () => {
                         </a>
                       )}
                     </div>
+                  </div>
 
-                    <div className="flex items-start gap-2 pt-1 text-[11px] text-gray-500">
-                      <Sparkles className="w-3.5 h-3.5 text-brand-pink shrink-0 mt-0.5" />
-                      <span>
-                        Tip: Talent profiles with verified Instagram links receive 35% higher response rates from commercial and OTT producers.
-                      </span>
+                  {/* LinkedIn Profile */}
+                  <div className="border-t border-gray-100 pt-3 space-y-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#0077b5] text-white flex items-center justify-center shadow-2xs shrink-0">
+                        <LinkedInIcon className="w-4 h-4 fill-white" />
+                      </div>
+                      <h3 className="text-sm font-bold text-gray-900">
+                        LinkedIn Profile / ID
+                      </h3>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                      <div className="relative flex-1">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                          <span className="font-bold text-xs text-[#0077b5]">in/</span>
+                        </div>
+                        <input
+                          type="text"
+                          value={cleanLinkedInHandle(linkedin)}
+                          onChange={(e) => {
+                            const val = cleanLinkedInHandle(e.target.value);
+                            setLinkedin(val);
+                          }}
+                          placeholder="username or profile link (e.g. gobind-sah)"
+                          className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-900 focus:outline-none focus:border-[#0077b5] shadow-2xs"
+                        />
+                      </div>
+
+                      {cleanLinkedInHandle(linkedin) && (
+                        <a
+                          href={`https://linkedin.com/in/${cleanLinkedInHandle(linkedin)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2.5 rounded-xl bg-white border border-blue-200 hover:border-[#0077b5] text-[#0077b5] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors shadow-2xs shrink-0 cursor-pointer"
+                        >
+                          <LinkedInIcon className="w-3.5 h-3.5 fill-[#0077b5]" />
+                          <span>View LinkedIn Profile</span>
+                          <ExternalLink className="w-3 h-3 text-blue-400" />
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1431,28 +1559,40 @@ const ProfileSetupPage = () => {
             {currentStep === 4 && (
               <div className="space-y-6 animate-in fade-in duration-200">
                 <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-3">
+                  <label className="block text-xs font-bold text-gray-800 mb-2">
                     Preferred Project Types
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {PROJECT_TYPES.map((type) => {
-                      const isSelected = preferredProjects.includes(type);
-                      return (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => toggleProjectType(type)}
-                          className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                            isSelected
-                              ? 'bg-brand-pink text-white shadow-xs'
-                              : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'
-                          }`}
-                        >
+                  <div className="relative">
+                    <select
+                      value={preferredProjects[0] || 'Films'}
+                      onChange={(e) => setPreferredProjects([e.target.value])}
+                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 bg-white appearance-none pr-10 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all cursor-pointer"
+                    >
+                      {PROJECT_TYPES.map((type) => (
+                        <option key={type} value={type}>
                           {type}
-                        </button>
-                      );
-                    })}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
+
+                  {/* Custom Project Type Input Box when Other is selected */}
+                  {preferredProjects.includes('Other') && (
+                    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
+                        Please specify other project type <span className="text-brand-pink">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={customProjectType}
+                        onChange={(e) => setCustomProjectType(e.target.value)}
+                        placeholder="Enter preferred project type (e.g. Voiceover, Reality Show, Radio)..."
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all bg-white shadow-2xs"
+                        autoFocus
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3 pt-2">
@@ -1531,7 +1671,7 @@ const ProfileSetupPage = () => {
                     <h3 className="text-lg font-bold text-gray-900">{fullName}</h3>
                     <p className="text-xs text-brand-pink font-semibold">{headline}</p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {city}, {country} • {gender} • {experienceYears} experience
+                      {city}, {country} • {gender === 'Other' && customGender.trim() ? `Other (${customGender.trim()})` : gender} • {experienceYears} experience
                     </p>
                   </div>
                 </div>
@@ -1539,7 +1679,10 @@ const ProfileSetupPage = () => {
                 <div className="space-y-4 text-xs text-gray-600 bg-gray-50 p-5 rounded-2xl border border-gray-200">
                   <div className="space-y-2 pb-3 border-b border-gray-200">
                     <p>
-                      <strong className="text-gray-900">Categories:</strong> {selectedCategories.join(', ')}
+                      <strong className="text-gray-900">Categories:</strong>{' '}
+                      {selectedCategories
+                        .map((c) => (c === 'Other' && customCategory.trim() ? `Other (${customCategory.trim()})` : c))
+                        .join(', ')}
                     </p>
                     <p>
                       <strong className="text-gray-900">Bio:</strong> {bio}
@@ -1551,7 +1694,10 @@ const ProfileSetupPage = () => {
                       <strong className="text-gray-900">Languages:</strong> {languages.join(', ')}
                     </p>
                     <p>
-                      <strong className="text-gray-900">Preferred Projects:</strong> {preferredProjects.join(', ')}
+                      <strong className="text-gray-900">Preferred Projects:</strong>{' '}
+                      {preferredProjects
+                        .map((p) => (p === 'Other' && customProjectType.trim() ? `Other (${customProjectType.trim()})` : p))
+                        .join(', ')}
                     </p>
                   </div>
 
@@ -1576,9 +1722,9 @@ const ProfileSetupPage = () => {
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-gray-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-gray-200">
                       <div>
-                        <strong className="text-gray-900">Performance Reel / Video:</strong>{' '}
+                        <strong className="text-gray-900">Showreel Video:</strong>{' '}
                         {videoUrl ? (
                           <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
                             <Check className="w-3 h-3 text-emerald-600" />
@@ -1594,6 +1740,17 @@ const ProfileSetupPage = () => {
                           <span className="text-brand-pink font-semibold inline-flex items-center gap-1">
                             <InstagramIcon className="w-3.5 h-3.5" />
                             {instagram}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Not provided</span>
+                        )}
+                      </div>
+                      <div>
+                        <strong className="text-gray-900">LinkedIn:</strong>{' '}
+                        {cleanLinkedInHandle(linkedin) ? (
+                          <span className="text-[#0077b5] font-semibold inline-flex items-center gap-1">
+                            <LinkedInIcon className="w-3.5 h-3.5 fill-[#0077b5]" />
+                            in/{cleanLinkedInHandle(linkedin)}
                           </span>
                         ) : (
                           <span className="text-gray-400">Not provided</span>

@@ -401,7 +401,7 @@ export const authService = {
 
     const payload = role === 'recruiter'
       ? {
-          fullName: userData.fullName || 'Studio Recruiter',
+          fullName: userData.fullName || 'Casting Director',
           companyName: userData.companyName || 'StageLink Partner Studio',
           email: normalizedEmail,
           phoneNumber: userData.phoneNumber || '',
@@ -412,8 +412,8 @@ export const authService = {
           agreeToTerms: true,
         }
       : {
-          full_name: userData.fullName || 'StageLink Member',
-          fullName: userData.fullName || 'StageLink Member',
+          full_name: userData.fullName || 'Candidate',
+          fullName: userData.fullName || 'Candidate',
           email: normalizedEmail,
           phoneNumber: userData.phoneNumber || '',
           phone_number: userData.phoneNumber || '',
@@ -484,8 +484,10 @@ export const authService = {
     authUser = {
       id: generatedId,
       email: normalizedEmail || `${role}_${Date.now()}@stagelink.local`,
-      fullName: userData.fullName || (role === 'recruiter' ? 'Studio Recruiter' : 'StageLink Member'),
+      fullName: userData.fullName || (role === 'recruiter' ? 'Casting Director' : 'Candidate'),
       companyName: userData.companyName || (role === 'recruiter' ? 'StageLink Partner Studio' : undefined),
+      headline: role === 'recruiter' ? `Casting Director at ${userData.companyName || 'StageLink Partner Studio'}` : 'Candidate',
+      roleTitle: role === 'recruiter' ? 'Casting Director' : 'Candidate',
       phoneNumber: userData.phoneNumber || '',
       role: role,
       token: `stg-token-${role}-${generatedId}`,
@@ -588,6 +590,8 @@ export const authService = {
           const updated = {
             ...current,
             role: 'recruiter',
+            roleTitle: 'Casting Director',
+            headline: `Casting Director at ${companyName}`,
             companyName: companyName,
             productionCompany: companyName,
           };
@@ -603,6 +607,8 @@ export const authService = {
         fullName,
         companyName,
         productionCompany: companyName,
+        headline: `Casting Director at ${companyName}`,
+        roleTitle: 'Casting Director',
         email,
         phoneNumber: companyData.phoneNumber || '+1 (555) 782-9901',
         country: companyData.country || 'India',

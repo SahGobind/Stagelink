@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import InviteToCastingModal from '../../components/talent/InviteToCastingModal';
 import Toast from '../../components/common/Toast';
 import {
@@ -68,6 +69,10 @@ const SavedTalentPage = () => {
 
   return (
     <PageContainer maxWidth="7xl" className="py-8 pb-24 text-left space-y-6">
+      <div>
+        <BackButton fallback="/talent" label="Back to Discover Talent" variant="light" />
+      </div>
+
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
         <div>

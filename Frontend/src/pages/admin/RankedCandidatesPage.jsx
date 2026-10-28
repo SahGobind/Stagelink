@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import Button from '../../components/common/Button';
 import CandidateCard from '../../components/ranking/CandidateCard';
 import ScoreBreakdownModal from '../../components/ranking/ScoreBreakdownModal';
@@ -78,6 +79,23 @@ const RankedCandidatesPage = () => {
   const [selectedAvailability, setSelectedAvailability] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState('match_score'); // 'match_score' | 'latest_application' | 'experience'
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  const STATUS_TABS = [
+    { value: 'all', label: 'All Applicants' },
+    { value: 'shortlisted', label: 'Shortlisted' },
+    { value: 'under_review', label: 'Under Review' },
+    { value: 'selected', label: 'Selected' },
+    { value: 'audition_requested', label: 'Audition Requested' },
+  ];
+
+  const activeAdvancedCount = [
+    selectedCategory !== 'all',
+    selectedSkill !== 'all',
+    selectedLanguage !== 'all',
+    selectedLocation !== 'all',
+    selectedAvailability !== 'all',
+  ].filter(Boolean).length;
 
   // Selection for bulk actions and comparison
   const [selectedAppIds, setSelectedAppIds] = useState([]);
@@ -247,67 +265,62 @@ const RankedCandidatesPage = () => {
         </div>
       )}
 
-      {/* Breadcrumb & Navigation */}
-      <div className="flex items-center gap-2 text-xs text-neutral-500">
-        <Link
-          to="/admin/opportunities"
-          className="inline-flex items-center gap-1 hover:text-brand-pink transition-colors font-medium"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Casting Opportunities</span>
-        </Link>
-        <span>/</span>
-        <span className="text-neutral-900 font-bold truncate max-w-xs">
-          {opportunity?.title || 'Ranked Candidates'}
-        </span>
+      {/* Top Navigation */}
+      <div className="flex items-center justify-between pb-1">
+        <BackButton fallback="/admin/opportunities" label="Back to Opportunities" variant="light" />
+        <div className="hidden sm:flex items-center gap-1.5 text-xs text-neutral-400 font-medium">
+          <span>Casting</span>
+          <span>/</span>
+          <span className="text-neutral-700 font-bold truncate max-w-xs">{opportunity?.title || 'Ranked Candidates'}</span>
+        </div>
       </div>
 
       {/* TOP HEADER: Opportunity Info, Metrics & Actions */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-white border border-neutral-200 shadow-xs space-y-4">
+      <div className="p-5 sm:p-6 rounded-3xl bg-white border border-neutral-200/90 shadow-2xs space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-50 text-brand-pink border border-pink-100">
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-50 text-[#FA5A36] border border-orange-200">
                 {opportunity?.category || 'Casting Call'}
               </span>
-              <span className="text-xs text-neutral-400">•</span>
-              <span className="text-xs font-bold text-neutral-600 flex items-center gap-1">
+              <span className="text-xs text-neutral-300">•</span>
+              <span className="text-xs font-semibold text-neutral-600 flex items-center gap-1">
                 <Building className="w-3.5 h-3.5 text-neutral-400" />
                 {opportunity?.production_company || 'StageLink Productions'}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-900 tracking-tight">
               Ranked Candidates — {opportunity?.title || 'Production Opportunity'}
             </h1>
-            <p className="text-xs text-neutral-500 max-w-2xl">
-              Applicants automatically ranked using role-specific transparent scoring (skills 30%, portfolio 25%, experience 15%, language 10%, availability 10%, location 10%).
+            <p className="text-xs text-neutral-500 max-w-2xl leading-relaxed">
+              Review, compare, and shortlist applicants ranked automatically against your role requirements.
             </p>
           </div>
 
           {/* Quick Metrics Bar */}
-          <div className="flex items-center gap-2 self-start lg:self-center">
-            <div className="px-3.5 py-2 rounded-2xl bg-neutral-50 border border-neutral-200 text-center min-w-[90px]">
+          <div className="flex items-center gap-2.5 self-start lg:self-center shrink-0">
+            <div className="px-4 py-2 rounded-2xl bg-neutral-50 border border-neutral-200 text-center min-w-[90px]">
               <span className="block text-base font-bold font-mono text-neutral-900">
                 {opportunity?.total_applications || applications.length}
               </span>
-              <span className="text-[10px] font-semibold text-neutral-500 uppercase">
-                Applications
+              <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                Applicants
               </span>
             </div>
-            <div className="px-3.5 py-2 rounded-2xl bg-amber-50/60 border border-amber-200 text-center min-w-[90px]">
+            <div className="px-4 py-2 rounded-2xl bg-amber-50/80 border border-amber-200 text-center min-w-[90px]">
               <span className="block text-base font-bold font-mono text-amber-900">
                 {opportunity?.total_shortlisted || 0}
               </span>
-              <span className="text-[10px] font-semibold text-amber-700 uppercase">
+              <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
                 Shortlisted
               </span>
             </div>
             <button
               type="button"
               onClick={() => setIsCriteriaInfoOpen(true)}
-              className="p-2.5 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 transition-colors flex items-center gap-1.5 text-xs font-bold cursor-pointer"
-              title="View transparent scoring criteria weights & fairness policy"
+              className="px-3.5 py-2.5 rounded-2xl bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 transition-colors flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+              title="View scoring criteria & fairness policy"
             >
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
               <span className="hidden sm:inline">Scoring Rubric</span>
@@ -317,12 +330,12 @@ const RankedCandidatesPage = () => {
 
         {/* Requirements Summary Badge */}
         {opportunity?.requirements_summary && (
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200/80 text-neutral-700 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="font-medium">
-              <strong className="text-slate-900">Target Role Requirements: </strong>
+              <strong className="text-neutral-900">Target Role: </strong>
               {opportunity.requirements_summary}
             </span>
-            <span className="text-[11px] font-mono text-slate-500">
+            <span className="text-[11px] font-mono text-neutral-500">
               Dialogue: {opportunity.languages || 'Hindi, English'} • Location: {opportunity.location || 'Mumbai'}
             </span>
           </div>
@@ -330,165 +343,192 @@ const RankedCandidatesPage = () => {
       </div>
 
       {/* FILTER & SORTING TOOLBAR */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-xs space-y-3.5">
-        {/* Row 1: Search + Sorting */}
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs space-y-3.5">
+        {/* Row 1: Search + Sort + Advanced Filter Toggle */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center">
           {/* Search by name or skill */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search candidate by name, talent skill (e.g. Combat, Dance, Improv)..."
-              className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder-neutral-400 focus:outline-hidden focus:ring-2 focus:ring-brand-pink/20 focus:border-brand-pink focus:bg-white transition-all"
+              placeholder="Search candidate by name, skills (e.g. Combat, Dance, Improv)..."
+              className="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-xl text-xs text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#FA5A36]/20 focus:border-[#FA5A36] focus:bg-white transition-all"
             />
           </div>
 
           {/* Sort By Dropdown */}
-          <div className="flex items-center gap-2 shrink-0">
-            <ArrowUpDown className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-            <span className="text-xs font-bold text-neutral-700 whitespace-nowrap">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              aria-label="Sort candidates"
-              className="px-3 py-2 bg-white border border-neutral-200 rounded-xl text-xs font-bold text-brand-navy focus:outline-hidden focus:ring-2 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="match_score">Highest Match Score (Default)</option>
-              <option value="latest_application">Latest Application Date</option>
-              <option value="experience">Years of Experience</option>
-            </select>
-          </div>
-        </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort candidates"
+                className="px-3 py-2 bg-white border border-neutral-200 rounded-xl text-xs font-bold text-neutral-800 focus:outline-none focus:border-[#FA5A36] cursor-pointer"
+              >
+                <option value="match_score">Highest Match Score (Default)</option>
+                <option value="latest_application">Latest Application Date</option>
+                <option value="experience">Years of Experience</option>
+              </select>
+            </div>
 
-        {/* Row 2: Comprehensive Multi-Criteria Filters */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
-          {/* Category Filter */}
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-              Talent Category
-            </label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Categories</option>
-              <option value="actor">Actor</option>
-              <option value="model">Model</option>
-              <option value="theatre">Theatre</option>
-              <option value="voiceover">Voiceover</option>
-            </select>
-          </div>
-
-          {/* Skill Filter */}
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-              Specific Skill
-            </label>
-            <select
-              value={selectedSkill}
-              onChange={(e) => setSelectedSkill(e.target.value)}
-              className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Skills</option>
-              <option value="acting">Acting</option>
-              <option value="dialogue">Dialogue Delivery</option>
-              <option value="improvisation">Improvisation</option>
-              <option value="combat">Screen Combat</option>
-              <option value="dance">Dance</option>
-              <option value="modeling">Modeling</option>
-            </select>
-          </div>
-
-          {/* Language Filter */}
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-              Language
-            </label>
-            <select
-              value={selectedLanguage}
-              onChange={(e) => setSelectedLanguage(e.target.value)}
-              className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Languages</option>
-              <option value="hindi">Hindi</option>
-              <option value="english">English</option>
-              <option value="punjabi">Punjabi</option>
-              <option value="bengali">Bengali</option>
-              <option value="french">French</option>
-            </select>
-          </div>
-
-          {/* Location Filter */}
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-              Location
-            </label>
-            <select
-              value={selectedLocation}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Locations</option>
-              <option value="mumbai">Mumbai, India</option>
-              <option value="delhi">Delhi, India</option>
-              <option value="new york">New York, NY</option>
-              <option value="london">London, UK</option>
-            </select>
-          </div>
-
-          {/* Availability Filter */}
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-              Availability
-            </label>
-            <select
-              value={selectedAvailability}
-              onChange={(e) => setSelectedAvailability(e.target.value)}
-              className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Availability</option>
-              <option value="project">Immediate / Projects</option>
-              <option value="audition">Available for Auditions</option>
-              <option value="flexible">Flexible with Dates</option>
-            </select>
-          </div>
-
-          {/* Application Status Filter */}
-          <div className="space-y-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-              Status
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-hidden focus:ring-1 focus:ring-brand-pink cursor-pointer"
-            >
-              <option value="all">All Statuses</option>
-              <option value="submitted">Submitted</option>
-              <option value="under_review">Under Review</option>
-              <option value="shortlisted">Shortlisted</option>
-              <option value="audition_requested">Audition Requested</option>
-              <option value="interview">Interview</option>
-              <option value="selected">Selected</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Reset Filter Button */}
-        {isFiltering && (
-          <div className="flex justify-end pt-1">
+            {/* Advanced Filters Toggle Button */}
             <button
               type="button"
-              onClick={handleResetFilters}
-              className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-brand-pink font-semibold transition-colors cursor-pointer"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                showAdvancedFilters || activeAdvancedCount > 0
+                  ? 'bg-neutral-900 text-white border-neutral-900 shadow-xs'
+                  : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
+              }`}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Active Filters</span>
+              <Filter className="w-3.5 h-3.5" />
+              <span>Filters</span>
+              {activeAdvancedCount > 0 && (
+                <span className="w-4 h-4 rounded-full bg-[#FA5A36] text-white text-[10px] flex items-center justify-center font-bold">
+                  {activeAdvancedCount}
+                </span>
+              )}
             </button>
+          </div>
+        </div>
+
+        {/* Row 2: Status Quick Filter Tabs */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 border-t border-neutral-100">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400 mr-1 shrink-0">
+            Status:
+          </span>
+          {STATUS_TABS.map((tab) => {
+            const isActive = selectedStatus === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setSelectedStatus(tab.value)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  isActive
+                    ? 'bg-[#FA5A36] text-white shadow-xs'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-900'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Collapsible Advanced Filters */}
+        {showAdvancedFilters && (
+          <div className="pt-3 border-t border-neutral-100 animate-in fade-in duration-150">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+              {/* Category */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Talent Category
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FA5A36] cursor-pointer"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="actor">Actor</option>
+                  <option value="model">Model</option>
+                  <option value="theatre">Theatre</option>
+                  <option value="voiceover">Voiceover</option>
+                </select>
+              </div>
+
+              {/* Specific Skill */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Specific Skill
+                </label>
+                <select
+                  value={selectedSkill}
+                  onChange={(e) => setSelectedSkill(e.target.value)}
+                  className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FA5A36] cursor-pointer"
+                >
+                  <option value="all">All Skills</option>
+                  <option value="acting">Acting</option>
+                  <option value="dialogue">Dialogue Delivery</option>
+                  <option value="improvisation">Improvisation</option>
+                  <option value="combat">Screen Combat</option>
+                  <option value="dance">Dance</option>
+                  <option value="modeling">Modeling</option>
+                </select>
+              </div>
+
+              {/* Language */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Language
+                </label>
+                <select
+                  value={selectedLanguage}
+                  onChange={(e) => setSelectedLanguage(e.target.value)}
+                  className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FA5A36] cursor-pointer"
+                >
+                  <option value="all">All Languages</option>
+                  <option value="hindi">Hindi</option>
+                  <option value="english">English</option>
+                  <option value="punjabi">Punjabi</option>
+                  <option value="bengali">Bengali</option>
+                  <option value="french">French</option>
+                </select>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Location
+                </label>
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FA5A36] cursor-pointer"
+                >
+                  <option value="all">All Locations</option>
+                  <option value="mumbai">Mumbai, India</option>
+                  <option value="delhi">Delhi, India</option>
+                  <option value="new york">New York, NY</option>
+                  <option value="london">London, UK</option>
+                </select>
+              </div>
+
+              {/* Availability */}
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Availability
+                </label>
+                <select
+                  value={selectedAvailability}
+                  onChange={(e) => setSelectedAvailability(e.target.value)}
+                  className="w-full p-2 bg-white border border-neutral-200 rounded-xl text-xs font-medium text-neutral-800 focus:outline-none focus:border-[#FA5A36] cursor-pointer"
+                >
+                  <option value="all">All Availability</option>
+                  <option value="project">Immediate / Projects</option>
+                  <option value="audition">Available for Auditions</option>
+                  <option value="flexible">Flexible with Dates</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Reset Active Filters */}
+            {isFiltering && (
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-[#FA5A36] font-semibold transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reset All Filters</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -501,10 +541,19 @@ const RankedCandidatesPage = () => {
               type="checkbox"
               checked={applications.length > 0 && selectedAppIds.length === applications.length}
               onChange={handleSelectAll}
-              className="w-4 h-4 rounded text-brand-pink focus:ring-brand-pink border-neutral-300"
+              className="w-4 h-4 rounded text-[#FA5A36] focus:ring-[#FA5A36] border-neutral-300"
             />
-            <span>Select All on Page ({selectedAppIds.length} Selected)</span>
+            <span>Select All ({selectedAppIds.length} Selected)</span>
           </label>
+          {selectedAppIds.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedAppIds([])}
+              className="text-xs text-neutral-400 hover:text-neutral-700 underline cursor-pointer"
+            >
+              Clear
+            </button>
+          )}
         </div>
 
         {/* Action triggers */}
@@ -516,10 +565,10 @@ const RankedCandidatesPage = () => {
             onClick={() => setIsCompareOpen(true)}
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
               selectedAppIds.length >= 2 && selectedAppIds.length <= 4
-                ? 'bg-brand-navy hover:bg-neutral-800 text-white shadow-2xs cursor-pointer'
+                ? 'bg-neutral-900 hover:bg-neutral-800 text-white shadow-2xs cursor-pointer'
                 : 'bg-neutral-100 text-neutral-400 cursor-not-allowed border border-neutral-200'
             }`}
-            title="Select 2 to 4 candidates to view side-by-side comparison matrix"
+            title="Select 2 to 4 candidates to view side-by-side comparison"
           >
             <Layers className="w-3.5 h-3.5" />
             <span>Compare Candidates ({selectedAppIds.length >= 2 && selectedAppIds.length <= 4 ? selectedAppIds.length : 'Select 2-4'})</span>

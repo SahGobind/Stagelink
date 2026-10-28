@@ -284,7 +284,13 @@ const AccessControlPanel = () => {
           <span className="text-[10px] uppercase font-bold text-slate-400">Current Actor Clearance</span>
           <span className="px-3 py-1 bg-white/10 backdrop-blur-md rounded-xl text-xs font-bold text-white border border-white/20 capitalize flex items-center gap-1.5">
             <Fingerprint className="w-3.5 h-3.5 text-brand-pink" />
-            <span>{user?.role?.replace('_', ' ') || 'Guest'}</span>
+            <span>
+              {user?.role === 'recruiter' || user?.role === 'production_company'
+                ? 'Casting Director'
+                : user?.role === 'candidate' || user?.role === 'talent'
+                ? 'Candidate'
+                : user?.role?.replace('_', ' ') || 'Guest'}
+            </span>
           </span>
         </div>
 

@@ -33,6 +33,7 @@ import TalentCard from '../../components/talent/TalentCard';
 import OpportunityCard from '../../components/opportunities/OpportunityCard';
 import InviteToCastingModal from '../../components/talent/InviteToCastingModal';
 import Toast from '../../components/common/Toast';
+import BackButton from '../../components/common/BackButton';
 import {
   TALENT_CATEGORIES,
   EXPERIENCE_LEVELS,
@@ -143,16 +144,15 @@ const SPOTLIGHT_CATEGORIES = [
 const QUICK_CATEGORY_CHIPS = [
   { id: 'All Categories', label: 'All Talent', icon: '✨' },
   { id: 'Film Stars', label: 'Indian Film Stars', icon: '🌟' },
-  { id: 'Musicians', label: 'Musicians', icon: '🎵' },
-  { id: 'Dancers', label: 'Dancers', icon: '💃' },
-  { id: 'Graphic Designers', label: 'Graphic Designers', icon: '🎨' },
-  { id: 'Comedians', label: 'Comedians', icon: '🎭' },
   { id: 'Actors', label: 'Actors', icon: '🎬' },
   { id: 'Actresses', label: 'Actresses', icon: '👗' },
   { id: 'Models', label: 'Models', icon: '📸' },
+  { id: 'Dancers', label: 'Dancers', icon: '💃' },
+  { id: 'Musicians', label: 'Musicians', icon: '🎵' },
   { id: 'Voice Artists', label: 'Voice Artists', icon: '🎙️' },
-  { id: 'Presenters', label: 'Presenters', icon: '📺' },
-  { id: 'Creators', label: 'Creators', icon: '🎥' },
+  { id: 'Comedians', label: 'Comedians', icon: '🎭' },
+  { id: 'Graphic Designers', label: 'Graphic Designers', icon: '🎨' },
+  { id: 'europe', label: 'European Talent', icon: '🇪🇺' },
 ];
 
 const JOB_CATEGORIES = [
@@ -477,8 +477,11 @@ const DiscoverTalentPage = () => {
   return (
     <div className="min-h-screen bg-white text-brand-navy pb-24 text-left">
       {/* Hero / Page Header */}
-      <section className="border-b border-gray-100 bg-gradient-to-b from-gray-50/70 via-white to-white pt-10 pb-6 sm:pt-14 sm:pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <section className="border-b border-gray-100 bg-gradient-to-b from-gray-50/70 via-white to-white pt-6 pb-6 sm:pt-8 sm:pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+          <div>
+            <BackButton fallback="/" variant="light" />
+          </div>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-50 border border-pink-100/80 text-brand-pink text-xs font-bold">
@@ -518,11 +521,11 @@ const DiscoverTalentPage = () => {
           </div>
 
           {/* Primary View Navigation Tabs */}
-          <div className="flex items-center gap-2 border-b border-gray-200 pt-4 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 border-b border-gray-200 pt-3 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setActiveTab('talent')}
-              className={`pb-3.5 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`pb-3 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === 'talent'
                   ? 'border-brand-pink text-brand-pink'
                   : 'border-transparent text-gray-500 hover:text-gray-900'
@@ -538,236 +541,64 @@ const DiscoverTalentPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('jobs')}
-              className={`pb-3.5 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer relative whitespace-nowrap ${
+              className={`pb-3 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer relative whitespace-nowrap ${
                 activeTab === 'jobs'
                   ? 'border-brand-pink text-brand-pink'
                   : 'border-transparent text-gray-500 hover:text-gray-900'
               }`}
             >
               <Briefcase className="w-4 h-4" />
-              <span>Published Casting Calls &amp; Job Posts</span>
+              <span>Published Casting Calls</span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 {publishedJobs.length} Live
               </span>
             </button>
           </div>
-
-          {/* SPOTLIGHT CATEGORIES SHOWCASE STRIP (Simple UI/UX 1-Click Filters) */}
-          <div className="pt-5 pb-2">
-            <div className="flex items-center justify-between mb-2.5">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-brand-pink" />
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-700">
-                  Spotlight Roster &amp; Categories
-                </span>
-              </div>
-              <span className="text-xs text-gray-500 hidden sm:inline">
-                Tap any category for instant 1-click discovery
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {SPOTLIGHT_CATEGORIES.map((cat) => {
-                const Icon = cat.icon;
-                const isSelected =
-                  cat.id === 'europe'
-                    ? selectedRegion === 'europe'
-                    : selectedCategory === cat.category && (cat.region === 'all' || selectedRegion === cat.region);
-
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab('talent');
-                      if (cat.id === 'europe') {
-                        setSelectedRegion('europe');
-                        setSelectedCategory('All Categories');
-                        setSelectedCountry('All Countries');
-                        setToastMessage('Showing European talent roster (UK, France, Germany, Italy, Spain, Sweden)!');
-                      } else {
-                        setSelectedCategory(cat.category);
-                        if (cat.region) setSelectedRegion(cat.region);
-                        setToastMessage(`Showing ${cat.title}!`);
-                      }
-                      setVisibleCount(PAGE_SIZE);
-                    }}
-                    className={`p-3.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between group relative overflow-hidden specular-top ${
-                      isSelected
-                        ? 'border-brand-pink bg-pink-50/70 shadow-3d-card-hover ring-2 ring-brand-pink/30 -translate-y-0.5'
-                        : 'border-slate-200/90 bg-white hover:border-slate-300 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1 mb-2.5">
-                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs ${cat.iconBg}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs ${cat.badgeClass}`}>
-                        {cat.badge}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-gray-900 group-hover:text-brand-pink transition-colors truncate">
-                        {cat.title}
-                      </h4>
-                      <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                        {cat.subtitle}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
         </div>
       </section>
-
-      {/* NEWLY PUBLISHED OPPORTUNITY SPOTLIGHT BANNER */}
-      {newlyPublishedNotice && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-emerald-50 via-teal-50/80 to-pink-50/70 border border-emerald-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex items-start gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
-              </div>
-              <div className="space-y-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    ✓ Published Live Inside Discover Talent
-                  </span>
-                  <span className="text-[11px] text-gray-500 font-medium">
-                    Payment Verified &amp; Active
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 font-serif">
-                  {newlyPublishedNotice.title}
-                </h3>
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Published by <strong className="text-gray-900">{newlyPublishedNotice.productionCompany}</strong> • {newlyPublishedNotice.location || 'Mumbai'} • {newlyPublishedNotice.artistsNeeded || 1} open roles. Performers across StageLink can now view, share, and apply!
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-end md:self-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setActiveTab('jobs');
-                  setJobSearchQuery(newlyPublishedNotice.title || '');
-                }}
-                className="px-3.5 py-2 rounded-xl bg-white border border-gray-300 hover:border-gray-900 text-xs font-bold text-gray-800 transition-colors shadow-2xs cursor-pointer"
-              >
-                View in Job Posts
-              </button>
-              <button
-                type="button"
-                onClick={() => handleFindMatchingTalent(newlyPublishedNotice)}
-                className="px-4 py-2 rounded-xl bg-brand-pink hover:bg-rose-700 text-xs font-bold text-white transition-colors shadow-2xs flex items-center gap-1.5 cursor-pointer"
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Invite Matching Talent Below</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setNewlyPublishedNotice(null)}
-                className="p-2 text-gray-400 hover:text-gray-700 transition-colors cursor-pointer"
-                title="Dismiss banner"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ============================================================== */}
       {/* TAB 1: BROWSE TALENT ROSTER VIEW                               */}
       {/* ============================================================== */}
       {activeTab === 'talent' && (
         <>
-          {/* Quick Announcement Bar for Active Published Jobs */}
-          {customOpportunities.length > 0 && (
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-              <div className="p-3 bg-neutral-50 rounded-2xl border border-gray-200/80 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2 overflow-hidden text-ellipsis">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                  <span className="font-bold text-gray-800 shrink-0">Your Active Casting Calls:</span>
-                  <span className="text-gray-600 truncate">
-                    "{customOpportunities[0].title}" is live. Invite candidates directly from the roster below!
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('jobs')}
-                  className="text-xs font-bold text-brand-pink hover:underline shrink-0 flex items-center gap-1 cursor-pointer"
-                >
-                  <span>View All ({publishedJobs.length}) Published Calls</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Search and Filters Bar for Talent */}
-          <section className="bg-white border-y border-gray-100 py-3.5 shadow-2xs mt-3">
+          <section className="bg-white border-b border-gray-100 py-3 shadow-2xs">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-3">
-              {/* TOP ROW: Simple 1-Click Region Selector & Category Count */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-1 border-b border-gray-100/80">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-500 hidden sm:inline">
-                    Region:
-                  </span>
-                  <div className="inline-flex p-1 bg-gray-100/90 rounded-xl border border-gray-200/80 shadow-2xs">
-                    {REGION_FILTERS.map((rf) => {
-                      const isSelected = selectedRegion === rf.id;
-                      return (
-                        <button
-                          key={rf.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedRegion(rf.id);
-                            setVisibleCount(PAGE_SIZE);
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                            isSelected
-                              ? 'bg-white text-brand-navy shadow-xs ring-1 ring-gray-200'
-                              : 'text-gray-600 hover:text-gray-900'
-                          }`}
-                        >
-                          <span className="text-sm">{rf.flag}</span>
-                          <span>{rf.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="text-xs text-gray-600 font-medium flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>
-                    Showing <strong className="text-gray-900 font-bold">{filteredTalent.length}</strong>{' '}
-                    {selectedRegion === 'india' ? 'Indian' : selectedRegion === 'europe' ? 'European' : 'Verified'} artists
-                  </span>
-                </div>
-              </div>
-
-              {/* HORIZONTAL CATEGORY CHIPS (Simple UI/UX for Film Stars, Musicians, Dancers, etc.) */}
+              {/* HORIZONTAL CATEGORY CHIPS (Fast 1-Click Discovery) */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                 {QUICK_CATEGORY_CHIPS.map((chip) => {
-                  const isSelected = selectedCategory === chip.id;
+                  const isSelected =
+                    chip.id === 'europe'
+                      ? selectedRegion === 'europe'
+                      : selectedCategory === chip.id && selectedRegion !== 'europe';
+
                   return (
                     <button
                       key={chip.id}
                       type="button"
                       onClick={() => {
-                        setSelectedCategory(chip.id);
+                        if (chip.id === 'europe') {
+                          setSelectedRegion('europe');
+                          setSelectedCategory('All Categories');
+                          setSelectedCountry('All Countries');
+                          setToastMessage('Showing European performers');
+                        } else if (chip.id === 'Film Stars') {
+                          setSelectedCategory('Film Stars');
+                          setSelectedRegion('india');
+                          setToastMessage('Showing Indian Film Stars');
+                        } else {
+                          setSelectedCategory(chip.id);
+                          setSelectedRegion('all');
+                          setToastMessage(`Showing ${chip.label}`);
+                        }
                         setVisibleCount(PAGE_SIZE);
                       }}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer select-none ${
                         isSelected
-                          ? 'bg-brand-pink text-white shadow-xs'
-                          : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200/70'
+                          ? 'bg-brand-pink text-white shadow-xs scale-[1.02]'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/60'
                       }`}
                     >
                       <span className="text-xs">{chip.icon}</span>
@@ -780,7 +611,7 @@ const DiscoverTalentPage = () => {
               {/* Primary Search and Filters Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 pt-1">
                 {/* Search Input */}
-                <div className="lg:col-span-4 relative">
+                <div className="lg:col-span-5 relative">
                   <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   <input
                     type="text"
@@ -789,36 +620,18 @@ const DiscoverTalentPage = () => {
                       setSearchQuery(e.target.value);
                       setVisibleCount(PAGE_SIZE);
                     }}
-                    placeholder="Search name, film star, musician, dancer..."
+                    placeholder="Search candidate by name, category, or skill..."
                     className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-gray-200 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-pink/30 focus:border-brand-pink bg-white transition-all shadow-2xs"
                   />
                   {searchQuery && (
                     <button
                       type="button"
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-0.5 rounded-full cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
-                </div>
-
-                {/* Talent Category Dropdown */}
-                <div className="lg:col-span-3">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => {
-                      setSelectedCategory(e.target.value);
-                      setVisibleCount(PAGE_SIZE);
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-pink/30 focus:border-brand-pink transition-all shadow-2xs cursor-pointer"
-                  >
-                    {TALENT_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 {/* Country Dropdown */}
@@ -839,7 +652,25 @@ const DiscoverTalentPage = () => {
                   </select>
                 </div>
 
-                {/* More Filters Toggle & Clear Filters */}
+                {/* Talent Category Dropdown */}
+                <div className="lg:col-span-2">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => {
+                      setSelectedCategory(e.target.value);
+                      setVisibleCount(PAGE_SIZE);
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-brand-pink/30 focus:border-brand-pink transition-all shadow-2xs cursor-pointer"
+                  >
+                    {TALENT_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* More Filters Toggle */}
                 <div className="lg:col-span-2 flex items-center gap-2">
                   <button
                     type="button"

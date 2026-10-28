@@ -5,7 +5,7 @@ import PublicFooter from '../components/layout/PublicFooter';
 
 const PublicLayout = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-[#111214] text-neutral-100">
       <PublicNavbar />
       <main className="flex-1">
         <Outlet />

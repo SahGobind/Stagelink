@@ -15,6 +15,7 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
+import BackButton from '../../components/common/BackButton';
 import Avatar from '../../components/common/Avatar';
 import CandidateAccessLock from '../../components/common/CandidateAccessLock';
 import { hasCompletedPostingPayment, EVENT_PAYMENT_STATE_CHANGED } from '../../utils/paymentAccess';
@@ -207,6 +208,10 @@ const CandidatesPage = () => {
 
   return (
     <PageContainer maxWidth="7xl" className="space-y-6 text-left pb-12">
+      <div>
+        <BackButton fallback="/admin/dashboard" variant="light" />
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-200/80">
         <div className="space-y-1">
