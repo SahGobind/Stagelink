@@ -1,8 +1,9 @@
 from rest_framework import serializers
+from starcast.crypto import validate_password_strength
 
 class UserRegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password = serializers.CharField(min_length=8, write_only=True)
+    password = serializers.CharField(min_length=8, max_length=128, write_only=True)
     full_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     fullName = serializers.CharField(required=False, allow_blank=True, max_length=150)
     phone_number = serializers.CharField(required=False, allow_blank=True, max_length=30)
@@ -21,6 +22,15 @@ class UserRegistrationSerializer(serializers.Serializer):
         phone = data.get('phone_number') or data.get('phoneNumber') or ''
         data['phone_number'] = phone.strip()
         data['phoneNumber'] = phone.strip()
+
+        # Enforce strong password complexity at registration
+        raw_pwd = data.get('password')
+        if raw_pwd:
+            user_info = {'email': data.get('email'), 'fullName': data['full_name']}
+            is_valid, errors = validate_password_strength(raw_pwd, user_info)
+            if not is_valid:
+                raise serializers.ValidationError({"password": errors})
+
         return data
 
 class UserLoginSerializer(serializers.Serializer):
@@ -94,8 +104,8 @@ class RecruiterRegistrationSerializer(serializers.Serializer):
     phoneNumber = serializers.CharField(required=False, allow_blank=True, max_length=25)
     country = serializers.CharField(required=False, allow_blank=True, default="India", max_length=80)
     website = serializers.CharField(required=False, allow_blank=True, default="", max_length=200)
-    password = serializers.CharField(min_length=8, write_only=True)
-    confirmPassword = serializers.CharField(min_length=8, write_only=True)
+    password = serializers.CharField(min_length=8, max_length=128, write_only=True)
+    confirmPassword = serializers.CharField(min_length=8, max_length=128, write_only=True)
     agreeToTerms = serializers.BooleanField()
 
     def validate(self, data):
@@ -103,4 +113,13 @@ class RecruiterRegistrationSerializer(serializers.Serializer):
             raise serializers.ValidationError({"confirmPassword": "Passwords do not match."})
         if not data.get('agreeToTerms'):
             raise serializers.ValidationError({"agreeToTerms": "You must accept the Terms of Service and Privacy Policy."})
+
+        # Enforce strong password complexity at recruiter registration
+        raw_pwd = data.get('password')
+        if raw_pwd:
+            user_info = {'email': data.get('email'), 'fullName': data.get('fullName')}
+            is_valid, errors = validate_password_strength(raw_pwd, user_info)
+            if not is_valid:
+                raise serializers.ValidationError({"password": errors})
+
         return data

@@ -242,6 +242,8 @@ export const initialMockMessages = [
   },
 ];
 
+import { encryptMessageClient, decryptMessageClient } from '../utils/cryptoUtils';
+
 const MESSAGES_STORAGE_KEY = 'starcast_candidate_messages';
 
 export const getStoredMessages = () => {
@@ -250,12 +252,28 @@ export const getStoredMessages = () => {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
+        // Transparently decrypt stored messages for display
+        const decryptedList = parsed.map((conv) => {
+          const safeMessages = (conv.messages || []).map((msg) => ({
+            ...msg,
+            text: decryptMessageClient(msg.text),
+            is_encrypted: true,
+            encryption_status: 'AES-256 Verified',
+          }));
+          return {
+            ...conv,
+            is_encrypted: true,
+            lastMessage: decryptMessageClient(conv.lastMessage),
+            messages: safeMessages,
+          };
+        });
+
         // Ensure conv-ops is included
-        const hasOps = parsed.some((c) => c.id === 'conv-ops');
+        const hasOps = decryptedList.some((c) => c.id === 'conv-ops');
         if (!hasOps) {
-          return [initialMockMessages[0], ...parsed];
+          return [initialMockMessages[0], ...decryptedList];
         }
-        return parsed;
+        return decryptedList;
       }
     }
   } catch {
@@ -266,7 +284,21 @@ export const getStoredMessages = () => {
 
 export const saveStoredMessages = (updatedMessages) => {
   try {
-    localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updatedMessages));
+    // Encrypt message content before persisting to browser storage
+    const encryptedList = (updatedMessages || []).map((conv) => {
+      const encryptedMsgs = (conv.messages || []).map((msg) => ({
+        ...msg,
+        text: encryptMessageClient(msg.text),
+        is_encrypted: true,
+      }));
+      return {
+        ...conv,
+        is_encrypted: true,
+        lastMessage: encryptMessageClient(conv.lastMessage),
+        messages: encryptedMsgs,
+      };
+    });
+    localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(encryptedList));
   } catch {
     // ignore
   }

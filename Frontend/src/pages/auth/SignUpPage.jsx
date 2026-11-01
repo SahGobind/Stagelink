@@ -22,6 +22,7 @@ import { authService } from '../../services/authService';
 import { apiRequest } from '../../services/api';
 import Input from '../../components/common/Input';
 import Checkbox from '../../components/common/Checkbox';
+import PasswordStrengthIndicator from '../../components/common/PasswordStrengthIndicator';
 
 // 1. Candidate Registration Schema
 const candidateSignUpSchema = z
@@ -42,7 +43,11 @@ const candidateSignUpSchema = z
       .regex(/^[0-9+\s\-()]{10,18}$/, { message: 'Phone number format is invalid' }),
     password: z
       .string()
-      .min(8, { message: 'Password must be at least 8 characters long' }),
+      .min(8, { message: 'Password must be at least 8 characters long' })
+      .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter (A-Z)' })
+      .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter (a-z)' })
+      .regex(/[0-9]/, { message: 'Password must contain at least one number (0-9)' })
+      .regex(/[!@#$%^&*()_+\-=[\]{}|;:,.<>?~/]/, { message: 'Password must contain at least one special symbol (!@#$...)' }),
     confirmPassword: z
       .string()
       .min(1, { message: 'Please confirm your password' }),
@@ -84,7 +89,11 @@ const recruiterSignUpSchema = z
       ),
     password: z
       .string()
-      .min(8, { message: 'Password must be at least 8 characters long' }),
+      .min(8, { message: 'Password must be at least 8 characters long' })
+      .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter (A-Z)' })
+      .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter (a-z)' })
+      .regex(/[0-9]/, { message: 'Password must contain at least one number (0-9)' })
+      .regex(/[!@#$%^&*()_+\-=[\]{}|;:,.<>?~/]/, { message: 'Password must contain at least one special symbol (!@#$...)' }),
     confirmPassword: z
       .string()
       .min(1, { message: 'Please confirm your password' }),
@@ -144,6 +153,9 @@ const SignUpPage = () => {
       agreeToTerms: false,
     },
   });
+
+  const watchedCandidatePassword = candidateForm.watch('password');
+  const watchedRecruiterPassword = recruiterForm.watch('password');
 
   const onCandidateSubmit = async (data) => {
     setServerError('');
@@ -390,6 +402,9 @@ const SignUpPage = () => {
               {...recruiterForm.register('password')}
             />
 
+            {/* Password Security Strength Checklist */}
+            <PasswordStrengthIndicator password={watchedRecruiterPassword} />
+
             {/* Confirm Password */}
             <Input
               label="Confirm Password"
@@ -505,6 +520,9 @@ const SignUpPage = () => {
               }
               {...candidateForm.register('password')}
             />
+
+            {/* Password Security Strength Checklist */}
+            <PasswordStrengthIndicator password={watchedCandidatePassword} />
 
             <Input
               label="Confirm Password"

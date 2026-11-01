@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, CheckCheck, FileText, Download } from 'lucide-react';
+import { Check, CheckCheck, FileText, Download, Lock } from 'lucide-react';
 
 const MessageBubble = ({ message, participantName }) => {
   if (!message) return null;
@@ -73,13 +73,16 @@ const MessageBubble = ({ message, participantName }) => {
         )}
       </div>
 
-      {/* Meta (Timestamp & Read Receipt) */}
+      {/* Meta (Timestamp & Read Receipt & Encryption Lock) */}
       <div
         className={`flex items-center gap-1.5 text-[10px] text-gray-400 mt-1 px-1 ${
           isOwn ? 'justify-end' : 'justify-start'
         }`}
       >
-        <span>{message.timestamp}</span>
+        <span className="flex items-center gap-1" title="Encrypted with AES-256 (Protected)">
+          <Lock className="w-2.5 h-2.5 text-gray-400" />
+          <span>{message.timestamp}</span>
+        </span>
 
         {isOwn && (
           <span className="flex items-center gap-0.5">

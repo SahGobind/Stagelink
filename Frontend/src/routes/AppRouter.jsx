@@ -174,6 +174,8 @@ const AppRouter = () => {
           <Route path="profile/public" element={<PublicCandidateProfilePage />} />
           <Route path="profile/edit" element={<EditProfilePage />} />
           <Route path="saved-opportunities" element={<SavedOpportunitiesPage />} />
+          <Route path="jobs" element={<MyApplicationsPage />} />
+          <Route path="company-jobs" element={<MyApplicationsPage />} />
           <Route path="applications" element={<MyApplicationsPage />} />
           <Route path="applications/:id" element={<ApplicationDetailsPage />} />
           <Route path="messages" element={<MessagesPage />} />

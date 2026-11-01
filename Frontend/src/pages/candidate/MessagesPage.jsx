@@ -1,12 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldCheck, 
-  Headphones, 
   RotateCcw,
-  Sparkles,
   Lock,
   Clock,
-  CheckCircle2
 } from 'lucide-react';
 import MessageBubble from '../../components/messaging/MessageBubble';
 import MessageComposer from '../../components/messaging/MessageComposer';
@@ -219,28 +216,17 @@ const MessagesPage = () => {
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-bold font-serif text-brand-navy truncate">
-                {participant?.name || 'StageLink Operations Team'}
-              </h2>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200 shrink-0">
-                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
-                Verified Support Desk
-              </span>
-            </div>
+            <h2 className="text-sm sm:text-base font-bold font-serif text-brand-navy truncate">
+              {participant?.name || 'StageLink Operations Team'}
+            </h2>
             <p className="text-[11px] text-gray-500 truncate">
-              StageLink HQ • Direct Operations & Talent Coordination
+              StageLink HQ • Direct Operations &amp; Talent Coordination
             </p>
           </div>
         </div>
 
-        {/* Status indicator & reset action */}
+        {/* Reset action */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Active Desk • &lt; 2 min response</span>
-          </div>
-
           <button
             type="button"
             onClick={handleResetChat}
@@ -253,37 +239,8 @@ const MessagesPage = () => {
         </div>
       </div>
 
-      {/* 2. NOTICE BANNER */}
-      <div className="px-4 sm:px-6 py-2 bg-gradient-to-r from-neutral-900 via-neutral-800 to-emerald-950 text-white flex items-center justify-between gap-3 text-xs shrink-0 border-b border-emerald-900/40">
-        <div className="flex items-center gap-2 truncate">
-          <Headphones className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span className="font-bold text-white shrink-0">
-            Direct Line:
-          </span>
-          <span className="text-gray-300 truncate text-[11px] sm:text-xs">
-            Direct message channel with StageLink Operations Team for audition callbacks, profile verification & payouts.
-          </span>
-        </div>
-        <span className="hidden md:inline-flex text-[10px] font-semibold text-emerald-300 bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-700/60 shrink-0">
-          🟢 Online
-        </span>
-      </div>
-
-      {/* 3. MESSAGE STREAM */}
+      {/* 2. MESSAGE STREAM */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-gray-50/40">
-        {/* Welcome Card inside stream */}
-        <div className="max-w-xl mx-auto my-2 p-3.5 rounded-2xl bg-white border border-gray-200 shadow-2xs text-center space-y-1.5">
-          <div className="w-9 h-9 mx-auto rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <h4 className="text-xs sm:text-sm font-bold text-brand-navy">
-            StageLink Operations &amp; Performer Help Desk
-          </h4>
-          <p className="text-[11px] text-gray-500 leading-relaxed">
-            Need help with your profile badge, audition self-tapes, director callbacks, or fee milestones? Send a message below and our coordinator will respond directly.
-          </p>
-        </div>
-
         {/* Message bubbles */}
         {messages.map((msg) => (
           <MessageBubble

@@ -869,3 +869,59 @@ class AuditLogListView(APIView):
             "results": logs
         }, status=status.HTTP_200_OK)
 
+
+class UserPasswordChangeView(APIView):
+    """
+    Secure password change endpoint.
+    Requires current password verification and enforces new password strength.
+    """
+    def post(self, request):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user:
+            return Response({"error": "Authentication required to change password.", "code": "UNAUTHORIZED"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        current_password = request.data.get("current_password") or request.data.get("currentPassword")
+        new_password = request.data.get("new_password") or request.data.get("newPassword")
+        
+        if not current_password or not new_password:
+            return Response({"error": "Both current_password and new_password are required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        user = repository.find_user_by_id(auth_user["id"])
+        if not user:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+            
+        stored_hash = user.get("password_hash")
+        if stored_hash and not check_password(current_password, stored_hash):
+            log_audit_event(
+                action="PASSWORD_CHANGE_FAILED",
+                actor=auth_user,
+                resource_type="auth",
+                resource_id=auth_user["id"],
+                status="DENIED",
+                reason="Incorrect current password",
+                request=request
+            )
+            return Response({"error": "Current password is incorrect.", "code": "INVALID_PASSWORD"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Validate strength of new password
+        from starcast.crypto import validate_password_strength
+        is_strong, errors = validate_password_strength(new_password, user)
+        if not is_strong:
+            return Response({"error": "New password does not meet security requirements.", "details": errors}, status=status.HTTP_400_BAD_REQUEST)
+            
+        # Hash new password
+        new_hash = make_password(new_password)
+        repository.update_user(user["id"], {"password_hash": new_hash})
+        
+        log_audit_event(
+            action="PASSWORD_CHANGED",
+            actor=auth_user,
+            resource_type="auth",
+            resource_id=auth_user["id"],
+            status="SUCCESS",
+            request=request
+        )
+        
+        return Response({"message": "Password changed successfully. Your account is secured."}, status=status.HTTP_200_OK)
+
+

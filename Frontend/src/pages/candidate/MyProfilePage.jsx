@@ -84,7 +84,7 @@ const MyProfilePage = () => {
       );
       setCandidate(updated);
       setIsResumeUploadOpen(false);
-      setToastMessage('Resume uploaded successfully!');
+      setToastMessage('Portfolio uploaded successfully!');
     }
   };
 
@@ -331,11 +331,11 @@ const MyProfilePage = () => {
           </button>
         </div>
 
-        {/* Card 6: Resume / CV */}
+        {/* Card 6: Portfolio */}
         <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-xs flex flex-col justify-between hover:shadow-sm transition-shadow">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-gray-900">Resume / CV</h3>
+              <h3 className="text-sm font-bold text-gray-900">Portfolio</h3>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                 {candidate.portfolio?.resume ? 'Uploaded' : 'Optional'}
               </span>
@@ -347,7 +347,7 @@ const MyProfilePage = () => {
               </div>
               <div>
                 <p className="text-xs text-gray-600 font-medium leading-relaxed">
-                  {candidate.portfolio?.resume?.fileName || 'Upload your resume for casting directors.'}
+                  {candidate.portfolio?.resume?.fileName || 'Upload your portfolio for casting directors.'}
                 </p>
                 {candidate.portfolio?.resume?.fileSize && (
                   <span className="text-[11px] text-gray-400">
@@ -359,10 +359,10 @@ const MyProfilePage = () => {
           </div>
 
           <label className="w-full py-2.5 rounded-xl border border-gray-200 text-xs font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors text-center block cursor-pointer">
-            <span>Upload</span>
+            <span>Upload Portfolio</span>
             <input
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.doc,.docx,.zip,.png,.jpg"
               className="hidden"
               onChange={handleResumeUploaded}
             />

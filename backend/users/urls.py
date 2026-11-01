@@ -14,12 +14,14 @@ from .views import (
     RoleDetailView,
     UserRoleManageView,
     AuditLogListView,
+    UserPasswordChangeView,
 )
 
 urlpatterns = [
     path('', UserListView.as_view(), name='user-list'),
     path('register/', UserRegisterView.as_view(), name='user-register'),
     path('login/', UserLoginView.as_view(), name='user-login'),
+    path('password/change/', UserPasswordChangeView.as_view(), name='user-password-change'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
     path('profile/publish/', UserProfilePublishView.as_view(), name='user-profile-publish'),
     path('profile/unpublish/', UserProfileUnpublishView.as_view(), name='user-profile-unpublish'),

@@ -7,6 +7,7 @@
  */
 
 import { API_BASE, apiRequest } from './api';
+import { hashPasswordClient } from '../utils/cryptoUtils';
 
 
 const CURRENT_USER_KEY = 'starcast_user';
@@ -195,7 +196,14 @@ const getStoredAccounts = () => {
 
 const saveStoredAccounts = (accounts) => {
   try {
-    localStorage.setItem(REGISTERED_ACCOUNTS_KEY, JSON.stringify(accounts));
+    // Security: sanitize accounts to ensure raw passwords are never persisted in plaintext
+    const sanitized = (accounts || []).map((acc) => {
+      const copy = { ...acc };
+      delete copy.password;
+      delete copy.confirmPassword;
+      return copy;
+    });
+    localStorage.setItem(REGISTERED_ACCOUNTS_KEY, JSON.stringify(sanitized));
   } catch {
     // ignore
   }
@@ -299,13 +307,22 @@ export const authService = {
         localStorage.setItem('starcast_jwt_token', data.token);
       }
 
-      // Also ensure updated in local registered cache
+      // Also ensure updated in local registered cache with secure password hash
       const accounts = getStoredAccounts();
       const existingIdx = accounts.findIndex((a) => a.id === authUser.id || a.email?.toLowerCase() === normalizedEmail);
+      const safePasswordHash = password ? await hashPasswordClient(password) : undefined;
+      
+      const safeUserCopy = { ...authUser };
+      delete safeUserCopy.password;
+
       if (existingIdx !== -1) {
-        accounts[existingIdx] = { ...accounts[existingIdx], ...authUser, password: password || accounts[existingIdx].password };
+        accounts[existingIdx] = { 
+          ...accounts[existingIdx], 
+          ...safeUserCopy, 
+          passwordHash: safePasswordHash || accounts[existingIdx].passwordHash 
+        };
       } else {
-        accounts.push({ ...authUser, password: password || '' });
+        accounts.push({ ...safeUserCopy, passwordHash: safePasswordHash || '' });
       }
       saveStoredAccounts(accounts);
 
@@ -319,23 +336,28 @@ export const authService = {
     );
 
     if (localMatch) {
-      // If a local account has a stored password, verify it matches
-      if (localMatch.password && password && localMatch.password !== password) {
-        throw new Error('Invalid email or password. Please verify your credentials.');
-      }
-
-      // If local account had no password stored yet, store the password entered
-      if (!localMatch.password && password) {
-        localMatch.password = password;
-        const idx = accounts.findIndex((a) => a.id === localMatch.id);
-        if (idx !== -1) {
-          accounts[idx] = localMatch;
-          saveStoredAccounts(accounts);
+      const inputHash = password ? await hashPasswordClient(password) : '';
+      
+      // If account has a stored password hash, verify against cryptographic hash
+      if (localMatch.passwordHash) {
+        if (password && localMatch.passwordHash !== inputHash) {
+          throw new Error('Invalid email or password. Please verify your credentials.');
         }
+      } else if (localMatch.password) {
+        // Legacy account plaintext password migration: upgrade to hash immediately
+        if (password && localMatch.password !== password) {
+          throw new Error('Invalid email or password. Please verify your credentials.');
+        }
+        localMatch.passwordHash = inputHash;
+        delete localMatch.password;
+        saveStoredAccounts(accounts);
       }
 
-      // Set active session
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(localMatch));
+      // Set active session without password
+      const safeSessionUser = { ...localMatch };
+      delete safeSessionUser.password;
+      delete safeSessionUser.passwordHash;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(safeSessionUser));
       localStorage.setItem('starcast_jwt_token', localMatch.token || `stg-token-${localMatch.role || 'candidate'}-${localMatch.id}`);
 
       // If backend is alive, attempt to sync this account to MongoDB Atlas in the background
@@ -360,7 +382,7 @@ export const authService = {
         apiRequest(syncEndpoint, { method: 'POST', body: JSON.stringify(syncPayload) }).catch(() => {});
       }
 
-      return localMatch;
+      return safeSessionUser;
     }
 
     // C. If backend returned explicit error (e.g. incorrect password for existing MongoDB user)
@@ -379,7 +401,6 @@ export const authService = {
         companyName: isRecruiter ? 'StageLink Studio' : undefined,
         role: isRecruiter ? 'recruiter' : 'candidate',
         is_verified: true,
-        password: password || '',
       };
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(fallbackUser));
       localStorage.setItem('starcast_jwt_token', 'stg-token-fallback-' + Date.now());
@@ -446,10 +467,15 @@ export const authService = {
         }
         const accounts = getStoredAccounts();
         if (!accounts.some((a) => a.id === authUser.id)) {
-          accounts.push({ ...authUser, password: userData.password || '' });
+          const clientHash = userData.password ? await hashPasswordClient(userData.password) : '';
+          const copyAcc = { ...authUser, passwordHash: clientHash };
+          delete copyAcc.password;
+          accounts.push(copyAcc);
           saveStoredAccounts(accounts);
         }
-        return authUser;
+        const safeReturn = { ...authUser };
+        delete safeReturn.password;
+        return safeReturn;
       }
 
       // Backend returned an explicit business rejection (e.g. 409 Conflict, 400 Bad Request)
@@ -479,8 +505,9 @@ export const authService = {
       console.warn('Backend server registration timed out or unavailable, saving account locally:', networkErr);
     }
 
-    // High-speed fallback: If backend server is offline or times out, create and persist locally instantly
+    // High-speed fallback: If backend server is offline or times out, create and persist locally securely
     const generatedId = role === 'recruiter' ? `rec-${Date.now().toString(36)}` : `cand-${Date.now().toString(36)}`;
+    const clientHash = userData.password ? await hashPasswordClient(userData.password) : '';
     authUser = {
       id: generatedId,
       email: normalizedEmail || `${role}_${Date.now()}@stagelink.local`,
@@ -493,11 +520,13 @@ export const authService = {
       token: `stg-token-${role}-${generatedId}`,
       isVerified: true,
       status: 'active',
-      password: userData.password || '',
+      passwordHash: clientHash,
     };
 
     if (autoLogin) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(authUser));
+      const safeSession = { ...authUser };
+      delete safeSession.passwordHash;
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(safeSession));
       localStorage.setItem('starcast_jwt_token', authUser.token);
     }
 
@@ -507,7 +536,9 @@ export const authService = {
       saveStoredAccounts(accounts);
     }
 
-    return authUser;
+    const safeFinal = { ...authUser };
+    delete safeFinal.passwordHash;
+    return safeFinal;
   },
 
   /**

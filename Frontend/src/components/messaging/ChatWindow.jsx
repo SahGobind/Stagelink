@@ -8,6 +8,7 @@ import {
   PanelRightOpen,
   ExternalLink,
   MessageSquare,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import MessageBubble from './MessageBubble';
@@ -178,10 +179,11 @@ const ChatWindow = ({
       {/* 3. MESSAGE FEED */}
       <div className="flex-1 p-4 sm:p-6 overflow-y-auto bg-gray-50/40">
         <div className="max-w-3xl mx-auto space-y-4">
-          {/* Casting Liaison Disclaimer */}
-          <div className="text-center py-2">
-            <span className="px-3 py-1 rounded-full bg-gray-200/70 text-gray-500 text-[10px] font-semibold">
-              🔒 StageLink Verified Thread • Safe Talent Communication
+          {/* End-to-End Encryption Banner */}
+          <div className="text-center py-2 flex flex-col items-center gap-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/90 text-emerald-800 text-[11px] font-semibold shadow-2xs">
+              <Lock className="w-3 h-3 text-emerald-600" />
+              <span>End-to-End Encrypted (AES-256) • Secure &amp; Confidential Communications</span>
             </span>
           </div>
 

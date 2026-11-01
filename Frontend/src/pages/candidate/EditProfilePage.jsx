@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   User,
@@ -798,17 +798,17 @@ const EditProfilePage = () => {
               </div>
             </div>
 
-            {/* Resume document info */}
+            {/* Portfolio document info */}
             <div className="space-y-2 pt-4 border-t border-gray-100">
               <label className="block text-xs font-semibold uppercase tracking-wider text-brand-navy">
-                Current Resume / CV
+                Current Portfolio
               </label>
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <FileText className="w-5 h-5 text-brand-navy" />
                   <div>
                     <p className="text-xs font-bold text-brand-navy">
-                      {resume?.fileName || 'Sophia_Bennett_Acting_CV_2026.pdf'}
+                      {resume?.fileName || 'Sophia_Bennett_Portfolio_Deck_2026.pdf'}
                     </p>
                     <p className="text-[11px] text-gray-400">
                       {resume?.fileSize || '2.4 MB'} • Client session storage
@@ -818,7 +818,7 @@ const EditProfilePage = () => {
                 <label className="cursor-pointer px-3 py-1.5 bg-white border border-gray-200 hover:border-black rounded-xl text-xs font-semibold text-brand-navy transition-colors">
                   <input
                     type="file"
-                    accept=".pdf,.doc,.docx"
+                    accept=".pdf,.doc,.docx,.zip,.png,.jpg"
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -832,7 +832,7 @@ const EditProfilePage = () => {
                       }
                     }}
                   />
-                  <span>Replace CV</span>
+                  <span>Replace Portfolio</span>
                 </label>
               </div>
             </div>

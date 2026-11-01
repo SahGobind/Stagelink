@@ -8,6 +8,9 @@ import {
   ArrowRight,
   ArrowLeft,
   Upload,
+  UploadCloud,
+  FileText,
+  Globe,
   Film,
   Sparkles,
   ChevronDown,
@@ -195,7 +198,25 @@ const ProfileSetupPage = () => {
     ''
   );
 
-  // Step 4: Casting Preferences
+  // Step 4: Upload Portfolio
+  const [portfolioFile, setPortfolioFile] = useState(
+    candidate.portfolio?.portfolioDocument ||
+    candidate.portfolio?.resume ||
+    candidate.resume ||
+    null
+  );
+  const [portfolioUrl, setPortfolioUrl] = useState(
+    candidate.portfolio?.website || candidate.website || ''
+  );
+  const [portfolioNotes, setPortfolioNotes] = useState(
+    candidate.portfolio?.portfolioNotes ||
+    candidate.portfolio?.resume?.summary ||
+    candidate.portfolioNotes ||
+    ''
+  );
+  const portfolioInputRef = useRef(null);
+
+  // Background casting defaults (preserved for schema compatibility)
   const [preferredProjects, setPreferredProjects] = useState(
     candidate.preferredProjectTypes || ['Films']
   );
@@ -251,6 +272,20 @@ const ProfileSetupPage = () => {
             if (profile.portfolio.showreel.fileName) {
               setVideoFileName(profile.portfolio.showreel.fileName);
             }
+          }
+          if (profile.portfolio?.portfolioDocument || profile.portfolio?.resume || profile.resume) {
+            setPortfolioFile(profile.portfolio?.portfolioDocument || profile.portfolio?.resume || profile.resume);
+          }
+          if (profile.portfolio?.website || profile.website) {
+            setPortfolioUrl(profile.portfolio?.website || profile.website || '');
+          }
+          if (profile.portfolio?.portfolioNotes || profile.portfolio?.resume?.summary || profile.portfolioNotes) {
+            setPortfolioNotes(
+              profile.portfolio?.portfolioNotes ||
+              profile.portfolio?.resume?.summary ||
+              profile.portfolioNotes ||
+              ''
+            );
           }
         }
       }).catch((e) => console.warn('Could not load profile on wizard mount:', e));
@@ -433,6 +468,59 @@ const ProfileSetupPage = () => {
     setToastMessage('Video removed.');
   };
 
+  const handlePortfolioUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validExtensions = ['.pdf', '.doc', '.docx', '.zip', '.png', '.jpg', '.jpeg'];
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (!validExtensions.includes(ext)) {
+      setToastMessage('Please upload a valid document or image file (PDF, DOC, DOCX, ZIP, PNG, JPG).');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      setToastMessage('File size exceeds 15MB limit. Please upload a smaller file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const docData = {
+        fileName: file.name,
+        fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        fileType: ext.replace('.', '').toUpperCase(),
+        uploadDate: 'Just now',
+        summary: portfolioNotes.trim(),
+        dataUrl: ev.target.result,
+        isLocalDemo: true,
+      };
+      setPortfolioFile(docData);
+      setToastMessage('Portfolio document uploaded successfully!');
+    };
+    reader.onerror = () => {
+      const docData = {
+        fileName: file.name,
+        fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+        fileType: ext.replace('.', '').toUpperCase(),
+        uploadDate: 'Just now',
+        summary: portfolioNotes.trim(),
+        isLocalDemo: true,
+      };
+      setPortfolioFile(docData);
+      setToastMessage('Portfolio document selected!');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePortfolio = () => {
+    setPortfolioFile(null);
+    if (portfolioInputRef.current) {
+      portfolioInputRef.current.value = '';
+    }
+    setToastMessage('Portfolio document removed.');
+  };
+
   const buildProfilePayload = () => {
     const handle = cleanInstagramHandle(instagram);
     const formattedInsta = handle ? `@${handle}` : '';
@@ -482,6 +570,9 @@ const ProfileSetupPage = () => {
       customProjectType: customProjectType.trim(),
       instagram: formattedInsta,
       linkedin: formattedLinkedIn,
+      resume: portfolioFile,
+      website: portfolioUrl.trim(),
+      portfolioNotes: portfolioNotes.trim(),
       social_links: {
         ...(candidate.social_links || {}),
         instagram: formattedInsta,
@@ -495,6 +586,10 @@ const ProfileSetupPage = () => {
       portfolio: {
         ...candidate.portfolio,
         headshots,
+        portfolioDocument: portfolioFile,
+        resume: portfolioFile,
+        website: portfolioUrl.trim(),
+        portfolioNotes: portfolioNotes.trim(),
         instagram: formattedInsta,
         linkedin: formattedLinkedIn,
         showreel: {
@@ -517,14 +612,6 @@ const ProfileSetupPage = () => {
       }
       if (gender === 'Other' && !customGender.trim()) {
         setToastMessage('Please specify your gender in the Other gender box.');
-        return;
-      }
-    }
-
-    // Validate Step 4 custom entries
-    if (currentStep === 4) {
-      if (preferredProjects.includes('Other') && !customProjectType.trim()) {
-        setToastMessage('Please specify your other preferred project type.');
         return;
       }
     }
@@ -572,7 +659,7 @@ const ProfileSetupPage = () => {
     { number: 1, title: 'Basic Information', subtitle: 'Name, location, category' },
     { number: 2, title: 'Professional Details', subtitle: 'Bio, experience, skills' },
     { number: 3, title: 'Photos & Videos', subtitle: 'Headshots, reel & Instagram' },
-    { number: 4, title: 'Casting Preferences', subtitle: 'Role types, availability' },
+    { number: 4, title: 'Upload Portfolio', subtitle: 'Deck, CV & showcase links' },
     { number: 5, title: 'Review & Submit', subtitle: 'Preview and publish' },
   ];
 
@@ -668,7 +755,7 @@ const ProfileSetupPage = () => {
                 {currentStep === 1 && "Let's start with your basic details."}
                 {currentStep === 2 && 'Tell casting directors about your background and appearance.'}
                 {currentStep === 3 && 'Upload your highest quality headshots and performance reels.'}
-                {currentStep === 4 && 'Define the roles and project scopes you are open to.'}
+                {currentStep === 4 && 'Upload your portfolio document, lookbook deck, CV, and showcase links.'}
                 {currentStep === 5 && 'Verify your details before saving and publishing.'}
               </p>
             </div>
@@ -1555,85 +1642,126 @@ const ProfileSetupPage = () => {
               </div>
             )}
 
-            {/* STEP 4: Casting Preferences */}
+            {/* STEP 4: Upload Portfolio */}
             {currentStep === 4 && (
               <div className="space-y-6 animate-in fade-in duration-200">
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-2">
-                    Preferred Project Types
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={preferredProjects[0] || 'Films'}
-                      onChange={(e) => setPreferredProjects([e.target.value])}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 bg-white appearance-none pr-10 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all cursor-pointer"
-                    >
-                      {PROJECT_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {/* 1. Main Portfolio Document / Deck / CV */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-800">
+                        Portfolio Document / Lookbook / CV
+                      </label>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Upload your talent deck, lookbook, acting CV, or creative portfolio.
+                      </p>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-brand-pink uppercase tracking-wide">
+                      Recommended
+                    </span>
                   </div>
 
-                  {/* Custom Project Type Input Box when Other is selected */}
-                  {preferredProjects.includes('Other') && (
-                    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                      <label className="block text-[11px] font-bold text-gray-700 mb-1.5">
-                        Please specify other project type <span className="text-brand-pink">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={customProjectType}
-                        onChange={(e) => setCustomProjectType(e.target.value)}
-                        placeholder="Enter preferred project type (e.g. Voiceover, Reality Show, Radio)..."
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all bg-white shadow-2xs"
-                        autoFocus
-                      />
+                  {/* Hidden file input */}
+                  <input
+                    ref={portfolioInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg"
+                    className="hidden"
+                    onChange={handlePortfolioUpload}
+                  />
+
+                  {portfolioFile ? (
+                    <div className="p-4 sm:p-5 rounded-2xl border-2 border-brand-pink/30 bg-gradient-to-r from-pink-50/50 via-white to-pink-50/20 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-brand-pink/10 border border-brand-pink/20 flex items-center justify-center shrink-0 text-brand-pink">
+                          <FileText className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate">
+                            {portfolioFile.fileName || 'Portfolio_Document.pdf'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 text-[11px] text-gray-500">
+                            {portfolioFile.fileSize && <span>{portfolioFile.fileSize}</span>}
+                            {portfolioFile.fileType && (
+                              <span className="px-1.5 py-0.2 rounded bg-gray-100 text-[10px] font-semibold text-gray-600 uppercase">
+                                {portfolioFile.fileType}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold text-[11px]">
+                              <CheckCircle2 className="w-3 h-3" /> Ready for Casting
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                        {portfolioFile.dataUrl && (
+                          <a
+                            href={portfolioFile.dataUrl}
+                            download={portfolioFile.fileName || 'Portfolio_Deck'}
+                            className="px-3 py-1.5 rounded-xl border border-gray-200 hover:border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:text-gray-900 transition-colors shadow-2xs"
+                          >
+                            View
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => portfolioInputRef.current?.click()}
+                          className="px-3 py-1.5 rounded-xl border border-gray-200 hover:border-gray-900 bg-white text-xs font-semibold text-gray-800 transition-colors shadow-2xs"
+                        >
+                          Replace
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemovePortfolio}
+                          className="p-1.5 rounded-xl border border-gray-200 hover:border-rose-300 bg-white text-gray-400 hover:text-rose-600 transition-colors shadow-2xs"
+                          title="Remove Portfolio"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => portfolioInputRef.current?.click()}
+                      className="group cursor-pointer p-8 rounded-2xl border-2 border-dashed border-gray-300 hover:border-brand-pink/60 bg-white hover:bg-pink-50/20 transition-all flex flex-col items-center justify-center text-center gap-3"
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-pink-50 group-hover:bg-pink-100 text-brand-pink flex items-center justify-center transition-colors">
+                        <UploadCloud className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-900 group-hover:text-brand-pink transition-colors">
+                          Click to upload your portfolio deck or drag & drop here
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-1">
+                          Supports PDF, DOC, DOCX, ZIP, JPG, or PNG (up to 15MB)
+                        </p>
+                      </div>
+                      <span className="px-4 py-1.5 rounded-xl bg-gray-900 group-hover:bg-brand-pink text-white text-xs font-semibold transition-colors shadow-2xs">
+                        Browse Files
+                      </span>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-3 pt-2">
-                  <label className="block text-xs font-bold text-gray-800 mb-2">
-                    Availability & Travel Status
+                {/* 2. Online Portfolio or Showcase Website Link */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="block text-xs font-bold text-gray-800">
+                    Online Showcase / Portfolio Link <span className="text-gray-400 font-normal">(Optional)</span>
                   </label>
-                  <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 cursor-pointer">
+                  <div className="relative">
+                    <Globe className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
-                      type="checkbox"
-                      checked={availableForAuditions}
-                      onChange={(e) => setAvailableForAuditions(e.target.checked)}
-                      className="w-4 h-4 text-brand-pink rounded focus:ring-brand-pink"
+                      type="url"
+                      value={portfolioUrl}
+                      onChange={(e) => setPortfolioUrl(e.target.value)}
+                      placeholder="https://behance.net/username, https://vimeo.com/... or your website"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all bg-white"
                     />
-                    <span className="text-xs font-bold text-gray-900">
-                      Available for Auditions & Screen Tests
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={travelInternationally}
-                      onChange={(e) => setTravelInternationally(e.target.checked)}
-                      className="w-4 h-4 text-brand-pink rounded focus:ring-brand-pink"
-                    />
-                    <span className="text-xs font-bold text-gray-900">
-                      Open to travel internationally for shoots
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-gray-50 border border-gray-200/80 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={flexibleDates}
-                      onChange={(e) => setFlexibleDates(e.target.checked)}
-                      className="w-4 h-4 text-brand-pink rounded focus:ring-brand-pink"
-                    />
-                    <span className="text-xs font-bold text-gray-900">
-                      Flexible with shoot dates & schedules
-                    </span>
-                  </label>
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    Add a direct link to your personal portfolio, Behance, ArtStation, or Vimeo showcase.
+                  </p>
                 </div>
               </div>
             )}
@@ -1694,11 +1822,30 @@ const ProfileSetupPage = () => {
                       <strong className="text-gray-900">Languages:</strong> {languages.join(', ')}
                     </p>
                     <p>
-                      <strong className="text-gray-900">Preferred Projects:</strong>{' '}
-                      {preferredProjects
-                        .map((p) => (p === 'Other' && customProjectType.trim() ? `Other (${customProjectType.trim()})` : p))
-                        .join(', ')}
+                      <strong className="text-gray-900">Portfolio Document:</strong>{' '}
+                      {portfolioFile?.fileName ? (
+                        <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          {portfolioFile.fileName} {portfolioFile.fileSize ? `(${portfolioFile.fileSize})` : ''}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 italic">None attached</span>
+                      )}
                     </p>
+                    {portfolioUrl && (
+                      <p>
+                        <strong className="text-gray-900">Portfolio Link:</strong>{' '}
+                        <a
+                          href={portfolioUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-brand-pink hover:underline font-medium inline-flex items-center gap-1"
+                        >
+                          {portfolioUrl}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </p>
+                    )}
                   </div>
 
                   {/* Portfolio Media Summary */}
@@ -1722,13 +1869,24 @@ const ProfileSetupPage = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-gray-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-2 border-t border-gray-200">
                       <div>
                         <strong className="text-gray-900">Showreel Video:</strong>{' '}
                         {videoUrl ? (
                           <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
                             <Check className="w-3 h-3 text-emerald-600" />
-                            {videoFileName || 'Video Attached'}
+                            {videoFileName || 'Attached'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">None attached</span>
+                        )}
+                      </div>
+                      <div>
+                        <strong className="text-gray-900">Portfolio Deck:</strong>{' '}
+                        {portfolioFile?.fileName ? (
+                          <span className="text-emerald-700 font-semibold inline-flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-600" />
+                            {portfolioFile.fileName}
                           </span>
                         ) : (
                           <span className="text-gray-400">None attached</span>
