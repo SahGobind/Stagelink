@@ -19,6 +19,9 @@ import {
   X,
   ChevronRight,
   Layers,
+  Trophy,
+  AlertCircle,
+  RotateCcw,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import ApplicationCard from '../../components/applications/ApplicationCard';
@@ -56,21 +59,25 @@ const MyApplicationsPage = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Active top-level tab: 'jobs' (Company / Jobs) vs 'applications' (My Applications)
+  // Active top-level tab: 'jobs' vs 'applications'
   const initialTab = searchParams.get('tab') === 'applications' ? 'applications' : 'jobs';
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Status & search states
+  const initialStatus = searchParams.get('status') || 'all';
+  const [selectedStatus, setSelectedStatus] = useState(initialStatus);
+  const [selectedJobCategory, setSelectedJobCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [appSearchQuery, setAppSearchQuery] = useState('');
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
+  const [selectedLocationFilter, setSelectedLocationFilter] = useState('all');
 
   // Data states
   const [applications, setApplications] = useState([]);
   const [opportunities, setOpportunities] = useState(() => mockOpportunities);
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedJobCategory, setSelectedJobCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState('all');
-  const [selectedLocationFilter, setSelectedLocationFilter] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Sync tab with URL query param if present
+  // Sync tab & status with URL query params
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'applications' && activeTab !== 'applications') {
@@ -78,65 +85,89 @@ const MyApplicationsPage = () => {
     } else if (tabParam === 'jobs' && activeTab !== 'jobs') {
       setActiveTab('jobs');
     }
+
+    const statusParam = searchParams.get('status');
+    if (statusParam && statusParam !== selectedStatus) {
+      setSelectedStatus(statusParam);
+    }
   }, [searchParams]);
 
-  // Handle switching tabs
+  // Handle switching top-level tabs
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    setSearchParams(tabId === 'applications' ? { tab: 'applications' } : {});
+    if (tabId === 'applications') {
+      setSearchParams(selectedStatus !== 'all' ? { tab: 'applications', status: selectedStatus } : { tab: 'applications' });
+    } else {
+      setSearchParams({});
+    }
   };
 
-  // Fetch applications and live company opportunities
-  useEffect(() => {
-    let isMounted = true;
+  // Handle selecting an application status filter
+  const handleStatusChange = (statusId) => {
+    setSelectedStatus(statusId);
+    if (activeTab === 'applications') {
+      setSearchParams(statusId !== 'all' ? { tab: 'applications', status: statusId } : { tab: 'applications' });
+    }
+  };
+
+  // Fetch candidate applications & company opportunities
+  const loadData = () => {
     const candidateId = user?.id || 'cand-aanya';
 
     // 1. Fetch Candidate Applications
     applicationService
       .getByCandidate(candidateId)
       .then((res) => {
-        if (isMounted && res && res.length > 0) {
+        if (res && res.length > 0) {
           setApplications(res);
           return;
         }
         return rankingService.getTalentApplications(candidateId);
       })
       .then((rankApps) => {
-        if (isMounted && rankApps && rankApps.length > 0) {
+        if (rankApps && rankApps.length > 0) {
           setApplications(rankApps);
-        } else if (isMounted) {
+        } else {
           const all = getAllApplications();
           const candidateApps = all.filter((a) => a.candidateId === candidateId || a.candidate_id === candidateId);
           setApplications(candidateApps.length > 0 ? candidateApps : all);
         }
       })
       .catch(() => {
-        if (isMounted) {
-          const all = getAllApplications();
-          const candidateApps = all.filter((a) => a.candidateId === candidateId || a.candidate_id === candidateId);
-          setApplications(candidateApps.length > 0 ? candidateApps : all);
-        }
+        const all = getAllApplications();
+        const candidateApps = all.filter((a) => a.candidateId === candidateId || a.candidate_id === candidateId);
+        setApplications(candidateApps.length > 0 ? candidateApps : all);
       });
 
     // 2. Fetch Live Company Jobs & Opportunities
     castingService
       .getPublicOpportunities()
       .then((data) => {
-        if (isMounted && Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data) && data.length > 0) {
           setOpportunities(data);
-        } else if (isMounted) {
+        } else {
           setOpportunities(mockOpportunities);
         }
       })
       .catch(() => {
-        if (isMounted) setOpportunities(mockOpportunities);
+        setOpportunities(mockOpportunities);
       })
       .finally(() => {
-        if (isMounted) setIsLoading(false);
+        setIsLoading(false);
       });
+  };
+
+  useEffect(() => {
+    loadData();
+
+    // Listen for real-time application events (such as withdrawals or new submissions)
+    const handleUpdate = () => loadData();
+    window.addEventListener('storage', handleUpdate);
+    window.addEventListener('starcast_applications_updated', handleUpdate);
 
     return () => {
-      isMounted = false;
+      window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('starcast_applications_updated', handleUpdate);
     };
   }, [user]);
 
@@ -148,6 +179,21 @@ const MyApplicationsPage = () => {
       if (app.opportunityTitle) map.set(app.opportunityTitle.toLowerCase().trim(), app);
     });
     return map;
+  }, [applications]);
+
+  // Derived application counts
+  const appCounts = useMemo(() => {
+    const total = applications.length;
+    const underReview = applications.filter((a) => (a.status || '').toLowerCase() === 'under_review').length;
+    const shortlisted = applications.filter((a) => (a.status || '').toLowerCase() === 'shortlisted').length;
+    const auditionRequested = applications.filter(
+      (a) => (a.status || '').toLowerCase() === 'audition_requested' || (a.status || '').toLowerCase() === 'interview'
+    ).length;
+    const selected = applications.filter(
+      (a) => (a.status || '').toLowerCase() === 'selected' || (a.status || '').toLowerCase() === 'accepted'
+    ).length;
+
+    return { total, underReview, shortlisted, auditionRequested, selected };
   }, [applications]);
 
   // Unique companies list for filtering
@@ -175,25 +221,21 @@ const MyApplicationsPage = () => {
   // Filtered Company Jobs
   const filteredCompanyJobs = useMemo(() => {
     return opportunities.filter((job) => {
-      // 1. Category Filter
       if (selectedJobCategory !== 'all') {
         const catKey = (job.categoryKey || job.category || '').toLowerCase().replace(/\s+/g, '-');
         if (!catKey.includes(selectedJobCategory)) return false;
       }
 
-      // 2. Company Filter
       if (selectedCompanyFilter !== 'all') {
         const comp = job.productionCompany || job.company || '';
         if (comp !== selectedCompanyFilter) return false;
       }
 
-      // 3. Location Filter
       if (selectedLocationFilter !== 'all') {
         const loc = job.location || '';
         if (!loc.toLowerCase().includes(selectedLocationFilter.toLowerCase())) return false;
       }
 
-      // 4. Search Query (title, company, role, requirements, location)
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase().trim();
         const title = (job.title || '').toLowerCase();
@@ -217,16 +259,39 @@ const MyApplicationsPage = () => {
     });
   }, [opportunities, selectedJobCategory, selectedCompanyFilter, selectedLocationFilter, searchQuery]);
 
-  // Filtered Applications
+  // Filtered Applications with search support
   const filteredApplications = useMemo(() => {
-    if (selectedStatus === 'all') return applications;
     return applications.filter((a) => {
       const s = (a.status || '').toLowerCase();
-      if (selectedStatus === 'submitted') return s === 'submitted' || s === 'applied';
-      if (selectedStatus === 'audition_requested') return s === 'audition_requested' || s === 'interview';
-      return s === selectedStatus;
+
+      // 1. Status Filter
+      if (selectedStatus !== 'all') {
+        if (selectedStatus === 'submitted' && !(s === 'submitted' || s === 'applied')) return false;
+        if (selectedStatus === 'audition_requested' && !(s === 'audition_requested' || s === 'interview')) return false;
+        if (selectedStatus === 'selected' && !(s === 'selected' || s === 'accepted')) return false;
+        if (selectedStatus === 'rejected' && !(s === 'rejected' || s === 'not_selected')) return false;
+        if (
+          !['submitted', 'audition_requested', 'selected', 'rejected'].includes(selectedStatus) &&
+          s !== selectedStatus
+        ) {
+          return false;
+        }
+      }
+
+      // 2. Search Filter
+      if (appSearchQuery.trim()) {
+        const query = appSearchQuery.toLowerCase().trim();
+        const title = (a.opportunityTitle || '').toLowerCase();
+        const comp = (a.productionCompany || '').toLowerCase();
+        const role = (a.roleAppliedFor || '').toLowerCase();
+        const note = (a.notes || '').toLowerCase();
+
+        return title.includes(query) || comp.includes(query) || role.includes(query) || note.includes(query);
+      }
+
+      return true;
     });
-  }, [applications, selectedStatus]);
+  }, [applications, selectedStatus, appSearchQuery]);
 
   return (
     <PageContainer className="space-y-6 text-left pb-16">
@@ -235,7 +300,7 @@ const MyApplicationsPage = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold font-serif text-brand-navy">
-              {activeTab === 'jobs' ? 'Company / Jobs' : 'My Applications'}
+              {activeTab === 'jobs' ? 'Jobs / Applications' : 'My Applications'}
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-brand-pink uppercase tracking-wide">
               {activeTab === 'jobs' ? `${opportunities.length} Active Jobs` : `${applications.length} Submitted`}
@@ -256,7 +321,7 @@ const MyApplicationsPage = () => {
         </div>
       </div>
 
-      {/* 2. Top-Level Switcher Tabs: [Company / Jobs] vs [My Applications] */}
+      {/* 2. Top-Level Switcher Tabs: [Jobs / Openings] vs [My Applications] */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
         <button
           type="button"
@@ -268,7 +333,7 @@ const MyApplicationsPage = () => {
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Company / Jobs</span>
+          <span>Jobs / Openings</span>
           <span
             className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
               activeTab === 'jobs' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
@@ -299,7 +364,7 @@ const MyApplicationsPage = () => {
         </button>
       </div>
 
-      {/* ================= VIEW 1: COMPANY / JOBS ================= */}
+      {/* ================= VIEW 1: JOBS / OPENINGS ================= */}
       {activeTab === 'jobs' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Search & Dropdown Filters Bar */}
@@ -578,41 +643,144 @@ const MyApplicationsPage = () => {
       {/* ================= VIEW 2: MY APPLICATIONS ================= */}
       {activeTab === 'applications' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Filter Tabs for Application Statuses */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-            {STATUS_TABS.map((tab) => {
-              const count =
-                tab.id === 'all'
-                  ? applications.length
-                  : applications.filter((a) => {
-                      const s = (a.status || '').toLowerCase();
-                      if (tab.id === 'submitted') return s === 'submitted' || s === 'applied';
-                      if (tab.id === 'audition_requested') return s === 'audition_requested' || s === 'interview';
-                      return s === tab.id;
-                    }).length;
+          {/* Quick Metrics Bar for Applications */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <button
+              type="button"
+              onClick={() => handleStatusChange('all')}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                selectedStatus === 'all'
+                  ? 'bg-brand-navy text-white border-brand-navy shadow-md'
+                  : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider opacity-75">
+                  Total Submissions
+                </span>
+                <FileCheck className="w-4 h-4" />
+              </div>
+              <p className="text-2xl font-bold font-serif">{appCounts.total}</p>
+            </button>
 
-              return (
+            <button
+              type="button"
+              onClick={() => handleStatusChange('under_review')}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                selectedStatus === 'under_review'
+                  ? 'bg-sky-700 text-white border-sky-700 shadow-md'
+                  : 'bg-white border-slate-200 hover:border-sky-300 text-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider opacity-75">
+                  In Review
+                </span>
+                <Clock className="w-4 h-4 text-sky-500" />
+              </div>
+              <p className="text-2xl font-bold font-serif">{appCounts.underReview}</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleStatusChange('shortlisted')}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                selectedStatus === 'shortlisted'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-md'
+                  : 'bg-white border-slate-200 hover:border-amber-300 text-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider opacity-75">
+                  Shortlisted
+                </span>
+                <Trophy className="w-4 h-4 text-amber-500" />
+              </div>
+              <p className="text-2xl font-bold font-serif">{appCounts.shortlisted}</p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleStatusChange('audition_requested')}
+              className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+                selectedStatus === 'audition_requested'
+                  ? 'bg-brand-pink text-white border-brand-pink shadow-md'
+                  : 'bg-white border-slate-200 hover:border-pink-300 text-slate-700'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider opacity-75">
+                  Auditions
+                </span>
+                <Sparkles className="w-4 h-4 text-pink-500" />
+              </div>
+              <p className="text-2xl font-bold font-serif">{appCounts.auditionRequested}</p>
+            </button>
+          </div>
+
+          {/* Search & Filter Bar for Applications */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
+            {/* Search input */}
+            <div className="relative w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={appSearchQuery}
+                onChange={(e) => setAppSearchQuery(e.target.value)}
+                placeholder="Search your applications by role, production company, or notes..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 focus:outline-none focus:border-brand-pink focus:ring-2 focus:ring-pink-100 transition-all bg-white"
+              />
+              {appSearchQuery && (
                 <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setSelectedStatus(tab.id)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
-                    selectedStatus === tab.id
-                      ? 'bg-brand-pink text-white shadow-3d-button-pink'
-                      : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                  }`}
+                  onClick={() => setAppSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                 >
-                  <span>{tab.label}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-                      selectedStatus === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Tabs for Application Statuses */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-1 border-t border-slate-100">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 shrink-0 flex items-center gap-1">
+                <Filter className="w-3 h-3" /> Status:
+              </span>
+              {STATUS_TABS.map((tab) => {
+                const count =
+                  tab.id === 'all'
+                    ? applications.length
+                    : applications.filter((a) => {
+                        const s = (a.status || '').toLowerCase();
+                        if (tab.id === 'submitted') return s === 'submitted' || s === 'applied';
+                        if (tab.id === 'audition_requested') return s === 'audition_requested' || s === 'interview';
+                        if (tab.id === 'selected') return s === 'selected' || s === 'accepted';
+                        if (tab.id === 'rejected') return s === 'rejected' || s === 'not_selected';
+                        return s === tab.id;
+                      }).length;
+
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleStatusChange(tab.id)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                      selectedStatus === tab.id
+                        ? 'bg-brand-pink text-white shadow-3d-button-pink'
+                        : 'bg-white border border-slate-200/80 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
                     }`}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+                    <span>{tab.label}</span>
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                        selectedStatus === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {isLoading ? (
@@ -627,10 +795,17 @@ const MyApplicationsPage = () => {
               description={
                 selectedStatus === 'all'
                   ? 'Browse open company jobs to submit your first audition application.'
-                  : `You have no applications with status "${selectedStatus.replace('_', ' ')}".`
+                  : `You have no applications matching the status "${selectedStatus.replace('_', ' ')}"${appSearchQuery ? ` and query "${appSearchQuery}"` : ''}.`
               }
-              actionText={selectedStatus !== 'all' ? 'View All Applications' : 'Explore Company Jobs'}
-              onAction={() => (selectedStatus !== 'all' ? setSelectedStatus('all') : handleTabChange('jobs'))}
+              actionText={selectedStatus !== 'all' || appSearchQuery ? 'View All Applications' : 'Explore Open Jobs'}
+              onAction={() => {
+                if (selectedStatus !== 'all' || appSearchQuery) {
+                  setSelectedStatus('all');
+                  setAppSearchQuery('');
+                } else {
+                  handleTabChange('jobs');
+                }
+              }}
             />
           ) : (
             <div className="space-y-4">

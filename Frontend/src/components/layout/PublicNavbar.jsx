@@ -163,7 +163,7 @@ const PublicNavbar = () => {
                           className="flex items-center gap-2.5 px-4 py-2 hover:bg-neutral-800 text-neutral-200 font-semibold transition-colors"
                         >
                           <Briefcase className="w-4 h-4 text-neutral-400" />
-                          <span>Company / Jobs</span>
+                          <span>Jobs / Applications</span>
                         </Link>
                       </>
                     )}

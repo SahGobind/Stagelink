@@ -172,6 +172,13 @@ export const applicationService = {
   },
 
   /**
+   * Alias for withdraw (supporting both method signatures)
+   */
+  withdrawApplication: async (applicationId, candidateId) => {
+    return applicationService.withdraw(applicationId, candidateId);
+  },
+
+  /**
    * Get all applications for a specific candidate
    */
   getByCandidate: async (candidateId) => {

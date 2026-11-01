@@ -95,6 +95,7 @@ const ApplicationDetailsPage = () => {
           status: 'withdrawn',
         }));
         setWithdrawSuccess(true);
+        window.dispatchEvent(new Event('starcast_applications_updated'));
         setTimeout(() => {
           setIsWithdrawModalOpen(false);
           setWithdrawSuccess(false);
@@ -124,7 +125,7 @@ const ApplicationDetailsPage = () => {
   return (
     <PageContainer maxWidth="lg" className="space-y-6 text-left">
       <div className="flex items-center justify-between">
-        <BackButton fallback="/candidate/applications" label="Back to My Applications" variant="light" />
+        <BackButton fallback="/candidate/applications?tab=applications" label="Back to My Applications" variant="light" />
 
         {canWithdraw && (
           <button

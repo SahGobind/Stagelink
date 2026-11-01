@@ -212,7 +212,7 @@ const DashboardPage = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Total Applications */}
         <Link
-          to="/candidate/applications"
+          to="/candidate/applications?tab=applications"
           className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-slate-400 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
@@ -234,7 +234,7 @@ const DashboardPage = () => {
 
         {/* Under Review */}
         <Link
-          to="/candidate/applications"
+          to="/candidate/applications?tab=applications&status=under_review"
           className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-sky-300 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
@@ -255,7 +255,7 @@ const DashboardPage = () => {
 
         {/* Shortlisted */}
         <Link
-          to="/candidate/applications"
+          to="/candidate/applications?tab=applications&status=shortlisted"
           className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-amber-300 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
@@ -276,7 +276,7 @@ const DashboardPage = () => {
 
         {/* Interview Invitations */}
         <Link
-          to="/candidate/applications"
+          to="/candidate/applications?tab=applications&status=audition_requested"
           className="group bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 hover:border-slate-900 shadow-3d-card hover:shadow-3d-card-hover hover:-translate-y-1 specular-top transition-all duration-300 flex items-center justify-between"
         >
           <div className="space-y-1">
@@ -314,7 +314,7 @@ const DashboardPage = () => {
               </div>
 
               <Link
-                to="/candidate/applications"
+                to="/candidate/applications?tab=applications"
                 className="text-xs font-bold text-brand-navy hover:underline flex items-center gap-1 group"
               >
                 <span>View All ({totalApplications})</span>
