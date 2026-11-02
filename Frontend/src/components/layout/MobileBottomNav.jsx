@@ -8,7 +8,7 @@ const MobileBottomNav = () => {
 
   const candidateLinks = [
     { label: 'Dashboard', path: '/candidate/dashboard', icon: LayoutDashboard },
-    { label: 'Castings', path: '/opportunities', icon: Briefcase },
+    { label: 'Castings', path: '/candidate/casting-calls', icon: Briefcase },
     { label: 'Jobs / Applications', path: '/candidate/applications', icon: Briefcase },
     { label: 'Messages', path: '/candidate/messages', icon: MessageSquare },
     { label: 'Profile', path: '/candidate/profile', icon: User },

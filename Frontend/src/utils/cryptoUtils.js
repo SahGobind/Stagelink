@@ -73,7 +73,7 @@ export function decryptMessageClient(cipherText) {
 /**
  * Analyzes password strength and checks for registration compliance.
  */
-export function calculatePasswordStrength(password) {
+export function calculatePasswordStrength(password, userInfo = {}) {
   const pwd = password || '';
   const checks = {
     length: pwd.length >= 8,
@@ -83,17 +83,45 @@ export function calculatePasswordStrength(password) {
     special: /[!@#$%^&*()_+\-=[\]{}|;:,.<>?~/]/.test(pwd),
   };
 
-  const score = Object.values(checks).filter(Boolean).length;
+  const lower = pwd.toLowerCase();
+  let containsPersonalInfo = false;
+  let personalInfoError = '';
+
+  if (userInfo && typeof userInfo === 'object') {
+    const email = (userInfo.email || '').toLowerCase().trim();
+    if (email && email.includes('@')) {
+      const emailUser = email.split('@')[0];
+      if (emailUser.length >= 3 && lower.includes(emailUser)) {
+        containsPersonalInfo = true;
+        personalInfoError = 'Password cannot contain your email username.';
+      }
+    }
+    const name = (userInfo.fullName || userInfo.full_name || '').toLowerCase().trim();
+    if (name) {
+      for (const part of name.split(/\s+/)) {
+        if (part.length >= 3 && lower.includes(part)) {
+          containsPersonalInfo = true;
+          personalInfoError = 'Password cannot contain parts of your name.';
+          break;
+        }
+      }
+    }
+  }
+
+  let score = Object.values(checks).filter(Boolean).length;
+  if (containsPersonalInfo && score > 2) {
+    score = 2; // Penalize score if it contains user's personal info
+  }
 
   let label = 'Very Weak';
   let color = 'bg-red-500';
   let textColor = 'text-red-600';
 
-  if (score === 5) {
+  if (score === 5 && !containsPersonalInfo) {
     label = 'Strong';
     color = 'bg-emerald-500';
     textColor = 'text-emerald-600';
-  } else if (score >= 4) {
+  } else if (score >= 4 && !containsPersonalInfo) {
     label = 'Good';
     color = 'bg-teal-500';
     textColor = 'text-teal-600';
@@ -114,7 +142,9 @@ export function calculatePasswordStrength(password) {
     label,
     color,
     textColor,
-    isValid: score === 5,
+    isValid: score === 5 && !containsPersonalInfo,
+    containsPersonalInfo,
+    personalInfoError,
     checks,
   };
 }

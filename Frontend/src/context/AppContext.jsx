@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 const AppContext = createContext(null);
 const SAVED_OPPS_STORAGE_KEY = 'starcast_saved_opportunities';
@@ -14,9 +14,9 @@ export const AppProvider = ({ children }) => {
     }
   });
 
-  const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
 
-  const toggleSaveOpportunity = (id) => {
+  const toggleSaveOpportunity = useCallback((id) => {
     setSavedOpportunityIds((prev) => {
       const updated = prev.includes(id)
         ? prev.filter((item) => item !== id)
@@ -28,18 +28,21 @@ export const AppProvider = ({ children }) => {
       }
       return updated;
     });
-  };
+  }, []);
 
-  const isOpportunitySaved = (id) => savedOpportunityIds.includes(id);
+  const isOpportunitySaved = useCallback((id) => savedOpportunityIds.includes(id), [savedOpportunityIds]);
 
-  const value = {
-    sidebarOpen,
-    setSidebarOpen,
-    toggleSidebar,
-    savedOpportunityIds,
-    toggleSaveOpportunity,
-    isOpportunitySaved,
-  };
+  const value = useMemo(
+    () => ({
+      sidebarOpen,
+      setSidebarOpen,
+      toggleSidebar,
+      savedOpportunityIds,
+      toggleSaveOpportunity,
+      isOpportunitySaved,
+    }),
+    [sidebarOpen, savedOpportunityIds, toggleSidebar, toggleSaveOpportunity, isOpportunitySaved]
+  );
 
   return (
     <AppContext.Provider value={value}>

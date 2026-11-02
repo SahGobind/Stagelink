@@ -6,7 +6,7 @@
  * require backend implementation.
  */
 
-import { API_BASE, apiRequest } from './api';
+import { apiRequest } from './api';
 import { hashPasswordClient } from '../utils/cryptoUtils';
 
 
@@ -480,14 +480,20 @@ export const authService = {
 
       // Backend returned an explicit business rejection (e.g. 409 Conflict, 400 Bad Request)
       if (res && (res.status === 409 || res.status === 400)) {
-        let errorMsg = data?.error;
-        if (!errorMsg && data?.details) {
+        let errorMsg = '';
+        if (data?.details) {
           if (typeof data.details === 'object') {
-            const errorList = Object.entries(data.details).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(' ') : v}`);
-            errorMsg = errorList.join(', ');
+            const errorList = Object.entries(data.details).map(([k, v]) => {
+              const val = Array.isArray(v) ? v.join(' ') : v;
+              return `${val}`;
+            });
+            errorMsg = errorList.join(' ');
           } else {
             errorMsg = String(data.details);
           }
+        }
+        if (!errorMsg) {
+          errorMsg = data?.error;
         }
         throw new Error(errorMsg || 'Registration failed. Please check your information.');
       }

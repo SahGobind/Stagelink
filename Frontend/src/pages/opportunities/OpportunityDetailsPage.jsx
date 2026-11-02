@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
   MapPin,
   Heart,
@@ -52,9 +52,16 @@ import { useAuth } from '../../context/AuthContext';
 const OpportunityDetailsPage = () => {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { isOpportunitySaved, toggleSaveOpportunity } = useApp();
   const { isAuthenticated, user } = useAuth();
+
+  const isCandidateArea = location.pathname.startsWith('/candidate');
+  const backFallback = isCandidateArea ? '/candidate/casting-calls' : '/opportunities';
+  const backLabel = isCandidateArea ? 'Back to Casting Calls' : 'Back to Opportunities';
+  const breadcrumbHome = isCandidateArea ? '/candidate/dashboard' : '/';
+  const breadcrumbCasting = isCandidateArea ? '/candidate/casting-calls' : '/opportunities';
 
   const [opportunity, setOpportunity] = useState(() => {
     const allOpps = [...getCustomOpportunities(), ...mockOpportunities];
@@ -284,14 +291,14 @@ const OpportunityDetailsPage = () => {
     <div className="bg-gray-50/50 min-h-screen py-6 sm:py-10 pb-24 text-left">
       <PageContainer maxWidth="lg" className="space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <BackButton fallback="/opportunities" label="Back to Opportunities" variant="light" />
+          <BackButton fallback={backFallback} label={backLabel} variant="light" />
           {/* 1. BREADCRUMB NAVIGATION */}
           <nav aria-label="Breadcrumb" className="hidden sm:flex items-center space-x-2 text-xs text-brand-text-secondary">
-            <Link to="/" className="hover:text-black transition-colors font-medium">
-              Home
+            <Link to={breadcrumbHome} className="hover:text-black transition-colors font-medium">
+              {isCandidateArea ? 'Dashboard' : 'Home'}
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
-            <Link to="/opportunities" className="hover:text-black transition-colors font-medium">
+            <Link to={breadcrumbCasting} className="hover:text-black transition-colors font-medium">
               Casting Calls
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-gray-400" />

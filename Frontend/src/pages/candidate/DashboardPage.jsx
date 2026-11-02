@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText,
   Clock,
@@ -33,6 +33,7 @@ import { castingService } from '../../services/castingService';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   // Synchronize candidate profile & applications from storage & MongoDB Atlas
   const [candidate, setCandidate] = useState(() => getCandidateProfile(user));
@@ -328,7 +329,7 @@ const DashboardPage = () => {
                 title="No applications submitted yet"
                 description="Explore current auditions and submit your tape to get reviewed by casting directors."
                 actionLabel="Explore Opportunities"
-                onAction={() => (window.location.href = '/opportunities')}
+                onAction={() => navigate('/candidate/casting-calls')}
               />
             ) : (
               <div className="space-y-3.5">
@@ -395,7 +396,7 @@ const DashboardPage = () => {
               </div>
 
               <Link
-                to="/opportunities"
+                to="/candidate/casting-calls"
                 className="text-xs font-bold text-brand-navy hover:underline flex items-center gap-1 group self-start sm:self-auto"
               >
                 <span>Browse All Opportunities</span>

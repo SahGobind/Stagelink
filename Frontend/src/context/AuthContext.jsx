@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { authService, DEFAULT_ROLE_PERMISSIONS } from '../services/authService';
 
 const AuthContext = createContext(null);
@@ -6,9 +6,10 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => authService.getCurrentUser());
   const [permissions, setPermissions] = useState(() => {
-    const u = authService.getCurrentUser();
-    const r = u?.role || 'user';
-    return DEFAULT_ROLE_PERMISSIONS[r] || [];
+    const initialUser = authService.getCurrentUser();
+    if (!initialUser) return [];
+    const r = initialUser.role || 'user';
+    return DEFAULT_ROLE_PERMISSIONS[r] || DEFAULT_ROLE_PERMISSIONS.user || [];
   });
   const [loading, setLoading] = useState(false);
 
@@ -33,10 +34,31 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
-    refreshPermissions();
-  }, [user, refreshPermissions]);
+    let isSubscribed = true;
+    if (!user) {
+      return;
+    }
+    authService
+      .fetchPermissions()
+      .then((data) => {
+        if (isSubscribed && data && Array.isArray(data.permissions)) {
+          setPermissions(data.permissions);
+        }
+      })
+      .catch(() => {
+        if (isSubscribed) {
+          const fallbackPerms =
+            DEFAULT_ROLE_PERMISSIONS[user.role] || DEFAULT_ROLE_PERMISSIONS.user || [];
+          setPermissions(fallbackPerms);
+        }
+      });
 
-  const login = async (email, password) => {
+    return () => {
+      isSubscribed = false;
+    };
+  }, [user]);
+
+  const login = useCallback(async (email, password) => {
     setLoading(true);
     try {
       const loggedUser = await authService.login(email, password);
@@ -49,85 +71,109 @@ export const AuthProvider = ({ children }) => {
         if (data && Array.isArray(data.permissions)) {
           setPermissions(data.permissions);
         }
-      }).catch(() => {});
+      }).catch(() => { });
       return loggedUser;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const signUp = async (userData) => {
+  const signUp = useCallback(async (userData) => {
     const newUser = await authService.signUp(userData);
     setUser(newUser);
     return newUser;
-  };
+  }, []);
 
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     return await authService.register(userData);
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await authService.logout();
     setUser(null);
     setPermissions([]);
-  };
+  }, []);
 
-  const setRecruiterSession = (companyData = {}) => {
+  const setRecruiterSession = useCallback((companyData = {}) => {
     const recUser = authService.ensureRecruiterSession(companyData);
     setUser(recUser);
     return recUser;
-  };
+  }, []);
 
-  const setOperationsSession = () => {
+  const setOperationsSession = useCallback(() => {
     const opsUser = authService.ensureOperationsSession();
     setUser(opsUser);
     return opsUser;
-  };
+  }, []);
 
-  const updateUser = (updates) => {
+  const updateUser = useCallback((updates) => {
     const updated = authService.updateCurrentUser(updates);
     if (updated) {
       setUser((prev) => ({ ...prev, ...updated }));
     }
     return updated;
-  };
+  }, []);
 
   // Permission evaluation helpers
-  const hasPermission = (permission) => {
+  const hasPermission = useCallback((permission) => {
     return authService.hasPermission(user, permission, permissions);
-  };
+  }, [user, permissions]);
 
-  const hasAnyPermission = (perms = []) => {
+  const hasAnyPermission = useCallback((perms = []) => {
     return authService.hasAnyPermission(user, perms, permissions);
-  };
+  }, [user, permissions]);
 
-  const hasAllPermissions = (perms = []) => {
+  const hasAllPermissions = useCallback((perms = []) => {
     return authService.hasAllPermissions(user, perms, permissions);
-  };
+  }, [user, permissions]);
 
-  const isSuperAdmin = authService.isSuperAdmin(user);
-  const isAdmin = authService.isAdmin(user);
+  const isSuperAdmin = useMemo(() => authService.isSuperAdmin(user), [user]);
+  const isAdmin = useMemo(() => authService.isAdmin(user), [user]);
+  const role = useMemo(() => user?.role || 'guest', [user?.role]);
+  const isAuthenticated = useMemo(() => !!user, [user]);
 
-  const value = {
-    user,
-    loading,
-    permissions,
-    refreshPermissions,
-    isAuthenticated: !!user,
-    role: user?.role || 'guest',
-    hasPermission,
-    hasAnyPermission,
-    hasAllPermissions,
-    isSuperAdmin,
-    isAdmin,
-    login,
-    signUp,
-    register,
-    logout,
-    updateUser,
-    setRecruiterSession,
-    setOperationsSession,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      loading,
+      permissions,
+      refreshPermissions,
+      isAuthenticated,
+      role,
+      hasPermission,
+      hasAnyPermission,
+      hasAllPermissions,
+      isSuperAdmin,
+      isAdmin,
+      login,
+      signUp,
+      register,
+      logout,
+      updateUser,
+      setRecruiterSession,
+      setOperationsSession,
+    }),
+    [
+      user,
+      loading,
+      permissions,
+      refreshPermissions,
+      isAuthenticated,
+      role,
+      hasPermission,
+      hasAnyPermission,
+      hasAllPermissions,
+      isSuperAdmin,
+      isAdmin,
+      login,
+      signUp,
+      register,
+      logout,
+      updateUser,
+      setRecruiterSession,
+      setOperationsSession,
+    ]
+  );
 
   return (
     <AuthContext.Provider value={value}>

@@ -155,7 +155,12 @@ const SignUpPage = () => {
   });
 
   const watchedCandidatePassword = candidateForm.watch('password');
+  const watchedCandidateFullName = candidateForm.watch('fullName');
+  const watchedCandidateEmail = candidateForm.watch('email');
+
   const watchedRecruiterPassword = recruiterForm.watch('password');
+  const watchedRecruiterFullName = recruiterForm.watch('fullName');
+  const watchedRecruiterEmail = recruiterForm.watch('email');
 
   const onCandidateSubmit = async (data) => {
     setServerError('');
@@ -403,7 +408,10 @@ const SignUpPage = () => {
             />
 
             {/* Password Security Strength Checklist */}
-            <PasswordStrengthIndicator password={watchedRecruiterPassword} />
+            <PasswordStrengthIndicator
+              password={watchedRecruiterPassword}
+              userInfo={{ fullName: watchedRecruiterFullName, email: watchedRecruiterEmail }}
+            />
 
             {/* Confirm Password */}
             <Input
@@ -522,7 +530,10 @@ const SignUpPage = () => {
             />
 
             {/* Password Security Strength Checklist */}
-            <PasswordStrengthIndicator password={watchedCandidatePassword} />
+            <PasswordStrengthIndicator
+              password={watchedCandidatePassword}
+              userInfo={{ fullName: watchedCandidateFullName, email: watchedCandidateEmail }}
+            />
 
             <Input
               label="Confirm Password"

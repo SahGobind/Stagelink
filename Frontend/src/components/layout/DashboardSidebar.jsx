@@ -57,7 +57,7 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
   const candidateLinks = [
     { label: 'Dashboard', path: '/candidate/dashboard', icon: LayoutDashboard },
     { label: 'My Profile', path: '/candidate/profile', icon: User },
-    { label: 'Casting Calls', path: '/opportunities', icon: Briefcase },
+    { label: 'Casting Calls', path: '/candidate/casting-calls', icon: Briefcase },
     { label: 'Jobs / Applications', path: '/candidate/applications', icon: Building2 },
     { label: 'Saved Opportunities', path: '/candidate/saved-opportunities', icon: Bookmark },
     { label: 'Messages', path: '/candidate/messages', icon: MessageSquare },

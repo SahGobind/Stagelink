@@ -169,6 +169,10 @@ const AppRouter = () => {
           }
         >
           <Route path="dashboard" element={<CandidateDashboardPage />} />
+          <Route path="casting-calls" element={<OpportunitiesPage />} />
+          <Route path="casting-calls/:id" element={<OpportunityDetailsPage />} />
+          <Route path="opportunities" element={<OpportunitiesPage />} />
+          <Route path="opportunities/:id" element={<OpportunityDetailsPage />} />
           <Route path="profile/setup" element={<ProfileSetupPage />} />
           <Route path="profile" element={<MyProfilePage />} />
           <Route path="profile/public" element={<PublicCandidateProfilePage />} />

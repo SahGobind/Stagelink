@@ -553,7 +553,7 @@ const MyApplicationsPage = () => {
                     <div className="py-4 space-y-2">
                       <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
                         <Link
-                          to={`/opportunities/${job.id}`}
+                          to={`/candidate/casting-calls/${job.id}`}
                           className="text-lg sm:text-xl font-bold font-serif text-brand-navy hover:text-brand-pink transition-colors tracking-tight"
                         >
                           {job.title}
@@ -607,7 +607,7 @@ const MyApplicationsPage = () => {
 
                       <div className="flex items-center gap-2.5 self-end sm:self-center">
                         <Link
-                          to={`/opportunities/${job.id}`}
+                          to={`/candidate/casting-calls/${job.id}`}
                           className="px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors shadow-2xs"
                         >
                           View Details
@@ -623,7 +623,7 @@ const MyApplicationsPage = () => {
                           </Link>
                         ) : (
                           <Link
-                            to={`/opportunities/${job.id}?apply=true`}
+                            to={`/candidate/casting-calls/${job.id}?apply=true`}
                             className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#FA5A36] to-[#FB6947] hover:brightness-105 active:scale-95 transition-all flex items-center gap-1.5 shadow-xs"
                           >
                             <span>Apply Now</span>

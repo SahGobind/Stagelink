@@ -1,6 +1,7 @@
 """
 URL configuration for StageLink backend.
 """
+from django.contrib import admin
 from django.urls import path, include
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -48,6 +49,9 @@ class HealthCheckView(APIView):
 
 
 urlpatterns = [
+    # Django Admin site
+    path('admin/', admin.site.urls),
+
     # Health check and root entry points
     path('', HealthCheckView.as_view(), name='api-root'),
     path('health/', HealthCheckView.as_view(), name='health-check-short'),

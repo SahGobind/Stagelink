@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import {
   Search,
   X,
@@ -20,6 +20,11 @@ import { castingService } from '../../services/castingService';
 
 const OpportunitiesPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+
+  const isCandidateArea = location.pathname.startsWith('/candidate');
+  const backFallback = isCandidateArea ? '/candidate/dashboard' : '/';
+  const backLabel = isCandidateArea ? 'Back to Dashboard' : 'Back to Home';
 
   // URL param or initial category
   const initialCategory = searchParams.get('category') || 'all';
@@ -341,7 +346,7 @@ const OpportunitiesPage = () => {
       <section className="bg-[#18191C]/60 border-b border-neutral-800/80 py-4 sm:py-5 text-left">
         <PageContainer>
           <div className="mb-3">
-            <BackButton fallback="/" variant="dark" />
+            <BackButton fallback={backFallback} label={backLabel} variant="dark" />
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

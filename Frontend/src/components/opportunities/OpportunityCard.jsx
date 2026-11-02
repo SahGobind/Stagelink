@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   MapPin,
   Heart,
@@ -17,8 +17,13 @@ import { useApp } from '../../context/AppContext';
 import { resolveOpportunityImage, getCategoryFallbackImage } from '../../utils/opportunityImageHelper';
 
 const OpportunityCard = ({ opportunity, onApplyClick }) => {
+  const location = useLocation();
   const { isOpportunitySaved, toggleSaveOpportunity } = useApp();
   const isSaved = isOpportunitySaved(opportunity?.id);
+
+  const isCandidateArea = location.pathname.startsWith('/candidate');
+  const detailsUrl = isCandidateArea ? `/candidate/casting-calls/${opportunity?.id}` : `/opportunities/${opportunity?.id}`;
+  const applyUrl = isCandidateArea ? `/candidate/casting-calls/${opportunity?.id}?apply=true` : `/opportunities/${opportunity?.id}?apply=true`;
 
   const [imgSrc, setImgSrc] = useState(() => resolveOpportunityImage(opportunity));
   const [imgFailed, setImgFailed] = useState(false);
@@ -236,13 +241,13 @@ const OpportunityCard = ({ opportunity, onApplyClick }) => {
       {/* Action Buttons: View Details & Apply Now */}
       <div className="p-4 sm:p-5 pt-0 grid grid-cols-2 gap-2">
         <Link
-          to={`/opportunities/${opportunity.id}`}
+          to={detailsUrl}
           className="inline-flex items-center justify-center py-2.5 px-3 bg-neutral-800/90 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 text-xs font-semibold rounded-full shadow-2xs hover:shadow-subtle active:translate-y-0.5 transition-all text-center"
         >
           View Details
         </Link>
         <Link
-          to={`/opportunities/${opportunity.id}?apply=true`}
+          to={applyUrl}
           className={`inline-flex items-center justify-center py-2.5 px-3 text-xs font-bold rounded-full transition-all duration-200 text-center active:translate-y-0.5 ${
             isClosed
               ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed pointer-events-none'

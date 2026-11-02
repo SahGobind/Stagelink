@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo, useCallback } from 'react';
 import {
   getStoredNotifications,
   saveStoredNotifications,
@@ -9,25 +9,25 @@ const NotificationContext = createContext(null);
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState(() => getStoredNotifications());
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
-  const markAsRead = (id) => {
+  const markAsRead = useCallback((id) => {
     setNotifications((prev) => {
       const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
       saveStoredNotifications(updated);
       return updated;
     });
-  };
+  }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     setNotifications((prev) => {
       const updated = prev.map((n) => ({ ...n, read: true }));
       saveStoredNotifications(updated);
       return updated;
     });
-  };
+  }, []);
 
-  const addNotification = (notification) => {
+  const addNotification = useCallback((notification) => {
     setNotifications((prev) => {
       const updated = [
         {
@@ -41,15 +41,18 @@ export const NotificationProvider = ({ children }) => {
       saveStoredNotifications(updated);
       return updated;
     });
-  };
+  }, []);
 
-  const value = {
-    notifications,
-    unreadCount,
-    markAsRead,
-    markAllAsRead,
-    addNotification,
-  };
+  const value = useMemo(
+    () => ({
+      notifications,
+      unreadCount,
+      markAsRead,
+      markAllAsRead,
+      addNotification,
+    }),
+    [notifications, unreadCount, markAsRead, markAllAsRead, addNotification]
+  );
 
   return (
     <NotificationContext.Provider value={value}>
