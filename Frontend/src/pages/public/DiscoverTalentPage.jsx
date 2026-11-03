@@ -475,12 +475,12 @@ const DiscoverTalentPage = () => {
   }, [publishedJobs]);
 
   return (
-    <div className="min-h-screen bg-white text-brand-navy pb-24 text-left">
+    <div className="min-h-screen bg-slate-100 text-brand-navy pb-24 text-left">
       {/* Hero / Page Header */}
-      <section className="border-b border-gray-100 bg-gradient-to-b from-gray-50/70 via-white to-white pt-6 pb-6 sm:pt-8 sm:pb-8">
+      <section className="border-b border-slate-200/90 bg-white pt-6 pb-6 sm:pt-8 sm:pb-8 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <div>
-            <BackButton fallback="/" variant="light" />
+            <BackButton fallback="/admin/dashboard" variant="light" />
           </div>
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-2">

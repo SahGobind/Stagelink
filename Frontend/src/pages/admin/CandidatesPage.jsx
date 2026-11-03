@@ -230,7 +230,7 @@ const CandidatesPage = () => {
 
         <div className="flex items-center gap-2">
           <Link
-            to="/talent"
+            to="/admin/talent"
             className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-brand-pink text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-2xs"
           >
             <span>Discover Talent Gallery</span>

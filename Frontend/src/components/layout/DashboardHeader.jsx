@@ -148,8 +148,16 @@ const DashboardHeader = ({ title, subtitle }) => {
           </div>
           <div className="pt-1 border-t border-gray-100">
             <button
-              onClick={logout}
-              className="w-full flex items-center space-x-2 px-4 py-2 text-xs font-medium text-brand-error hover:bg-red-50 transition-colors"
+              onClick={async () => {
+                const wasAdmin = user?.role === 'admin' || user?.role === 'super_admin' || role === 'admin';
+                await logout();
+                if (wasAdmin) {
+                  navigate('/admin', { replace: true });
+                } else {
+                  navigate('/login', { replace: true });
+                }
+              }}
+              className="w-full flex items-center space-x-2 px-4 py-2 text-xs font-medium text-brand-error hover:bg-red-50 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>

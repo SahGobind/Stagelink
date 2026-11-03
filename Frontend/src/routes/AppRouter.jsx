@@ -97,26 +97,8 @@ const AppRouter = () => {
           <Route path="/payment/callback" element={<PaymentCallbackPage />} />
           <Route path="/escrow-payment" element={<PaymentPage />} />
           <Route path="/design-system" element={<DesignSystemPage />} />
-          <Route
-            path="/talent"
-            element={
-              <ProtectedRoute>
-                <RoleBasedRoute allowedRoles={['recruiter', 'admin', 'super_admin']}>
-                  <DiscoverTalentPage />
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/discover-talent"
-            element={
-              <ProtectedRoute>
-                <RoleBasedRoute allowedRoles={['recruiter', 'admin', 'super_admin']}>
-                  <DiscoverTalentPage />
-                </RoleBasedRoute>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/talent" element={<Navigate to="/admin/talent" replace />} />
+          <Route path="/discover-talent" element={<Navigate to="/admin/talent" replace />} />
           <Route
             path="/saved-talent"
             element={
@@ -136,7 +118,8 @@ const AppRouter = () => {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/recruiter/register" element={<SignUpPage />} />
           <Route path="/recruiter/login" element={<LoginPage />} />
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin" element={<AdminLoginPage />} />
+          <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
           <Route path="/operations/login" element={<OperationsLoginPage />} />
           <Route path="/admin/operations/login" element={<Navigate to="/operations/login" replace />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
@@ -150,7 +133,7 @@ const AppRouter = () => {
         <Route path="/recruiter/opportunities" element={<Navigate to="/admin/opportunities" replace />} />
         <Route path="/recruiter/applications" element={<Navigate to="/admin/applications" replace />} />
         <Route path="/recruiter/post-job" element={<Navigate to="/post-job" replace />} />
-        <Route path="/recruiter/talent" element={<Navigate to="/talent" replace />} />
+        <Route path="/recruiter/talent" element={<Navigate to="/admin/talent" replace />} />
 
         {/* Operations Route Aliases */}
         <Route path="/operations" element={<Navigate to="/admin/operations/support" replace />} />
@@ -193,7 +176,7 @@ const AppRouter = () => {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute redirectTo="/admin">
               <RoleBasedRoute allowedRoles={['super_admin', 'admin', 'recruiter', 'operations']}>
                 <AdminLayout />
               </RoleBasedRoute>
@@ -201,6 +184,8 @@ const AppRouter = () => {
           }
         >
           <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="talent" element={<DiscoverTalentPage />} />
+          <Route path="discover-talent" element={<DiscoverTalentPage />} />
           <Route path="saved-talent" element={<SavedTalentPage />} />
           <Route path="candidates" element={<CandidatesPage />} />
           <Route path="candidates/:id" element={<CandidateDetailsPage />} />

@@ -8,7 +8,7 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 
 const CandidateLayout = () => {
   return (
-    <div className="flex min-h-screen bg-gray-50/50">
+    <div className="flex min-h-screen bg-slate-100">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <DashboardSidebar role="candidate" />

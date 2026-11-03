@@ -44,8 +44,8 @@ def find_user_by_email_or_phone(identifier: str):
         return None
     col = get_users_col()
     clean_id = identifier.strip().lower()
-    # 1. Fast indexed exact match check
-    doc = col.find_one({"email": clean_id})
+    # 1. Fast indexed exact match check (email, id, or username)
+    doc = col.find_one({"$or": [{"email": clean_id}, {"id": clean_id}, {"username": clean_id}]})
     if doc:
         return clean_doc(doc, drop_password=False)
     
@@ -61,6 +61,8 @@ def find_user_by_email_or_phone(identifier: str):
     or_clauses = [
         {"email": regex},
         {"secondary_email": regex},
+        {"id": regex},
+        {"username": regex},
     ]
     if phone_digits:
         phone_regex = re.compile(re.escape(phone_digits))

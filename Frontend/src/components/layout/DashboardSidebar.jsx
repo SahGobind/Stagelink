@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
   LayoutDashboard,
@@ -22,6 +22,7 @@ import { useNotifications } from '../../context/NotificationContext';
 import { getStoredSupportTickets } from '../../data/mockSupportTickets';
 
 const DashboardSidebar = ({ role = 'candidate' }) => {
+  const navigate = useNavigate();
   const { user, logout, isSuperAdmin, isAdmin } = useAuth();
   const { unreadCount } = useNotifications();
 
@@ -65,8 +66,7 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
 
   const adminLinks = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Discover Talent', path: '/talent', icon: Sparkles },
-    { label: 'Saved Talent', path: '/admin/saved-talent', icon: Bookmark },
+    { label: 'Discover Talent', path: '/admin/talent', icon: Sparkles },
     { label: 'Candidates', path: '/admin/candidates', icon: Users },
     { label: 'Ranked Matching', path: '/admin/candidates/ranked', icon: Sparkles },
     { label: 'Opportunities', path: '/admin/opportunities', icon: Briefcase },
@@ -146,7 +146,15 @@ const DashboardSidebar = ({ role = 'candidate' }) => {
       {/* Logout Action */}
       <div className="pt-4 border-t border-slate-200/80">
         <button
-          onClick={logout}
+          onClick={async () => {
+            const wasAdmin = isAdminUser || isSuperAdminUser;
+            await logout();
+            if (wasAdmin) {
+              navigate('/admin', { replace: true });
+            } else {
+              navigate('/login', { replace: true });
+            }
+          }}
           className="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50/80 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink cursor-pointer"
         >
           <LogOut className="w-4 h-4 shrink-0" />

@@ -17,7 +17,8 @@ const RoleBasedRoute = ({
   }
 
   if (!isAuthenticated || !user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const target = location.pathname.startsWith('/admin') ? '/admin' : '/login';
+    return <Navigate to={target} state={{ from: location }} replace />;
   }
 
   const currentRole = user?.role || role || 'guest';

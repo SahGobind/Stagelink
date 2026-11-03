@@ -323,29 +323,29 @@ const AdminDashboardPage = () => {
       )}
 
       {/* Header & Quick Action Buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/90">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-neutral-100 text-brand-navy text-[11px] font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white border border-slate-200/90 text-slate-800 text-xs font-bold uppercase tracking-wider shadow-2xs">
               <Building2 className="w-3.5 h-3.5 text-brand-pink" />
               <span>{profileForm.companyName || 'Casting Director'}</span>
             </div>
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-pink-50 text-brand-pink border border-pink-200">
+            <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-brand-pink border border-rose-200 shadow-2xs">
               Casting Director
             </span>
             <button
               type="button"
               onClick={() => setIsProfileModalOpen(true)}
-              className="text-[11px] font-bold text-gray-500 hover:text-brand-pink underline flex items-center gap-1 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 hover:text-brand-pink bg-white/80 hover:bg-white border border-slate-200/80 shadow-2xs transition-all cursor-pointer"
             >
               <Edit className="w-3 h-3" />
               <span>Edit Profile</span>
             </button>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-gray-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold font-serif text-slate-900 tracking-tight">
             Casting Director Dashboard
           </h1>
-          <p className="text-xs text-gray-500">
+          <p className="text-sm text-slate-600 font-medium">
             Overview of your active casting calls, applicant pipeline, and opportunities.
           </p>
         </div>
@@ -354,14 +354,14 @@ const AdminDashboardPage = () => {
         <div className="flex flex-wrap items-center gap-2.5">
           {(currentUser?.role === 'admin' || currentUser?.role === 'operations') && (
             <Link to="/admin/operations/support">
-              <Button variant="secondary" size="sm" className="space-x-1.5 text-xs font-bold border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-900">
+              <Button variant="secondary" size="sm" className="space-x-1.5 text-xs font-bold border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 shadow-2xs">
                 <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Operations Desk</span>
               </Button>
             </Link>
           )}
           <Link to="/admin/support">
-            <Button variant="secondary" size="sm" className="space-x-1.5 text-xs font-bold border-gray-300 hover:border-gray-900 text-brand-navy">
+            <Button variant="secondary" size="sm" className="space-x-1.5 text-xs font-bold bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800 shadow-2xs">
               <LifeBuoy className="w-3.5 h-3.5 text-brand-pink" />
               <span>Help &amp; Support</span>
               {recruiterTickets.some((t) => t.unreadForUser) && (
@@ -370,13 +370,13 @@ const AdminDashboardPage = () => {
             </Button>
           </Link>
           <Link to="/admin/opportunities">
-            <Button variant="secondary" size="sm" className="space-x-1.5 text-xs font-bold">
-              <Briefcase className="w-3.5 h-3.5" />
+            <Button variant="secondary" size="sm" className="space-x-1.5 text-xs font-bold bg-white hover:bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-800 shadow-2xs">
+              <Briefcase className="w-3.5 h-3.5 text-slate-600" />
               <span>All Casting Calls</span>
             </Button>
           </Link>
           <Link to="/post-job">
-            <Button size="sm" variant="primary" className="space-x-1.5 text-xs font-bold bg-brand-pink hover:bg-rose-700 text-white shadow-xs">
+            <Button size="sm" variant="primary" className="space-x-1.5 text-xs font-bold bg-gradient-to-r from-brand-pink to-rose-600 hover:from-rose-600 hover:to-brand-pink text-white shadow-md hover:shadow-lg transition-all">
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Announce Work / Create Job</span>
             </Button>
@@ -385,11 +385,11 @@ const AdminDashboardPage = () => {
       </div>
 
       {/* Recruiter Welcome & Company Profile Completion Section */}
-      <div className="bg-gradient-to-r from-neutral-950 via-slate-900 to-neutral-950 rounded-3xl p-6 sm:p-7 text-white shadow-3d-floating specular-top border border-neutral-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 rounded-3xl p-6 sm:p-7 text-white shadow-3d-floating specular-top border border-slate-800/80 flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="space-y-3 max-w-2xl relative z-10">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-pink/20 text-pink-300 border border-brand-pink/30 px-3 py-0.5 rounded-full shadow-2xs">
+            <span className="text-[11px] font-bold uppercase tracking-wider bg-brand-pink/20 text-pink-300 border border-brand-pink/30 px-3 py-0.5 rounded-full shadow-2xs">
               Casting Director Workspace
             </span>
             <span className="text-xs font-semibold text-slate-300">
@@ -411,11 +411,11 @@ const AdminDashboardPage = () => {
           <div className="space-y-1.5 pt-1">
             <div className="flex justify-between text-[11px] text-slate-400">
               <span>Studio Verification &amp; Profile Setup</span>
-              <span>{profileCompletion}%</span>
+              <span className="font-semibold text-slate-300">{profileCompletion}%</span>
             </div>
-            <div className="w-full bg-neutral-800 rounded-full h-2 max-w-md overflow-hidden border border-white/10 shadow-inner-pressed">
+            <div className="w-full bg-slate-800/90 rounded-full h-2.5 max-w-md overflow-hidden border border-white/10 shadow-inner-pressed">
               <div
-                className="bg-brand-pink h-2 rounded-full transition-all duration-500 shadow-2xs"
+                className="bg-gradient-to-r from-brand-pink to-rose-500 h-2.5 rounded-full transition-all duration-500 shadow-2xs"
                 style={{ width: `${profileCompletion}%` }}
               />
             </div>
@@ -430,8 +430,8 @@ const AdminDashboardPage = () => {
             </Button>
           </Link>
 
-          <Link to="/admin/talent" className="w-full">
-            <Button size="sm" variant="secondary" className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold border border-white/20 shadow-2xs hover:shadow-xs active:translate-y-0.5 space-x-1.5 flex items-center justify-center">
+          <Link to="/talent" className="w-full">
+            <Button size="sm" variant="secondary" className="w-full py-2.5 bg-white/15 hover:bg-white/25 text-white text-xs font-bold border border-white/25 shadow-2xs hover:shadow-xs active:translate-y-0.5 space-x-1.5 flex items-center justify-center backdrop-blur-xs">
               <Search className="w-4 h-4 text-pink-300" />
               <span>Discover Talent</span>
             </Button>
@@ -447,89 +447,155 @@ const AdminDashboardPage = () => {
         </div>
       </div>
 
-      {/* 6 REQUIRED RECRUITER METRIC CARDS */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* 6 INTERACTIVE RECRUITER METRIC CARDS */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
         {/* Metric 1: Total Jobs */}
-        <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
-          <span className="text-[10px] font-bold uppercase text-slate-500 block tracking-wider">
-            Total Jobs
-          </span>
-          <p className="text-2xl sm:text-3xl font-extrabold font-serif text-brand-navy">
+        <Link
+          to="/admin/opportunities"
+          className="group p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 space-y-2 block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase text-slate-500 tracking-wider">
+              Total Jobs
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-slate-200 transition-colors">
+              <Briefcase className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-900">
             {recruiterStats.total}
           </p>
-          <span className="text-[10px] text-slate-400 font-medium">All posted opportunities</span>
-        </div>
+          <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+            <span>All opportunities</span>
+            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-slate-700" />
+          </span>
+        </Link>
 
         {/* Metric 2: Published Jobs */}
-        <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
-          <span className="text-[10px] font-bold uppercase text-emerald-700 block tracking-wider">
-            Published Jobs
-          </span>
+        <Link
+          to="/admin/opportunities"
+          className="group p-4 bg-white rounded-2xl border border-emerald-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 space-y-2 block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase text-emerald-700 tracking-wider">
+              Published Jobs
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </div>
+          </div>
           <p className="text-2xl sm:text-3xl font-extrabold font-serif text-emerald-700">
             {recruiterStats.published}
           </p>
-          <span className="text-[10px] text-emerald-600 font-medium">Active &amp; public calls</span>
-        </div>
+          <span className="text-[11px] text-emerald-600 font-medium flex items-center gap-1">
+            <span>Active &amp; public calls</span>
+            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-emerald-700" />
+          </span>
+        </Link>
 
         {/* Metric 3: Drafts */}
-        <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
-          <span className="text-[10px] font-bold uppercase text-slate-500 block tracking-wider">
-            Drafts
-          </span>
-          <p className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-700">
+        <Link
+          to="/admin/opportunities"
+          className="group p-4 bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 space-y-2 block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase text-slate-600 tracking-wider">
+              Drafts
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-slate-200 transition-colors">
+              <FileText className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <p className="text-2xl sm:text-3xl font-extrabold font-serif text-slate-800">
             {recruiterStats.drafts}
           </p>
-          <span className="text-[10px] text-slate-400 font-medium">Saved drafts in progress</span>
-        </div>
+          <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1">
+            <span>Drafts in progress</span>
+            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-slate-700" />
+          </span>
+        </Link>
 
         {/* Metric 4: Pending Payments */}
-        <div className="p-4 bg-white rounded-2xl border border-amber-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
-          <span className="text-[10px] font-bold uppercase text-amber-700 block tracking-wider">
-            Pending Payments
-          </span>
+        <Link
+          to="/admin/opportunities"
+          className="group p-4 bg-white rounded-2xl border border-amber-200/80 shadow-xs hover:border-amber-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 space-y-2 block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase text-amber-700 tracking-wider">
+              Pending Payments
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
+              <Clock className="w-3.5 h-3.5" />
+            </div>
+          </div>
           <p className="text-2xl sm:text-3xl font-extrabold font-serif text-amber-600">
             {recruiterStats.pendingPayment}
           </p>
-          <span className="text-[10px] text-amber-600 font-medium">Awaiting checkout auth</span>
-        </div>
+          <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+            <span>Awaiting payment</span>
+            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-amber-800" />
+          </span>
+        </Link>
 
         {/* Metric 5: Pending Review */}
-        <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
-          <span className="text-[10px] font-bold uppercase text-blue-700 block tracking-wider">
-            Pending Review
-          </span>
+        <Link
+          to="/admin/opportunities"
+          className="group p-4 bg-white rounded-2xl border border-blue-200/80 shadow-xs hover:border-blue-400 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 space-y-2 block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase text-blue-700 tracking-wider">
+              Pending Review
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-100 transition-colors">
+              <ShieldCheck className="w-3.5 h-3.5" />
+            </div>
+          </div>
           <p className="text-2xl sm:text-3xl font-extrabold font-serif text-blue-600">
             {recruiterStats.pendingReview}
           </p>
-          <span className="text-[10px] text-blue-600 font-medium">In moderation queue</span>
-        </div>
+          <span className="text-[11px] text-blue-700 font-medium flex items-center gap-1">
+            <span>In moderation queue</span>
+            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-blue-800" />
+          </span>
+        </Link>
 
         {/* Metric 6: Total Applications */}
-        <div className="p-4 bg-white rounded-2xl border border-pink-100 shadow-3d-subtle hover:shadow-3d-card hover:-translate-y-1 specular-top transition-all duration-300 space-y-1">
-          <span className="text-[10px] font-bold uppercase text-brand-pink block tracking-wider">
-            Total Applications
-          </span>
+        <Link
+          to="/admin/applications"
+          className="group p-4 bg-white rounded-2xl border border-pink-200/80 shadow-xs hover:border-brand-pink hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 space-y-2 block"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase text-brand-pink tracking-wider">
+              Total Applications
+            </span>
+            <div className="w-6 h-6 rounded-lg bg-pink-50 flex items-center justify-center text-brand-pink group-hover:bg-pink-100 transition-colors">
+              <Users className="w-3.5 h-3.5" />
+            </div>
+          </div>
           <p className="text-2xl sm:text-3xl font-extrabold font-serif text-brand-pink">
             {recruiterStats.totalApplications}
           </p>
-          <span className="text-[10px] text-pink-600 font-medium">Performer submissions</span>
-        </div>
+          <span className="text-[11px] text-pink-700 font-medium flex items-center gap-1">
+            <span>Performer submissions</span>
+            <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-brand-pink" />
+          </span>
+        </Link>
       </div>
 
       {/* Recruiter Casting Call Actions Table (Surfacing all 8 actions) */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-3d-card specular-top overflow-hidden">
-        <div className="p-5 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
           <div className="space-y-0.5">
-            <h2 className="text-base font-bold font-serif text-gray-900">
+            <h2 className="text-base font-bold font-serif text-slate-900">
               Casting Announcements &amp; Production Management
             </h2>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-600 font-medium">
               Manage jobs, resume pending payments with Juspay, review applicants, and rank candidates.
             </p>
           </div>
           <Link
             to="/admin/opportunities"
-            className="text-xs font-bold text-brand-pink hover:underline flex items-center gap-1 group"
+            className="text-xs font-bold text-brand-pink hover:text-rose-700 hover:underline flex items-center gap-1 group"
           >
             <span>View All Opportunities Table</span>
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -538,7 +604,7 @@ const AdminDashboardPage = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left">
-            <thead className="bg-gray-50 text-gray-500 font-bold uppercase text-[10px] tracking-wider border-b border-gray-200">
+            <thead className="bg-slate-50 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
               <tr>
                 <th className="py-3.5 px-5">Job / Casting Title</th>
                 <th className="py-3.5 px-4">Category</th>

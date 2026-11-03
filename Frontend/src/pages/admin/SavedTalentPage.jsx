@@ -91,7 +91,7 @@ const SavedTalentPage = () => {
         </div>
 
         <Link
-          to="/talent"
+          to="/admin/talent"
           className="px-4 py-2.5 rounded-xl bg-brand-pink text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-xs flex items-center gap-1.5 self-start sm:self-auto shrink-0"
         >
           <Sparkles className="w-3.5 h-3.5" />
@@ -161,7 +161,7 @@ const SavedTalentPage = () => {
                 </p>
               </div>
               <Link
-                to="/talent"
+                to="/admin/talent"
                 className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-brand-pink text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-xs"
               >
                 <span>Browse Performers</span>

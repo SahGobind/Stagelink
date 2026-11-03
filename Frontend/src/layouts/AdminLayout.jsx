@@ -29,7 +29,7 @@ const AdminLayout = () => {
     : 'Talent, Casting Calls & Application Management';
 
   return (
-    <div className="flex min-h-screen bg-gray-50/50">
+    <div className="flex min-h-screen bg-slate-100">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <DashboardSidebar role={isOps ? 'operations' : role} />
