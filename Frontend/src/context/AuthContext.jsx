@@ -174,7 +174,7 @@ export const AuthProvider = ({ children }) => {
       setOperationsSession,
     ]
   );
-
+   
   return (
     <AuthContext.Provider value={value}>
       {children}

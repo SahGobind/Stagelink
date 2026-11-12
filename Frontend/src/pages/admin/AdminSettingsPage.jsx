@@ -1,358 +1,598 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Building2,
-  Mail,
-  Phone,
+  Settings,
   Globe,
-  Shield,
-  Bell,
-  Lock,
+  Palette,
+  Mail,
+  CreditCard,
+  ShieldCheck,
+  Cpu,
+  FileVideo,
+  Search,
+  AlertTriangle,
   Save,
   CheckCircle2,
-  HardDrive,
-  LogOut,
-  MapPin,
+  Lock,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
-import PageContainer from '../../components/layout/PageContainer';
-import Input from '../../components/common/Input';
-import Button from '../../components/common/Button';
-import Toast from '../../components/common/Toast';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import AccessControlPanel from '../../components/admin/AccessControlPanel';
+import { apiRequest } from '../../services/api';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 
-const AdminSettingsPage = ({ initialTab = null }) => {
-  const { user, logout, updateUser, isSuperAdmin, isAdmin, hasPermission } = useAuth();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+const AdminSettingsPage = () => {
+  const [activeSection, setActiveSection] = useState('general');
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [showSensitiveKeys, setShowSensitiveKeys] = useState(false);
 
-  const queryTab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(initialTab || queryTab || 'studio'); // 'studio' | 'notifications' | 'security' | 'accessControl'
-  const [toastMsg, setToastMsg] = useState('');
-  const [toastType, setToastType] = useState('success');
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await apiRequest('/api/users/admin/settings/');
+      if (res.ok) {
+        const json = await res.json();
+        setSettings(json);
+      }
+    } catch (err) {
+      console.warn('Failed to load platform settings:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Studio profile
-  const [studioName, setStudioName] = useState(
-    user?.companyName || user?.company_name || 'Auteur Pictures Studio'
-  );
-  const [adminEmail, setAdminEmail] = useState(
-    user?.email || 'admin@stagelink.com'
-  );
-  const [phoneNumber, setPhoneNumber] = useState(
-    user?.phoneNumber || '+91 98765 00000'
-  );
-  const [website, setWebsite] = useState(
-    user?.website || 'https://auteurstudio.com'
-  );
-  const [location, setLocation] = useState(
-    user?.location || 'Mumbai, India'
-  );
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
-  // Notifications
-  const [notifState, setNotifState] = useState({
-    candidateApplications: true,
-    auditionTapeUploads: true,
-    directMessages: true,
-    supportAlerts: true,
-    emailSummaries: false,
-  });
-
-  // Password
-  const [currentPwd, setCurrentPwd] = useState('');
-  const [newPwd, setNewPwd] = useState('');
-  const [confirmPwd, setConfirmPwd] = useState('');
-
-  const handleSaveStudio = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    if (updateUser) {
-      updateUser({
-        companyName: studioName,
-        email: adminEmail,
-        phoneNumber,
-        website,
-        location,
+    setSaving(true);
+    try {
+      const res = await apiRequest('/api/users/admin/settings/', {
+        method: 'POST',
+        body: JSON.stringify(settings),
       });
+      if (res.ok) {
+        setSuccessMsg('Platform settings successfully saved and persisted to MongoDB Atlas.');
+        setTimeout(() => setSuccessMsg(''), 4000);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Failed to save settings.');
+      }
+    } catch (err) {
+      alert('Save operation failed: ' + err.message);
+    } finally {
+      setSaving(false);
     }
-    setToastMsg('Studio and agency details updated successfully!');
-    setToastType('success');
   };
 
-  const handleSaveNotifs = (e) => {
-    e.preventDefault();
-    setToastMsg('Notification preferences updated!');
-    setToastType('success');
+  const updateField = (section, key, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [section]: {
+        ...(prev?.[section] || {}),
+        [key]: value,
+      },
+    }));
   };
 
-  const handleSavePassword = (e) => {
-    e.preventDefault();
-    if (!newPwd || newPwd.length < 8) {
-      setToastMsg('New password must be at least 8 characters.');
-      setToastType('error');
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      setToastMsg('Passwords do not match.');
-      setToastType('error');
-      return;
-    }
-    setCurrentPwd('');
-    setNewPwd('');
-    setConfirmPwd('');
-    setToastMsg('Admin security credentials updated successfully!');
-    setToastType('success');
-  };
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <LoadingSpinner message="Retrieving platform configuration from MongoDB Atlas..." />
+      </div>
+    );
+  }
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
+  const sections = [
+    { key: 'general', label: 'General Configuration', icon: Globe },
+    { key: 'branding', label: 'Branding & Theme', icon: Palette },
+    { key: 'email', label: 'Email Configuration', icon: Mail },
+    { key: 'payments', label: 'Payment Integrations', icon: CreditCard },
+    { key: 'security', label: 'Security & Access', icon: ShieldCheck },
+    { key: 'api', label: 'API Integrations', icon: Cpu },
+    { key: 'file_media', label: 'File & Media Limits', icon: FileVideo },
+    { key: 'seo', label: 'SEO & Search Meta', icon: Search },
+    { key: 'maintenance', label: 'Maintenance Mode', icon: AlertTriangle },
+  ];
+
+  const gen = settings?.general || {};
+  const brand = settings?.branding || {};
+  const mail = settings?.email || {};
+  const pay = settings?.payments || {};
+  const sec = settings?.security || {};
+  const api = settings?.api || {};
+  const media = settings?.file_media || {};
+  const seo = settings?.seo || {};
+  const maint = settings?.maintenance || {};
 
   return (
-    <PageContainer maxWidth="lg" className="space-y-6 text-left py-6 pb-24">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold font-serif text-brand-navy">
-          Studio Administration & Settings
-        </h1>
-        <p className="text-xs text-brand-text-secondary mt-0.5">
-          Manage your production agency profile, casting notification webhooks, and team credentials.
-        </p>
+    <div className="space-y-6 font-sans">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Platform Settings</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Manage system-wide configuration, security parameters, payment gateways, and branding assets.
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#FA5A36] hover:bg-[#e04825] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <Save className="w-4 h-4" />
+          <span>{saving ? 'Persisting...' : 'Save All Settings'}</span>
+        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-2xl">
-        {[
-          { id: 'studio', label: 'Studio Profile', icon: Building2 },
-          { id: 'notifications', label: 'Casting Alerts', icon: Bell },
-          { id: 'security', label: 'Security & Team', icon: Shield },
-          ...((isSuperAdmin || isAdmin || hasPermission('role:view') || hasPermission('audit:view'))
-            ? [{ id: 'accessControl', label: 'Access Control & Audit (RBAC)', icon: ShieldCheck }]
-            : []),
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                isActive
-                  ? 'bg-black text-white shadow-xs'
-                  : 'text-gray-600 hover:text-black hover:bg-white/70'
-              }`}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab 1: Studio Profile */}
-      {activeTab === 'studio' && (
-        <form
-          onSubmit={handleSaveStudio}
-          className="bg-white rounded-3xl border border-brand-border p-6 sm:p-8 shadow-card space-y-6"
-        >
-          <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-lg font-bold font-serif text-brand-navy">
-              Agency & Production House Details
-            </h2>
-            <p className="text-xs text-brand-text-secondary mt-0.5">
-              Accredited studio information displayed on published casting calls and contracts.
-            </p>
+      {successMsg && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-medium flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successMsg}</span>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <Input
-              label="Production Company / Studio Name"
-              value={studioName}
-              onChange={(e) => setStudioName(e.target.value)}
-              required
-            />
-            <Input
-              label="Primary Administrator Email"
-              type="email"
-              value={adminEmail}
-              onChange={(e) => setAdminEmail(e.target.value)}
-              required
-            />
-            <Input
-              label="Direct Casting Desk Phone"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-            <Input
-              label="Official Studio Website"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-            />
-            <Input
-              label="Primary Production Headquarters"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
-          </div>
-
-          <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] text-gray-400 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Visible to applicants on published opportunities</span>
-            </span>
-            <Button type="submit">
-              <Save className="w-3.5 h-3.5 mr-1" />
-              <span>Save Studio Details</span>
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {/* Tab 2: Casting Alerts */}
-      {activeTab === 'notifications' && (
-        <form
-          onSubmit={handleSaveNotifs}
-          className="bg-white rounded-3xl border border-brand-border p-6 sm:p-8 shadow-card space-y-6"
-        >
-          <div className="border-b border-gray-100 pb-4">
-            <h2 className="text-lg font-bold font-serif text-brand-navy">
-              Casting Desk Alerts & Relays
-            </h2>
-            <p className="text-xs text-brand-text-secondary mt-0.5">
-              Configure notifications for new candidate submissions, auditions, and tape submissions.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {[
-              {
-                key: 'candidateApplications',
-                title: 'New Candidate Submissions',
-                desc: 'Instant notice whenever talent submits an application to your open roles',
-              },
-              {
-                key: 'auditionTapeUploads',
-                title: 'Self-Tape & Video Reel Submissions',
-                desc: 'Alerts when requested self-tape sides are delivered by performers',
-              },
-              {
-                key: 'directMessages',
-                title: 'Candidate Inquiries & Messages',
-                desc: 'Direct chats from invited candidates and auditionees',
-              },
-              {
-                key: 'supportAlerts',
-                title: 'Studio Verification & Compliance Notices',
-                desc: 'Updates from StageLink platform operations desk',
-              },
-            ].map(({ key, title, desc }) => (
-              <div
-                key={key}
-                className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between gap-4"
-              >
-                <div>
-                  <p className="text-xs font-bold text-brand-navy">{title}</p>
-                  <p className="text-[11px] text-gray-500 mt-0.5">{desc}</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notifState[key]}
-                  onChange={(e) =>
-                    setNotifState({ ...notifState, [key]: e.target.checked })
-                  }
-                  className="w-4 h-4 accent-black cursor-pointer"
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="pt-4 border-t border-gray-100 flex justify-end">
-            <Button type="submit">
-              <Save className="w-3.5 h-3.5 mr-1" />
-              <span>Save Alert Preferences</span>
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {/* Tab 3: Security & Team */}
-      {activeTab === 'security' && (
-        <div className="space-y-6">
-          <form
-            onSubmit={handleSavePassword}
-            className="bg-white rounded-3xl border border-brand-border p-6 sm:p-8 shadow-card space-y-6"
-          >
-            <div className="border-b border-gray-100 pb-4">
-              <h2 className="text-lg font-bold font-serif text-brand-navy">
-                Studio Password & Credentials
-              </h2>
-              <p className="text-xs text-brand-text-secondary mt-0.5">
-                Maintain access credentials for studio administrators.
-              </p>
-            </div>
-
-            <div className="space-y-4 max-w-md">
-              <Input
-                label="Current Password"
-                type="password"
-                placeholder="••••••••"
-                value={currentPwd}
-                onChange={(e) => setCurrentPwd(e.target.value)}
-                required
-              />
-              <Input
-                label="New Password"
-                type="password"
-                placeholder="Minimum 8 characters"
-                value={newPwd}
-                onChange={(e) => setNewPwd(e.target.value)}
-                required
-              />
-              <Input
-                label="Confirm New Password"
-                type="password"
-                placeholder="Re-enter new password"
-                value={confirmPwd}
-                onChange={(e) => setConfirmPwd(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="pt-4 border-t border-gray-100 flex justify-end">
-              <Button type="submit">
-                <Lock className="w-3.5 h-3.5 mr-1" />
-                <span>Update Admin Password</span>
-              </Button>
-            </div>
-          </form>
-
-          {/* Session Sign Out */}
-          <div className="p-5 rounded-2xl bg-white border border-brand-border shadow-card flex items-center justify-between gap-4">
-            <div>
-              <h3 className="text-xs font-bold text-brand-navy flex items-center gap-1.5">
-                <LogOut className="w-4 h-4 text-brand-navy" />
-                <span>Sign Out of Studio Admin</span>
-              </h3>
-              <p className="text-[11px] text-gray-500 mt-0.5">
-                End active session across this workstation.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="px-4 py-2 border border-gray-300 hover:border-black rounded-xl text-xs font-bold text-brand-navy"
-            >
-              Sign Out Now
-            </button>
-          </div>
+          <button onClick={() => setSuccessMsg('')} className="text-emerald-700 font-bold">✕</button>
         </div>
       )}
 
-      {/* Tab 4: Access Control & Audit (RBAC) */}
-      {activeTab === 'accessControl' && <AccessControlPanel />}
+      {/* Main Settings Body: Left Navigation + Right Detail Panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Vertical Section Switcher */}
+        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200/80 p-3 shadow-xs space-y-1 h-fit">
+          {sections.map((s) => {
+            const Icon = s.icon;
+            const isSelected = activeSection === s.key;
+            return (
+              <button
+                key={s.key}
+                onClick={() => setActiveSection(s.key)}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#FA5A36] text-white font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                <span className="truncate">{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
-      <Toast message={toastMsg} type={toastType} onClose={() => setToastMsg('')} />
-    </PageContainer>
+        {/* Right Settings Form Container */}
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs">
+          <form onSubmit={handleSave} className="space-y-5 text-xs">
+            {/* 1. GENERAL CONFIGURATION */}
+            {activeSection === 'general' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">General Website Configuration</h2>
+                  <p className="text-slate-400 mt-0.5">Primary platform identifiers, timezone, and support channels.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Platform Name</label>
+                    <input
+                      type="text"
+                      value={gen.platform_name || ''}
+                      onChange={(e) => updateField('general', 'platform_name', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FA5A36] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Tagline</label>
+                    <input
+                      type="text"
+                      value={gen.tagline || ''}
+                      onChange={(e) => updateField('general', 'tagline', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FA5A36] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Official Support Email</label>
+                    <input
+                      type="email"
+                      value={gen.contact_email || ''}
+                      onChange={(e) => updateField('general', 'contact_email', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FA5A36] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Contact Phone</label>
+                    <input
+                      type="text"
+                      value={gen.contact_phone || ''}
+                      onChange={(e) => updateField('general', 'contact_phone', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FA5A36] focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Default Base Currency</label>
+                    <select
+                      value={gen.default_currency || 'INR'}
+                      onChange={(e) => updateField('general', 'default_currency', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FA5A36]"
+                    >
+                      <option value="INR">INR (₹ Indian Rupee)</option>
+                      <option value="USD">USD ($ United States Dollar)</option>
+                      <option value="GBP">GBP (£ British Pound)</option>
+                      <option value="EUR">EUR (€ Euro)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Platform Timezone</label>
+                    <input
+                      type="text"
+                      value={gen.timezone || 'Asia/Kolkata (IST)'}
+                      onChange={(e) => updateField('general', 'timezone', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#FA5A36] focus:bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 2. BRANDING */}
+            {activeSection === 'branding' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">Branding & Color Palettes</h2>
+                  <p className="text-slate-400 mt-0.5">Brand assets, primary accent colors, and logos.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Brand Accent Color (Hex)</label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="color"
+                        value={brand.accent_color || '#FA5A36'}
+                        onChange={(e) => updateField('branding', 'accent_color', e.target.value)}
+                        className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5"
+                      />
+                      <input
+                        type="text"
+                        value={brand.accent_color || '#FA5A36'}
+                        onChange={(e) => updateField('branding', 'accent_color', e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Navy Typography Hex</label>
+                    <input
+                      type="text"
+                      value={brand.dark_navy || '#0B1120'}
+                      onChange={(e) => updateField('branding', 'dark_navy', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Header Logo URL</label>
+                    <input
+                      type="text"
+                      value={brand.logo_url || '/assets/stagelink-logo.png'}
+                      onChange={(e) => updateField('branding', 'logo_url', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Favicon URL</label>
+                    <input
+                      type="text"
+                      value={brand.favicon_url || '/favicon.ico'}
+                      onChange={(e) => updateField('branding', 'favicon_url', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. EMAIL CONFIGURATION */}
+            {activeSection === 'email' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">Email SMTP Gateway Configuration</h2>
+                  <p className="text-slate-400 mt-0.5">Parameters for automated notifications and transactional dispatch.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">SMTP Host</label>
+                    <input
+                      type="text"
+                      value={mail.smtp_host || 'smtp.sendgrid.net'}
+                      onChange={(e) => updateField('email', 'smtp_host', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">SMTP Port</label>
+                    <input
+                      type="text"
+                      value={mail.smtp_port || '587'}
+                      onChange={(e) => updateField('email', 'smtp_port', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Sender Display Name</label>
+                    <input
+                      type="text"
+                      value={mail.sender_name || 'StageLink Notifications'}
+                      onChange={(e) => updateField('email', 'sender_name', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Sender Email Address</label>
+                    <input
+                      type="email"
+                      value={mail.sender_email || 'no-reply@stagelink.com'}
+                      onChange={(e) => updateField('email', 'sender_email', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 4. PAYMENT INTEGRATIONS */}
+            {activeSection === 'payments' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-bold text-slate-900">Payment Gateways & Escrow Rules</h2>
+                    <p className="text-slate-400 mt-0.5">Encrypted gateway settings. Secret keys are never exposed in UI.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSensitiveKeys(!showSensitiveKeys)}
+                    className="flex items-center space-x-1 text-slate-500 hover:text-slate-800 text-[11px]"
+                  >
+                    {showSensitiveKeys ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    <span>{showSensitiveKeys ? 'Hide' : 'Show Masked'}</span>
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-slate-800">Razorpay Gateway (Domestic UPI & Netbanking)</p>
+                      <p className="text-slate-400 text-[11px]">Primary payment processor for auditions in India.</p>
+                    </div>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pay.razorpay_enabled ?? true}
+                        onChange={(e) => updateField('payments', 'razorpay_enabled', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FA5A36]"></div>
+                    </label>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-slate-800">Stripe Gateway (International Cards & Wire)</p>
+                      <p className="text-slate-400 text-[11px]">Enables international transactions in USD, EUR, and GBP.</p>
+                    </div>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pay.stripe_enabled ?? true}
+                        onChange={(e) => updateField('payments', 'stripe_enabled', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FA5A36]"></div>
+                    </label>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-slate-800">Escrow Security Hold for Casting Fees</p>
+                      <p className="text-slate-400 text-[11px]">Holds performer booking funds securely until final cast wrap.</p>
+                    </div>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={pay.escrow_enabled ?? true}
+                        onChange={(e) => updateField('payments', 'escrow_enabled', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FA5A36]"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5. SECURITY & ACCESS */}
+            {activeSection === 'security' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">Security Policies & Authentication Rules</h2>
+                  <p className="text-slate-400 mt-0.5">Session controls, cryptographic token validation, and password policies.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Session Inactivity Timeout (Minutes)</label>
+                    <input
+                      type="number"
+                      value={sec.session_timeout_minutes || 120}
+                      onChange={(e) => updateField('security', 'session_timeout_minutes', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Minimum Password Length</label>
+                    <input
+                      type="number"
+                      value={sec.password_min_length || 8}
+                      onChange={(e) => updateField('security', 'password_min_length', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] flex items-start space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <span>
+                    Cryptographically signed HMAC-SHA256 session tokens and PBKDF2 password hashing are active server-side.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* 6. API INTEGRATIONS */}
+            {activeSection === 'api' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">Third-Party API Integrations</h2>
+                  <p className="text-slate-400 mt-0.5">Endpoints for storage buckets, webhooks, and maps.</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Webhook Dispatch Endpoint</label>
+                    <input
+                      type="url"
+                      value={api.webhook_url || 'https://api.stagelink.com/v1/webhooks/'}
+                      onChange={(e) => updateField('api', 'webhook_url', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Cloud Storage Media CDN Endpoint</label>
+                    <input
+                      type="url"
+                      value={api.storage_cdn_url || 'https://cdn.stagelink.com/media/'}
+                      onChange={(e) => updateField('api', 'storage_cdn_url', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 7. FILE & MEDIA LIMITS */}
+            {activeSection === 'file_media' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">File & Media Upload Governance</h2>
+                  <p className="text-slate-400 mt-0.5">Constrain audition reel sizes, headshot dimensions, and filetypes.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Max Video Audition File Size (MB)</label>
+                    <input
+                      type="number"
+                      value={media.max_video_size_mb || 100}
+                      onChange={(e) => updateField('file_media', 'max_video_size_mb', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Max Headshot Photo Size (MB)</label>
+                    <input
+                      type="number"
+                      value={media.max_image_size_mb || 10}
+                      onChange={(e) => updateField('file_media', 'max_image_size_mb', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="font-bold text-slate-700 block mb-1">Supported Video Formats</label>
+                    <input
+                      type="text"
+                      value={media.supported_video_formats || 'mp4, mov, webm'}
+                      onChange={(e) => updateField('file_media', 'supported_video_formats', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 8. SEO & META */}
+            {activeSection === 'seo' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">SEO & Metadata Configuration</h2>
+                  <p className="text-slate-400 mt-0.5">Control indexing tags and OpenGraph cards for casting calls.</p>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Global Meta Title</label>
+                    <input
+                      type="text"
+                      value={seo.meta_title || 'StageLink | Premier Casting & Talent Audition Suite'}
+                      onChange={(e) => updateField('seo', 'meta_title', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Global Meta Description</label>
+                    <textarea
+                      rows={3}
+                      value={seo.meta_description || 'Connect verified actors, models, and voice artists with top production houses.'}
+                      onChange={(e) => updateField('seo', 'meta_description', e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 9. MAINTENANCE MODE */}
+            {activeSection === 'maintenance' && (
+              <div className="space-y-4">
+                <div className="pb-3 border-b border-slate-100">
+                  <h2 className="text-sm font-bold text-slate-900">Maintenance Mode Emergency Override</h2>
+                  <p className="text-slate-400 mt-0.5">Direct all non-admin traffic to scheduled maintenance landing screen.</p>
+                </div>
+                <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-rose-900">Enable Maintenance Lockout</p>
+                      <p className="text-rose-700 text-[11px]">When enabled, only Super Admin accounts can access the platform.</p>
+                    </div>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={maint.maintenance_mode || false}
+                        onChange={(e) => updateField('maintenance', 'maintenance_mode', e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-600"></div>
+                    </label>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Custom Maintenance Notice Message</label>
+                    <textarea
+                      rows={3}
+                      value={maint.maintenance_message || 'StageLink is undergoing scheduled platform enhancements. We will be back shortly.'}
+                      onChange={(e) => updateField('maintenance', 'maintenance_message', e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-rose-200 rounded-xl text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Save trigger button at bottom of every panel */}
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-5 py-2 bg-[#FA5A36] hover:bg-[#e04825] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {saving ? 'Persisting to MongoDB...' : 'Persist Settings Changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 };
 

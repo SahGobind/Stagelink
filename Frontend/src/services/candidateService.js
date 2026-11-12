@@ -1,4 +1,12 @@
-import { getCandidatesList, getCandidateById, getCandidateProfile, saveCandidateProfile } from '../data/mockCandidates';
+import {
+  getCandidatesList,
+  getCandidateById,
+  getCandidateProfile,
+  saveCandidateProfile,
+  createCandidateInList,
+  updateCandidateInList,
+  deleteCandidateFromList,
+} from '../data/mockCandidates';
 import { apiRequest } from './api';
 
 export const candidateService = {
@@ -190,5 +198,68 @@ export const candidateService = {
     const updated = saveCandidateProfile({ is_published: false }, user);
     window.dispatchEvent(new CustomEvent('starcast_profile_updated', { detail: updated }));
     return updated;
+  },
+
+  /**
+   * Admin Create Candidate (Local & Backend fallback)
+   */
+  create: async (data) => {
+    try {
+      const res = await apiRequest('/api/users/register/', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: data.email,
+          password: 'StageLink2026!',
+          full_name: data.fullName,
+          phone_number: data.phone || data.phoneNumber,
+          role: 'candidate',
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.user) {
+          data.id = json.user.id;
+        }
+      }
+    } catch {
+      // fallback
+    }
+    const result = createCandidateInList(data);
+    window.dispatchEvent(new CustomEvent('starcast_candidate_created', { detail: result.newCandidate }));
+    return result.newCandidate;
+  },
+
+  /**
+   * Admin Update Candidate
+   */
+  update: async (id, updates) => {
+    try {
+      await apiRequest(`/api/users/profile/?id=${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+    } catch {
+      // fallback
+    }
+    const updatedList = updateCandidateInList(id, updates);
+    const updated = updatedList.find((c) => c.id === id) || { ...updates, id };
+    window.dispatchEvent(new CustomEvent('starcast_candidate_updated', { detail: updated }));
+    return updated;
+  },
+
+  /**
+   * Admin Delete Candidate
+   */
+  delete: async (id) => {
+    try {
+      await apiRequest(`/api/users/profile/?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      });
+    } catch {
+      // fallback
+    }
+    const updatedList = deleteCandidateFromList(id);
+    window.dispatchEvent(new CustomEvent('starcast_candidate_deleted', { detail: id }));
+    return updatedList;
   },
 };

@@ -19,6 +19,10 @@ from starcast.test_utils import MockCollection
 from starcast.seeder import INITIAL_USERS, INITIAL_APPLICATIONS, INITIAL_OPPORTUNITIES
 from starcast.rbac import Permissions, ALL_PERMISSIONS, DEFAULT_ROLE_PERMISSIONS
 from starcast.audit import query_audit_logs
+from starcast.crypto import generate_signed_session_token
+
+def auth_token(user_id: str, role: str) -> str:
+    return f"Bearer {generate_signed_session_token(user_id, role)}"
 
 
 class RBACTests(SimpleTestCase):
@@ -92,7 +96,7 @@ class RBACTests(SimpleTestCase):
 
     def test_super_admin_can_view_roles_and_audit_logs(self):
         """Super Admin can access roles and audit log endpoints."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-super_admin-superadmin-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('superadmin-1', 'super_admin'))
         roles_res = self.client.get('/api/users/roles/')
         self.assertEqual(roles_res.status_code, status.HTTP_200_OK)
         self.assertIn("roles", roles_res.data)
@@ -102,7 +106,7 @@ class RBACTests(SimpleTestCase):
 
     def test_admin_can_view_roles_but_cannot_modify_role_permissions(self):
         """Admin can view roles, but cannot modify role permissions (Super Admin only)."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-admin-admin-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('admin-1', 'admin'))
         get_res = self.client.get('/api/users/roles/')
         self.assertEqual(get_res.status_code, status.HTTP_200_OK)
 
@@ -115,7 +119,7 @@ class RBACTests(SimpleTestCase):
 
     def test_candidate_forbidden_from_admin_endpoints(self):
         """Candidate cannot access roles, audit logs, or role management."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-aanya-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-aanya', 'candidate'))
 
         roles_res = self.client.get('/api/users/roles/')
         self.assertEqual(roles_res.status_code, status.HTTP_403_FORBIDDEN)
@@ -131,7 +135,7 @@ class RBACTests(SimpleTestCase):
 
     def test_candidate_forbidden_from_creating_opportunities(self):
         """Candidate lacks opportunity:create permission."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-aanya-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-aanya', 'candidate'))
         res = self.client.post('/api/opportunities/', {
             "title": "Unauthorized Candidate Opportunity"
         }, format='json')
@@ -144,21 +148,21 @@ class RBACTests(SimpleTestCase):
     def test_candidate_cannot_access_another_candidates_application(self):
         """Candidate A cannot view Candidate B's private audition application (IDOR prevention)."""
         # app-101 belongs to cand-1
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-rohit-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-rohit', 'candidate'))
         res = self.client.get('/api/applications/app-101/')
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(res.data["code"], "FORBIDDEN_RESOURCE_ACCESS")
 
     def test_candidate_cannot_withdraw_another_candidates_application(self):
         """Candidate A cannot withdraw Candidate B's application."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-rohit-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-rohit', 'candidate'))
         res = self.client.post('/api/applications/app-101/withdraw/')
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_candidate_cannot_update_application_status(self):
         """Candidate cannot update application status (e.g. self-shortlisting)."""
         # Even on their own application, candidates cannot update status
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-1', 'candidate'))
         res = self.client.patch('/api/applications/app-101/status/', {
             "status": "selected"
         }, format='json')
@@ -179,7 +183,7 @@ class RBACTests(SimpleTestCase):
             "email": "other.recruiter@example.com",
             "role": "recruiter"
         })
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-recruiter-rec-other-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('rec-other', 'recruiter'))
 
         res = self.client.delete('/api/opportunities/opp-marcus/')
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
@@ -187,7 +191,7 @@ class RBACTests(SimpleTestCase):
 
     def test_data_isolation_applications_query(self):
         """Candidate querying /api/applications/ only receives their own applications."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-1', 'candidate'))
         # Even if cand-1 asks for candidate_id=cand-2, backend isolates to cand-1
         res = self.client.get('/api/applications/?candidate_id=cand-2')
         self.assertEqual(res.status_code, status.HTTP_200_OK)
@@ -212,7 +216,7 @@ class RBACTests(SimpleTestCase):
 
     def test_prevent_user_profile_role_tampering(self):
         """Users cannot change their role via profile update payload."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-candidate-cand-aanya-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('cand-aanya', 'candidate'))
         res = self.client.put('/api/users/profile/?id=cand-aanya', {
             "headline": "Updated Headline",
             "role": "super_admin"  # Tampered field
@@ -224,7 +228,7 @@ class RBACTests(SimpleTestCase):
 
     def test_admin_cannot_promote_anyone_to_super_admin(self):
         """Admin role cannot assign super_admin role."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-admin-admin-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('admin-1', 'admin'))
         res = self.client.post('/api/users/manage-role/', {
             "user_id": "cand-rohit",
             "role": "super_admin"
@@ -234,7 +238,7 @@ class RBACTests(SimpleTestCase):
 
     def test_user_cannot_modify_own_role(self):
         """Admins or users cannot modify their own role (prevents self-elevation)."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-admin-admin-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('admin-1', 'admin'))
         res = self.client.post('/api/users/manage-role/', {
             "user_id": "admin-1",
             "role": "super_admin"
@@ -244,14 +248,13 @@ class RBACTests(SimpleTestCase):
 
     def test_cannot_demote_root_super_admin(self):
         """Root Super Admin account cannot be demoted."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-super_admin-superadmin-1-token123')
         # Create second superadmin to attempt demoting root superadmin
         self.mock_users.insert_one({
             "id": "superadmin-2",
             "email": "sa2@stagelink.com",
             "role": "super_admin"
         })
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-super_admin-superadmin-2-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('superadmin-2', 'super_admin'))
         res = self.client.post('/api/users/manage-role/', {
             "user_id": "superadmin-1",
             "role": "candidate"
@@ -265,7 +268,7 @@ class RBACTests(SimpleTestCase):
 
     def test_super_admin_can_update_role_permissions(self):
         """Super Admin can update configured permissions for a role."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-super_admin-superadmin-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('superadmin-1', 'super_admin'))
         new_perms = [
             Permissions.OPPORTUNITY_VIEW_PUBLIC,
             Permissions.APPLICATION_CREATE,
@@ -279,7 +282,7 @@ class RBACTests(SimpleTestCase):
 
     def test_super_admin_cannot_alter_super_admin_role(self):
         """Super admin role permissions are immutable."""
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer stg-token-super_admin-superadmin-1-token123')
+        self.client.credentials(HTTP_AUTHORIZATION=auth_token('superadmin-1', 'super_admin'))
         res = self.client.put('/api/users/roles/super_admin/', {
             "permissions": []
         }, format='json')

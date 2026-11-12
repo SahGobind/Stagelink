@@ -9,6 +9,8 @@ class ProductionCompanySerializer(serializers.Serializer):
     description = serializers.CharField(required=False, allow_blank=True)
     verified = serializers.BooleanField(default=True)
     active_projects_count = serializers.IntegerField(default=1)
+    years_of_experience = serializers.IntegerField(default=5, required=False)
+    past_productions = serializers.ListField(child=serializers.DictField(), required=False, default=list)
 
 class CompanyReviewSerializer(serializers.Serializer):
     candidate_id = serializers.CharField(max_length=100)

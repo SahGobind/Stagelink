@@ -1171,6 +1171,38 @@ export const updateCandidateInList = (id, updates) => {
   return updatedList;
 };
 
+export const createCandidateInList = (data) => {
+  const currentList = getCandidatesList();
+  const id = data.id || `cand-${Date.now()}`;
+  const newCandidate = {
+    ...initialCandidateProfile,
+    ...data,
+    id,
+    registeredDate: data.registeredDate || new Date().toISOString().split('T')[0],
+    profileCompletion: data.profileCompletion || 80,
+    status: data.status || 'active',
+    isReviewed: true,
+  };
+  const updatedList = [newCandidate, ...currentList];
+  try {
+    localStorage.setItem(CANDIDATES_LIST_STORAGE_KEY, JSON.stringify(updatedList));
+  } catch {
+    // ignore
+  }
+  return { newCandidate, updatedList };
+};
+
+export const deleteCandidateFromList = (id) => {
+  const currentList = getCandidatesList();
+  const updatedList = currentList.filter((c) => c.id !== id);
+  try {
+    localStorage.setItem(CANDIDATES_LIST_STORAGE_KEY, JSON.stringify(updatedList));
+  } catch {
+    // ignore
+  }
+  return updatedList;
+};
+
 export const getCandidateById = (id) => {
   const list = getCandidatesList();
   const found = list.find((c) => c.id === id);

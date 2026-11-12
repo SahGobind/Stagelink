@@ -16,6 +16,11 @@ import {
   MapPin,
   Mail,
   Phone,
+  Briefcase,
+  Plus,
+  Trash2,
+  Film,
+  Clapperboard,
 } from 'lucide-react';
 import PageContainer from '../../components/layout/PageContainer';
 import PublicProfileModal from '../../components/profile/PublicProfileModal';
@@ -32,6 +37,58 @@ const MyProfilePage = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [isResumeUploadOpen, setIsResumeUploadOpen] = useState(false);
   const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
+  const [isAddExpModalOpen, setIsAddExpModalOpen] = useState(false);
+  const [newExp, setNewExp] = useState({
+    project: '',
+    role: '',
+    type: 'Feature Film',
+    year: new Date().getFullYear().toString(),
+    director: '',
+    description: '',
+  });
+
+  const handleAddExperience = (e) => {
+    e.preventDefault();
+    if (!newExp.project.trim() || !newExp.role.trim()) {
+      setToastMessage('Project and Role are required.');
+      return;
+    }
+    const item = {
+      id: `proj-${Date.now()}`,
+      project: newExp.project.trim(),
+      role: newExp.role.trim(),
+      type: newExp.type || 'Feature Film',
+      year: newExp.year || new Date().getFullYear().toString(),
+      director: newExp.director.trim() || 'Independent Production',
+      description: newExp.description.trim() || 'Principal performance credit.',
+    };
+    const updatedList = [item, ...(candidate.experience || [])];
+    const updated = saveCandidateProfile({ experience: updatedList }, user);
+    setCandidate(updated);
+    if (user?.id) {
+      candidateService.updateProfile(user.id, { experience: updatedList }).catch(console.warn);
+    }
+    setIsAddExpModalOpen(false);
+    setNewExp({
+      project: '',
+      role: '',
+      type: 'Feature Film',
+      year: new Date().getFullYear().toString(),
+      director: '',
+      description: '',
+    });
+    setToastMessage('Experience credit added successfully!');
+  };
+
+  const handleDeleteExperience = (idx) => {
+    const updatedList = (candidate.experience || []).filter((_, i) => i !== idx);
+    const updated = saveCandidateProfile({ experience: updatedList }, user);
+    setCandidate(updated);
+    if (user?.id) {
+      candidateService.updateProfile(user.id, { experience: updatedList }).catch(console.warn);
+    }
+    setToastMessage('Experience credit removed.');
+  };
 
   // Synchronize if profile changes or user changes
   useEffect(() => {
@@ -368,6 +425,115 @@ const MyProfilePage = () => {
             />
           </label>
         </div>
+      </div>
+
+      {/* ================= CANDIDATE EXPERIENCE & CREDITS SECTION ================= */}
+      <div className="bg-white rounded-3xl border border-gray-100 p-6 sm:p-7 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-pink-50 border border-pink-100 text-brand-pink flex items-center justify-center">
+                <Briefcase className="w-4 h-4" />
+              </div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                Experience & Acting Credits
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Your feature films, web series, commercials, and theatrical appearances.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-pink" />
+              {candidate.experienceYears || '2+'} Years Experience
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsAddExpModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-pink hover:bg-rose-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Experience</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Experience List */}
+        {(!candidate.experience || candidate.experience.length === 0) ? (
+          <div className="p-8 text-center bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-white border border-gray-200 text-gray-400 flex items-center justify-center mx-auto shadow-2xs">
+              <Film className="w-5 h-5 text-gray-400" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-700">No experience credits added yet</p>
+              <p className="text-[11px] text-gray-500 mt-0.5 max-w-sm mx-auto">
+                Add your roles in feature films, short films, television, commercials, or stage productions to stand out in director auditions.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsAddExpModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-semibold text-gray-700 transition-colors shadow-2xs cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5 text-brand-pink" />
+              <span>Add Your First Credit</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {candidate.experience.map((exp, idx) => (
+              <div
+                key={exp.id || idx}
+                className="p-4 rounded-2xl bg-gray-50/60 border border-gray-200/80 hover:border-gray-300 transition-all flex flex-col justify-between space-y-3 group"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-bold text-gray-900 group-hover:text-brand-pink transition-colors">
+                      {exp.project || 'Untitled Production'}
+                    </h3>
+                    <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-50 border border-pink-200 text-brand-pink">
+                      {exp.type || 'Film'}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-semibold text-gray-700">
+                    Role: <span className="text-gray-900 font-bold">{exp.role || 'Performer'}</span>
+                  </p>
+
+                  <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                    <span>{exp.year || '2025'}</span>
+                    {exp.director && (
+                      <>
+                        <span>•</span>
+                        <span>Dir / Studio: {exp.director}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {exp.description && (
+                    <p className="text-[11px] text-gray-500 leading-relaxed pt-1">
+                      {exp.description}
+                    </p>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-gray-200/60 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteExperience(idx)}
+                    className="text-gray-400 hover:text-red-600 transition-colors p-1 text-[11px] flex items-center gap-1 cursor-pointer"
+                    title="Remove credit"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Privacy Settings Modal */}

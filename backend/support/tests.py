@@ -131,3 +131,94 @@ class SupportAPITests(SimpleTestCase):
         self.assertEqual(metrics_res.status_code, status.HTTP_200_OK)
         self.assertIn("resolved_tickets", metrics_res.data)
         self.assertIn("total_tickets", metrics_res.data)
+
+    def test_support_agent_idor_restriction(self):
+        # Support agent Liam Patel trying to access ticket STG-1001 assigned to someone else
+        res = self.client.get('/api/support/tickets/STG-1001/?role=support_agent&user_id=supp-agent-liam&user_name=Liam+Patel')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data.get("code"), "IDOR_FORBIDDEN")
+
+    def test_support_agent_assigned_ticket_access(self):
+        # Assign STG-1001 to Liam first via Lead
+        assign_payload = {
+            "assigned_staff_id": "supp-agent-liam",
+            "assigned_to": "Liam Patel"
+        }
+        res_assign = self.client.post('/api/support/tickets/STG-1001/assign/?role=support_lead', assign_payload, format='json')
+        self.assertEqual(res_assign.status_code, status.HTTP_200_OK)
+
+        # Now Liam Patel accesses STG-1001
+        res = self.client.get('/api/support/tickets/STG-1001/?role=support_agent&user_id=supp-agent-liam&user_name=Liam+Patel')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data.get("id"), "STG-1001")
+        # Liam can see internal notes because he is support staff
+        self.assertIn("notes", res.data)
+
+    def test_support_agent_forbidden_from_priority_and_reassignment(self):
+        # Assign STG-1001 to Liam first so he is the assigned agent
+        self.mock_col.update_one({"id": "STG-1001"}, {"$set": {"assigned_staff_id": "supp-agent-liam", "assigned_to": "Liam Patel"}})
+
+        # Even on assigned ticket, Support Agent cannot change priority or reassign
+        patch_payload = {
+            "priority": "urgent",
+            "operator_role": "support_agent",
+            "user_id": "supp-agent-liam",
+            "operator_name": "Liam Patel"
+        }
+        res = self.client.patch('/api/support/tickets/STG-1001/', patch_payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data.get("code"), "RESTRICTED_FIELD_PRIORITY")
+
+        assign_payload = {
+            "assigned_to": "Someone Else"
+        }
+        res_assign = self.client.post('/api/support/tickets/STG-1001/assign/?role=support_agent', assign_payload, format='json')
+        self.assertEqual(res_assign.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res_assign.data.get("code"), "ASSIGN_FORBIDDEN")
+
+    def test_support_agent_escalation(self):
+        # Assign STG-1001 to Liam first so he is the assigned agent
+        self.mock_col.update_one({"id": "STG-1001"}, {"$set": {"assigned_staff_id": "supp-agent-liam", "assigned_to": "Liam Patel"}})
+
+        # Liam can escalate his assigned ticket
+        esc_payload = {
+            "reason": "Customer requesting special payment plan outside SLA limits",
+            "role": "support_agent",
+            "user_id": "supp-agent-liam",
+            "actor_name": "Liam Patel"
+        }
+        res = self.client.post('/api/support/tickets/STG-1001/escalate/', esc_payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["ticket"]["status"], "escalated")
+
+    def test_customer_context_polp_and_scrubbing(self):
+        # Support staff fetching customer context for STG-1001
+        res = self.client.get('/api/support/tickets/STG-1001/customer-context/?role=support_lead')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("customer", res.data)
+        self.assertIn("stats", res.data)
+        self.assertIn("security_notice", res.data)
+        # Ensure password, secrets, cards never leak
+        cust = res.data["customer"]
+        self.assertNotIn("password", cust)
+        self.assertNotIn("password_hash", cust)
+        self.assertNotIn("token_secret", cust)
+
+    def test_support_agent_blocked_from_team_management(self):
+        # Support Agent cannot access team management
+        res = self.client.get('/api/support/team/?role=support_agent')
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data.get("code"), "TEAM_MGMT_FORBIDDEN")
+
+        # Support Lead can access team management
+        res_lead = self.client.get('/api/support/team/?role=support_lead')
+        self.assertEqual(res_lead.status_code, status.HTTP_200_OK)
+        self.assertIn("results", res_lead.data)
+
+    def test_knowledge_base_access(self):
+        # Support Agent can access knowledge base
+        res = self.client.get('/api/support/knowledge-base/?role=support_agent')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("articles", res.data)
+        self.assertTrue(len(res.data["articles"]) > 0)
+

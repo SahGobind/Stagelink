@@ -79,8 +79,8 @@ def handle_db_error(err: Exception) -> Response:
 
 def get_auth_user_from_request(request):
     """
-    Extracts authenticated user from Authorization header or session token.
-    Token format: stg-token-{role}-{user_id}-{hash} or Bearer {token}
+    Extracts authenticated user from Authorization header with cryptographic HMAC verification.
+    Prevents token forgery, privilege escalation, and unauthorized access.
     """
     auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION", "")
     if auth_header.startswith("Bearer "):
@@ -92,15 +92,21 @@ def get_auth_user_from_request(request):
         return None
 
     try:
+        from starcast.crypto import verify_signed_session_token
         from users import repository as user_repo
-        body = token[len("stg-token-"):]
-        role, rest = body.split("-", 1)
-        user_id, _ = rest.rsplit("-", 1)
-        if user_id:
+
+        # 1. Cryptographic HMAC verification
+        verified = verify_signed_session_token(token)
+        if verified:
+            user_id, _ = verified
             user = user_repo.find_user_by_id(user_id)
             if user:
                 return user
-    except Exception:
-        pass
+
+        # Reject any unsigned, forged, or tampered tokens
+        logger.warning("Rejected unverified or tampered session token.")
+    except Exception as e:
+        logger.warning("Authentication verification error: %s", e)
+
     return None
 

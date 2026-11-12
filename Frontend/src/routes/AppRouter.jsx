@@ -9,6 +9,7 @@ import PublicLayout from '../layouts/PublicLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import CandidateLayout from '../layouts/CandidateLayout';
 import AdminLayout from '../layouts/AdminLayout';
+import SupportLayout from '../layouts/SupportLayout';
 
 // Route Guards
 import ProtectedRoute from './ProtectedRoute';
@@ -68,6 +69,27 @@ const AdminSettingsPage = lazy(() => import('../pages/admin/AdminSettingsPage'))
 const RecruiterSupportPage = lazy(() => import('../pages/admin/RecruiterSupportPage'));
 const RecruiterTicketDetailsPage = lazy(() => import('../pages/admin/RecruiterTicketDetailsPage'));
 const OperationsSupportDashboardPage = lazy(() => import('../pages/admin/OperationsSupportDashboardPage'));
+const UsersPage = lazy(() => import('../pages/admin/UsersPage'));
+const CompaniesPage = lazy(() => import('../pages/admin/CompaniesPage'));
+const PaymentsPage = lazy(() => import('../pages/admin/PaymentsPage'));
+const VerificationsPage = lazy(() => import('../pages/admin/VerificationsPage'));
+const AnalyticsPage = lazy(() => import('../pages/admin/AnalyticsPage'));
+const RolesPermissionsPage = lazy(() => import('../pages/admin/RolesPermissionsPage'));
+const ActivityLogsPage = lazy(() => import('../pages/admin/ActivityLogsPage'));
+const AdminNotificationsPage = lazy(() => import('../pages/admin/AdminNotificationsPage'));
+const NotificationsCMSPage = lazy(() => import('../pages/admin/NotificationsCMSPage'));
+const ArtistsManagementPage = lazy(() => import('../pages/admin/ArtistsManagementPage'));
+
+// Lazy-Loaded Support Portal Pages (PoLP Support Roles)
+const SupportLoginPage = lazy(() => import('../pages/support/SupportLoginPage'));
+const SupportDashboardPage = lazy(() => import('../pages/support/SupportDashboardPage'));
+const SupportTicketsPage = lazy(() => import('../pages/support/SupportTicketsPage'));
+const SupportTicketDetailPage = lazy(() => import('../pages/support/SupportTicketDetailPage'));
+const SupportKnowledgeBasePage = lazy(() => import('../pages/support/SupportKnowledgeBasePage'));
+const SupportHelpPage = lazy(() => import('../pages/support/SupportHelpPage'));
+const SupportTeamPage = lazy(() => import('../pages/support/SupportTeamPage'));
+const SupportTeamReportsPage = lazy(() => import('../pages/support/SupportTeamReportsPage'));
+const SupportTeamSettingsPage = lazy(() => import('../pages/support/SupportTeamSettingsPage'));
 
 // Lazy-Loaded Error Pages
 const NotFoundPage = lazy(() => import('../pages/errors/NotFoundPage'));
@@ -122,6 +144,7 @@ const AppRouter = () => {
           <Route path="/admin/login" element={<Navigate to="/admin" replace />} />
           <Route path="/operations/login" element={<OperationsLoginPage />} />
           <Route path="/admin/operations/login" element={<Navigate to="/operations/login" replace />} />
+          <Route path="/support/login" element={<SupportLoginPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -172,7 +195,7 @@ const AppRouter = () => {
           <Route path="support/:id" element={<CandidateTicketDetailsPage />} />
         </Route>
 
-        {/* Admin, Recruiter, Operations & Super Admin Routes */}
+        {/* Admin, Recruiter, Operations & Super Admin Routes (14 Dedicated Modules) */}
         <Route
           path="/admin"
           element={
@@ -183,12 +206,25 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         >
+          {/* Module 01: Overview */}
           <Route path="dashboard" element={<AdminDashboardPage />} />
-          <Route path="talent" element={<DiscoverTalentPage />} />
+
+          {/* Module 02: User Management */}
+          <Route path="users" element={<UsersPage />} />
+
+          {/* Module 03: Artists & Talent */}
+          <Route path="artists" element={<ArtistsManagementPage />} />
+          <Route path="talent" element={<ArtistsManagementPage />} />
           <Route path="discover-talent" element={<DiscoverTalentPage />} />
           <Route path="saved-talent" element={<SavedTalentPage />} />
           <Route path="candidates" element={<CandidatesPage />} />
           <Route path="candidates/:id" element={<CandidateDetailsPage />} />
+
+          {/* Module 04: Production Companies */}
+          <Route path="companies" element={<CompaniesPage />} />
+
+          {/* Module 05: Casting Calls */}
+          <Route path="casting-calls" element={<AdminOpportunitiesPage />} />
           <Route path="opportunities" element={<AdminOpportunitiesPage />} />
           <Route
             path="opportunities/create"
@@ -208,25 +244,85 @@ const AppRouter = () => {
           />
           <Route path="opportunities/:id/candidates" element={<RankedCandidatesPage />} />
           <Route path="candidates/ranked" element={<RankedCandidatesPage />} />
+
+          {/* Module 06: Application Management */}
           <Route path="applications" element={<AdminApplicationsPage />} />
+
+          {/* Module 07: Payments & Transactions */}
+          <Route path="payments" element={<PaymentsPage />} />
+
+          {/* Module 08: Verification & Approvals */}
+          <Route path="verifications" element={<VerificationsPage />} />
+
+          {/* Module 09: Support Management */}
+          <Route path="support" element={<OperationsSupportDashboardPage />} />
+          <Route path="support/:id" element={<RecruiterTicketDetailsPage />} />
+          <Route path="operations/support" element={<OperationsSupportDashboardPage />} />
+
+          {/* Module 10: Notifications & CMS */}
+          <Route path="notifications" element={<NotificationsCMSPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
+
+          {/* Module 11: Analytics & Reports */}
+          <Route path="analytics" element={<AnalyticsPage />} />
+
+          {/* Module 12: Roles & Permissions */}
+          <Route path="permissions" element={<RolesPermissionsPage />} />
+          <Route path="roles" element={<RolesPermissionsPage />} />
+
+          {/* Module 13: Activity Logs */}
+          <Route path="activity-logs" element={<ActivityLogsPage />} />
+          <Route path="audit-logs" element={<ActivityLogsPage />} />
+
+          {/* Module 14: Platform Settings */}
           <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="security" element={<AdminSettingsPage />} />
+          <Route path="access-control" element={<Navigate to="/admin/permissions" replace />} />
+        </Route>
+
+        {/* Support Management System (PoLP Enforced) */}
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute redirectTo="/support/login">
+              <RoleBasedRoute allowedRoles={['support_agent', 'support_lead', 'super_admin', 'admin', 'operations']}>
+                <SupportLayout />
+              </RoleBasedRoute>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<SupportDashboardPage />} />
+          <Route path="my-tickets" element={<SupportTicketsPage />} />
+          <Route path="tickets" element={<SupportTicketsPage />} />
+          <Route path="tickets/:id" element={<SupportTicketDetailPage />} />
+          <Route path="assigned" element={<SupportTicketsPage />} />
+          <Route path="escalations" element={<SupportTicketsPage />} />
+          <Route path="knowledge-base" element={<SupportKnowledgeBasePage />} />
+          <Route path="help" element={<SupportHelpPage />} />
+
+          {/* Support Lead Only Routes */}
           <Route
-            path="security"
+            path="team"
             element={
-              <RoleBasedRoute allowedRoles={['super_admin', 'admin']} requiredPermissions={['role:view', 'audit:view']} requireAll={false}>
-                <AdminSettingsPage initialTab="accessControl" />
+              <RoleBasedRoute allowedRoles={['support_lead', 'super_admin', 'admin']}>
+                <SupportTeamPage />
               </RoleBasedRoute>
             }
           />
-          <Route path="access-control" element={<Navigate to="/admin/security" replace />} />
-          <Route path="support" element={<RecruiterSupportPage />} />
-          <Route path="support/:id" element={<RecruiterTicketDetailsPage />} />
           <Route
-            path="operations/support"
+            path="team/reports"
             element={
-              <RoleBasedRoute allowedRoles={['super_admin', 'admin', 'operations']} requiredPermissions="support:view_all">
-                <OperationsSupportDashboardPage />
+              <RoleBasedRoute allowedRoles={['support_lead', 'super_admin', 'admin']}>
+                <SupportTeamReportsPage />
+              </RoleBasedRoute>
+            }
+          />
+          <Route
+            path="team/settings"
+            element={
+              <RoleBasedRoute allowedRoles={['support_lead', 'super_admin', 'admin']}>
+                <SupportTeamSettingsPage />
               </RoleBasedRoute>
             }
           />

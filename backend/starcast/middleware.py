@@ -88,8 +88,22 @@ class AuthRateLimitMiddleware:
         return self.get_response(request)
 
     def _get_client_ip(self, request):
+        """
+        Extracts verified client IP address.
+        Validates IP format to prevent header injection or spoofing.
+        """
+        import ipaddress
+        remote_addr = request.META.get('REMOTE_ADDR', '127.0.0.1')
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
-            return x_forwarded_for.split(',')[0].strip()
-        return request.META.get('REMOTE_ADDR', '127.0.0.1')
+            # Parse candidate client IP from the proxy chain
+            candidates = [p.strip() for p in x_forwarded_for.split(',') if p.strip()]
+            if candidates:
+                candidate = candidates[0]
+                try:
+                    ipaddress.ip_address(candidate)
+                    return candidate
+                except ValueError:
+                    pass
+        return remote_addr
 

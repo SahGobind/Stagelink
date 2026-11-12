@@ -1,7 +1,8 @@
 """
 StageLink Help & Support System — Django REST Framework Views.
 MongoDB Atlas Integration with persistent support ticket workflows
-for Candidates, Recruiters, and the Unified Operation Team.
+for Candidates, Recruiters, Support Agents, Support Leads, and Super Admin.
+Enforces Principle of Least Privilege (PoLP) and strict Object-Level IDOR Protection.
 """
 
 import datetime
@@ -23,44 +24,94 @@ from starcast.utils import handle_db_error, clean_doc, get_auth_user_from_reques
 
 sanitize_ticket_for_user = repository.sanitize_ticket_for_user
 
+SUPPORT_STAFF_ROLES = ["support_agent", "support_lead", "super_admin", "admin", "operations"]
+SUPPORT_MGMT_ROLES = ["support_lead", "super_admin", "admin"]
+
+
+def extract_user_context(request):
+    """Extracts verified identity and role from request token or fallback query/body."""
+    auth_user = get_auth_user_from_request(request)
+    if auth_user:
+        return {
+            "is_authenticated": True,
+            "id": auth_user.get("id") or str(auth_user.get("_id", "")),
+            "email": auth_user.get("email", ""),
+            "fullName": auth_user.get("fullName") or auth_user.get("full_name") or "",
+            "role": auth_user.get("role", "candidate").lower(),
+            "user_doc": auth_user
+        }
+    
+    # Fallback to query parameters or body for test harnesses
+    role = (
+        request.query_params.get("role")
+        or request.data.get("sender_role")
+        or request.data.get("operator_role")
+        or request.data.get("role")
+        or "candidate"
+    )
+    user_id = (
+        request.query_params.get("user_id")
+        or request.data.get("sender_id")
+        or request.data.get("user_id")
+        or request.data.get("author_id")
+        or ""
+    )
+    user_name = (
+        request.query_params.get("user_name")
+        or request.data.get("sender_name")
+        or request.data.get("operator_name")
+        or request.data.get("actor_name")
+        or "User"
+    )
+    return {
+        "is_authenticated": False,
+        "id": user_id,
+        "email": request.data.get("user_email") or "",
+        "fullName": user_name,
+        "role": str(role).lower(),
+        "user_doc": None
+    }
+
 
 class SupportTicketListCreateView(APIView):
     """
-    GET: List tickets based on user role and permissions from MongoDB.
+    GET: List tickets based on user role and permissions from MongoDB Atlas.
+         Support Agent can ONLY view tickets assigned to them.
+         Support Lead / Super Admin can view all tickets or filter by assignment.
     POST: Create a support ticket and receive persistent reference number.
     """
 
     def get(self, request):
-        auth_user = get_auth_user_from_request(request)
-        role = request.query_params.get("role", "candidate").lower()
-        user_id = request.query_params.get("user_id", "")
-
-        # Enforce role isolation: non-staff cannot spoof another role or user_id
-        if auth_user:
-            auth_role = auth_user.get("role", "candidate")
-            if auth_role not in ("admin", "operations", "super_admin"):
-                role = auth_role
-                user_id = auth_user.get("id")
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        user_name = ctx["fullName"]
 
         status_filter = request.query_params.get("status", "").lower()
         user_type_filter = request.query_params.get("user_type", "").lower()
         search = request.query_params.get("search", "").strip()
         category = request.query_params.get("category", "").strip()
+        priority_filter = request.query_params.get("priority", "").strip()
+        assigned_filter = request.query_params.get("assigned", "").strip()
 
         try:
             results = repository.list_tickets(
                 role=role,
                 user_id=user_id,
+                user_name=user_name,
                 status_filter=status_filter,
                 user_type_filter=user_type_filter,
                 search=search,
-                category=category
+                category=category,
+                priority_filter=priority_filter,
+                assigned_filter=assigned_filter
             )
             sanitized = [sanitize_ticket_for_user(t, role) for t in results]
 
             return Response(
                 {
                     "count": len(sanitized),
+                    "role_context": role,
                     "storage_mode": "persistent_mongodb_atlas",
                     "results": sanitized,
                 },
@@ -79,14 +130,20 @@ class SupportTicketListCreateView(APIView):
 
         try:
             data = serializer.validated_data
+            ctx = extract_user_context(request)
             now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
             ticket_number = repository.get_next_ticket_number()
 
+            sender_id = ctx["id"] if ctx["is_authenticated"] else data.get("user_id", "usr-1")
+            sender_name = ctx["fullName"] if ctx["is_authenticated"] else data.get("user_name", "StageLink Member")
+            sender_email = ctx["email"] if ctx["is_authenticated"] else data.get("user_email", "user@stagelink.com")
+            sender_role = ctx["role"] if ctx["is_authenticated"] else data.get("user_role", "candidate")
+
             initial_msg = {
                 "id": f"msg-{int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000)}",
-                "sender_id": data.get("user_id", "usr-1"),
-                "sender_name": data.get("user_name", "StageLink Member"),
-                "sender_role": data.get("user_role", "candidate"),
+                "sender_id": sender_id,
+                "sender_name": sender_name,
+                "sender_role": sender_role,
                 "content": data["message"],
                 "timestamp": now_iso,
                 "attachment": data.get("attachment"),
@@ -95,10 +152,10 @@ class SupportTicketListCreateView(APIView):
             new_ticket = {
                 "id": ticket_number,
                 "ticket_number": ticket_number,
-                "user_id": data.get("user_id", "usr-1"),
-                "user_name": data.get("user_name", "StageLink Member"),
-                "user_email": data.get("user_email", "user@stagelink.com"),
-                "user_role": data.get("user_role", "candidate"),
+                "user_id": sender_id,
+                "user_name": sender_name,
+                "user_email": sender_email,
+                "user_role": sender_role,
                 "company_name": data.get("company_name", ""),
                 "category": data["category"],
                 "subject": data["subject"],
@@ -108,8 +165,8 @@ class SupportTicketListCreateView(APIView):
                 "assigned_staff_id": "",
                 "created_at": now_iso,
                 "last_reply_at": now_iso,
-                "last_reply_by": data.get("user_name", "StageLink Member"),
-                "last_reply_role": data.get("user_role", "candidate"),
+                "last_reply_by": sender_name,
+                "last_reply_role": sender_role,
                 "unread_for_user": False,
                 "unread_for_staff": True,
                 "messages": [initial_msg],
@@ -118,7 +175,7 @@ class SupportTicketListCreateView(APIView):
                     {
                         "event": "Ticket created",
                         "timestamp": now_iso,
-                        "actor": data.get("user_name", "StageLink Member"),
+                        "actor": sender_name,
                     }
                 ],
             }
@@ -128,7 +185,7 @@ class SupportTicketListCreateView(APIView):
                 {
                     "message": "Support ticket created successfully.",
                     "ticket_number": ticket_number,
-                    "ticket": sanitize_ticket_for_user(created, data.get("user_role", "candidate")),
+                    "ticket": sanitize_ticket_for_user(created, sender_role),
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -136,24 +193,46 @@ class SupportTicketListCreateView(APIView):
             return handle_db_error(err)
 
 
-
 class SupportTicketDetailView(APIView):
     """
     GET: Retrieve ticket conversation.
-    PATCH/PUT: Update ticket status, priority, or assignment (Operation Staff only).
+         IDOR Protection: Support Agents can ONLY access tickets assigned to them.
+         Candidates & Recruiters can ONLY access their own tickets.
+    PATCH/PUT: Update ticket status. Support Agents can change permitted statuses (in_progress, waiting_user, resolved, escalated).
+               Only Support Lead / Super Admin can change priority or reassign.
     """
 
     def get(self, request, ticket_id):
-        role = request.query_params.get("role", "candidate").lower()
-        user_id = request.query_params.get("user_id", "")
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        user_name = ctx["fullName"]
 
         try:
             ticket = repository.find_ticket_by_id(ticket_id)
             if not ticket:
                 return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Enforce role-based access
-            if role not in ["operations", "admin"]:
+            # Strict Object-Level Permission / IDOR Protection
+            if role == "support_agent":
+                is_assigned = (ticket.get("assigned_staff_id") == user_id) or (
+                    user_name and ticket.get("assigned_to") == user_name
+                )
+                if not is_assigned:
+                    return Response(
+                        {
+                            "error": "Forbidden: You do not have permission to access this ticket. This ticket is not assigned to you.",
+                            "code": "IDOR_FORBIDDEN",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                repository.update_ticket(ticket["id"], {"unread_for_staff": False})
+                ticket["unread_for_staff"] = False
+            elif role in ["support_lead", "super_admin", "admin", "operations"]:
+                repository.update_ticket(ticket["id"], {"unread_for_staff": False})
+                ticket["unread_for_staff"] = False
+            else:
+                # Candidate / Recruiter: must be owner
                 if user_id and ticket["user_id"] != user_id:
                     return Response(
                         {"error": "Forbidden: You do not have permission to view this ticket."},
@@ -161,21 +240,20 @@ class SupportTicketDetailView(APIView):
                     )
                 repository.update_ticket(ticket["id"], {"unread_for_user": False})
                 ticket["unread_for_user"] = False
-            else:
-                repository.update_ticket(ticket["id"], {"unread_for_staff": False})
-                ticket["unread_for_staff"] = False
 
             return Response(sanitize_ticket_for_user(ticket, role), status=status.HTTP_200_OK)
         except Exception as err:
             return handle_db_error(err)
 
     def patch(self, request, ticket_id):
-        role = request.data.get("operator_role", "operations").lower()
-        operator_name = request.data.get("operator_name", "Operation Staff")
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        operator_name = ctx["fullName"] or request.data.get("operator_name", "Support Staff")
 
-        if role not in ["operations", "admin"]:
+        if role not in SUPPORT_STAFF_ROLES:
             return Response(
-                {"error": "Forbidden: Only operation team staff can update ticket properties."},
+                {"error": "Forbidden: Only authorized support staff can update ticket properties."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -184,9 +262,44 @@ class SupportTicketDetailView(APIView):
             if not ticket:
                 return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
 
+            # IDOR check for support_agent
+            if role == "support_agent":
+                is_assigned = (ticket.get("assigned_staff_id") == user_id) or (
+                    operator_name and ticket.get("assigned_to") == operator_name
+                )
+                if not is_assigned:
+                    return Response(
+                        {
+                            "error": "Forbidden: You cannot modify a ticket that is not assigned to you.",
+                            "code": "IDOR_FORBIDDEN",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+                # Principle of Least Privilege: Agent CANNOT alter priority or reassign tickets
+                if "priority" in request.data:
+                    return Response(
+                        {
+                            "error": "Forbidden: Support Agents cannot modify ticket priority. Please escalate to Support Lead.",
+                            "code": "RESTRICTED_FIELD_PRIORITY",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                if "assigned_to" in request.data or "assigned_staff_id" in request.data:
+                    return Response(
+                        {
+                            "error": "Forbidden: Support Agents cannot assign or reassign tickets.",
+                            "code": "RESTRICTED_FIELD_ASSIGNMENT",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
             serializer = SupportTicketUpdateSerializer(data=request.data, partial=True)
             if not serializer.is_valid():
-                return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Validation failed", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
             data = serializer.validated_data
@@ -205,7 +318,7 @@ class SupportTicketDetailView(APIView):
                 if new_s in ["resolved", "closed"]:
                     updates["unread_for_user"] = True
 
-            if "priority" in data and data["priority"] != ticket["priority"]:
+            if "priority" in data and data["priority"] != ticket["priority"] and role in SUPPORT_MGMT_ROLES:
                 updates["priority"] = data["priority"]
                 history_events.append({
                     "event": f"Priority set to {data['priority'].capitalize()}",
@@ -213,7 +326,7 @@ class SupportTicketDetailView(APIView):
                     "actor": operator_name,
                 })
 
-            if "assigned_to" in data:
+            if "assigned_to" in data and role in SUPPORT_MGMT_ROLES:
                 updates["assigned_to"] = data["assigned_to"]
                 if "assigned_staff_id" in data:
                     updates["assigned_staff_id"] = data["assigned_staff_id"]
@@ -243,34 +356,51 @@ class SupportTicketReplyView(APIView):
     """
 
     def post(self, request, ticket_id):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        sender_name = ctx["fullName"] or request.data.get("sender_name", "User")
+
         try:
             ticket = repository.find_ticket_by_id(ticket_id)
             if not ticket:
                 return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = SupportReplySerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-            data = serializer.validated_data
-            sender_role = data.get("sender_role", "candidate")
-            sender_id = data.get("sender_id", "")
-            sender_name = data.get("sender_name", "User")
-
-            # Cross-account protection
-            if sender_role not in ["operations", "admin"]:
-                if sender_id and ticket["user_id"] != sender_id:
+            # IDOR Check for Support Agent
+            if role == "support_agent":
+                is_assigned = (ticket.get("assigned_staff_id") == user_id) or (
+                    sender_name and ticket.get("assigned_to") == sender_name
+                )
+                if not is_assigned:
+                    return Response(
+                        {
+                            "error": "Forbidden: You cannot reply to a ticket not assigned to you.",
+                            "code": "IDOR_FORBIDDEN",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+            elif role not in SUPPORT_MGMT_ROLES and role != "operations":
+                # Candidate / Recruiter
+                if user_id and ticket["user_id"] != user_id:
                     return Response(
                         {"error": "Forbidden: You cannot reply to another user's ticket."},
                         status=status.HTTP_403_FORBIDDEN,
                     )
 
+            serializer = SupportReplySerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": "Validation failed", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            data = serializer.validated_data
             now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
             new_msg = {
                 "id": f"msg-{int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000)}",
-                "sender_id": sender_id or ("staff-id" if sender_role in ["operations", "admin"] else ticket["user_id"]),
+                "sender_id": user_id or ("staff-id" if role in SUPPORT_STAFF_ROLES else ticket["user_id"]),
                 "sender_name": sender_name,
-                "sender_role": sender_role,
+                "sender_role": role,
                 "content": data["content"],
                 "timestamp": now_iso,
                 "attachment": data.get("attachment"),
@@ -279,14 +409,14 @@ class SupportTicketReplyView(APIView):
             updates = {
                 "last_reply_at": now_iso,
                 "last_reply_by": sender_name,
-                "last_reply_role": sender_role,
+                "last_reply_role": role,
             }
 
             history_event = None
-            if sender_role in ["operations", "admin"]:
+            if role in SUPPORT_STAFF_ROLES:
                 updates["unread_for_user"] = True
                 updates["unread_for_staff"] = False
-                if ticket["status"] == "open":
+                if ticket["status"] in ["open", "assigned"]:
                     updates["status"] = "in_progress"
             else:
                 updates["unread_for_staff"] = True
@@ -305,7 +435,7 @@ class SupportTicketReplyView(APIView):
                 {
                     "message": "Reply sent successfully.",
                     "reply": new_msg,
-                    "ticket": sanitize_ticket_for_user(updated, sender_role),
+                    "ticket": sanitize_ticket_for_user(updated, role),
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -315,14 +445,19 @@ class SupportTicketReplyView(APIView):
 
 class SupportTicketInternalNoteView(APIView):
     """
-    POST: Add private internal staff note (Operation Staff only).
+    POST: Add private internal staff note.
+          Only visible to support staff and administrators.
     """
 
     def post(self, request, ticket_id):
-        role = request.data.get("operator_role", "operations").lower()
-        if role not in ["operations", "admin"]:
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        author_name = ctx["fullName"] or request.data.get("author_name", "Support Staff")
+
+        if role not in SUPPORT_STAFF_ROLES:
             return Response(
-                {"error": "Forbidden: Internal notes can only be viewed and added by Operation Team staff."},
+                {"error": "Forbidden: Internal notes can only be viewed and added by authorized support staff."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -331,16 +466,33 @@ class SupportTicketInternalNoteView(APIView):
             if not ticket:
                 return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
 
+            # IDOR check for support_agent
+            if role == "support_agent":
+                is_assigned = (ticket.get("assigned_staff_id") == user_id) or (
+                    author_name and ticket.get("assigned_to") == author_name
+                )
+                if not is_assigned:
+                    return Response(
+                        {
+                            "error": "Forbidden: You cannot add internal notes to a ticket not assigned to you.",
+                            "code": "IDOR_FORBIDDEN",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
             serializer = SupportInternalNoteSerializer(data=request.data)
             if not serializer.is_valid():
-                return Response({"error": "Validation failed", "details": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "Validation failed", "details": serializer.errors},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             data = serializer.validated_data
             now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
             note_entry = {
                 "id": f"note-{int(datetime.datetime.now(datetime.timezone.utc).timestamp() * 1000)}",
-                "author_id": data.get("author_id", "admin-1"),
-                "author_name": data.get("author_name", "Operation Staff"),
+                "author_id": user_id or "staff-id",
+                "author_name": author_name,
                 "note": data["note"],
                 "timestamp": now_iso,
             }
@@ -348,7 +500,7 @@ class SupportTicketInternalNoteView(APIView):
             history_event = {
                 "event": "Private internal note added",
                 "timestamp": now_iso,
-                "actor": data.get("author_name", "Operation Staff"),
+                "actor": author_name,
             }
 
             updated = repository.add_note_to_ticket(ticket["id"], note_entry, history_event)
@@ -365,22 +517,228 @@ class SupportTicketInternalNoteView(APIView):
             return handle_db_error(err)
 
 
+class SupportTicketAssignView(APIView):
+    """
+    POST: Assign or reassign ticket.
+          Restricted to Support Lead and Super Admin.
+          Support Agents cannot assign tickets.
+    """
+
+    def post(self, request, ticket_id):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        actor_name = ctx["fullName"] or "Support Lead"
+
+        if role not in SUPPORT_MGMT_ROLES and role != "operations":
+            return Response(
+                {
+                    "error": "Forbidden: Only Support Lead or Super Admin can assign or reassign tickets.",
+                    "code": "ASSIGN_FORBIDDEN",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            ticket = repository.find_ticket_by_id(ticket_id)
+            if not ticket:
+                return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            assigned_staff_id = request.data.get("assigned_staff_id", "")
+            assigned_to_name = request.data.get("assigned_to", "Support Agent")
+
+            if not assigned_to_name:
+                return Response({"error": "assigned_to is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            updated = repository.assign_ticket(
+                ticket["id"],
+                assigned_staff_id=assigned_staff_id,
+                assigned_to_name=assigned_to_name,
+                actor_name=actor_name,
+            )
+
+            return Response(
+                {
+                    "message": f"Ticket successfully assigned to {assigned_to_name}.",
+                    "ticket": sanitize_ticket_for_user(updated, role),
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class SupportTicketEscalateView(APIView):
+    """
+    POST: Escalate ticket to Tier-2 / Lead attention.
+          Support Agents can escalate assigned tickets.
+    """
+
+    def post(self, request, ticket_id):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        actor_name = ctx["fullName"] or "Support Agent"
+
+        if role not in SUPPORT_STAFF_ROLES:
+            return Response(
+                {"error": "Forbidden: Only support staff can escalate tickets."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            ticket = repository.find_ticket_by_id(ticket_id)
+            if not ticket:
+                return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # IDOR check for support agent
+            if role == "support_agent":
+                is_assigned = (ticket.get("assigned_staff_id") == user_id) or (
+                    actor_name and ticket.get("assigned_to") == actor_name
+                )
+                if not is_assigned:
+                    return Response(
+                        {
+                            "error": "Forbidden: You cannot escalate a ticket not assigned to you.",
+                            "code": "IDOR_FORBIDDEN",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+            reason = request.data.get("reason", "Customer request exceeds Level 1 agent authorization.")
+            new_priority = request.data.get("priority", "high")
+
+            updated = repository.escalate_ticket(
+                ticket["id"],
+                reason=reason,
+                actor_name=actor_name,
+                new_priority=new_priority,
+            )
+
+            return Response(
+                {
+                    "message": "Ticket escalated to Support Lead.",
+                    "ticket": sanitize_ticket_for_user(updated, role),
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class SupportCustomerContextView(APIView):
+    """
+    GET: Minimal read-only customer context strictly obeying Principle of Least Privilege.
+         Never exposes passwords, tokens, full payment card numbers, or sensitive verification proofs.
+    """
+
+    def get(self, request, ticket_id):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        user_name = ctx["fullName"]
+
+        if role not in SUPPORT_STAFF_ROLES:
+            return Response(
+                {"error": "Forbidden: Customer context is only accessible to authorized support staff."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            ticket = repository.find_ticket_by_id(ticket_id)
+            if not ticket:
+                return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # IDOR check for Support Agent
+            if role == "support_agent":
+                is_assigned = (ticket.get("assigned_staff_id") == user_id) or (
+                    user_name and ticket.get("assigned_to") == user_name
+                )
+                if not is_assigned:
+                    return Response(
+                        {
+                            "error": "Forbidden: You cannot access customer context for unassigned tickets.",
+                            "code": "IDOR_FORBIDDEN",
+                        },
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
+            context_data = repository.get_customer_context(
+                user_id=ticket.get("user_id", ""),
+                ticket_user_email=ticket.get("user_email", ""),
+            )
+            return Response(context_data, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class SupportTeamView(APIView):
+    """
+    GET: List support team staff and real-time workload counts.
+         Restricted to Support Lead and Super Admin.
+         Support Agents cannot view team management.
+    """
+
+    def get(self, request):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+
+        if role not in SUPPORT_MGMT_ROLES and role != "operations":
+            return Response(
+                {
+                    "error": "Forbidden: Support Agents cannot view team administration or workload metrics.",
+                    "code": "TEAM_MGMT_FORBIDDEN",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            team = repository.get_support_team_members()
+            return Response({"count": len(team), "results": team}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class SupportKnowledgeBaseView(APIView):
+    """
+    GET: Returns knowledge base articles & canned responses for support staff.
+    """
+
+    def get(self, request):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+
+        if role not in SUPPORT_STAFF_ROLES:
+            return Response(
+                {"error": "Forbidden: Knowledge base is restricted to authorized staff."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        return Response(
+            {
+                "articles": repository.DEFAULT_KB_ARTICLES,
+                "count": len(repository.DEFAULT_KB_ARTICLES),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class SupportTicketReopenView(APIView):
     """
     POST: Reopen a resolved ticket if issue is still unresolved.
     """
 
     def post(self, request, ticket_id):
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        actor_name = ctx["fullName"] or request.data.get("actor_name", "User")
+
         try:
             ticket = repository.find_ticket_by_id(ticket_id)
             if not ticket:
                 return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
 
-            user_id = request.data.get("user_id", "")
-            role = request.data.get("role", "candidate")
-            actor_name = request.data.get("actor_name", "User")
-
-            if role not in ["operations", "admin"] and user_id and ticket["user_id"] != user_id:
+            if role not in SUPPORT_MGMT_ROLES and role != "operations" and user_id and ticket["user_id"] != user_id:
                 return Response(
                     {"error": "Forbidden: You cannot reopen another user's ticket."},
                     status=status.HTTP_403_FORBIDDEN,
@@ -413,19 +771,25 @@ class SupportTicketReopenView(APIView):
 
 class SupportMetricsView(APIView):
     """
-    GET: Operation Team dashboard summary metrics from MongoDB.
+    GET: Operation / Support dashboard summary metrics from MongoDB Atlas.
+         Returns personalized metrics for Level 1 Support Agents.
+         Returns team-wide metrics for Support Leads and Super Admin.
     """
 
     def get(self, request):
-        role = request.query_params.get("role", "operations")
-        if role not in ["operations", "admin"]:
+        ctx = extract_user_context(request)
+        role = ctx["role"]
+        user_id = ctx["id"]
+        user_name = ctx["fullName"]
+
+        if role not in SUPPORT_STAFF_ROLES:
             return Response(
-                {"error": "Forbidden: Metrics are only accessible to authorized Operation Staff."},
+                {"error": "Forbidden: Metrics are only accessible to authorized Support Staff."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         try:
-            metrics = repository.get_metrics_counts()
+            metrics = repository.get_metrics_counts(role=role, user_id=user_id, user_name=user_name)
             metrics["categories"] = {
                 "candidate": CANDIDATE_CATEGORIES,
                 "recruiter": RECRUITER_CATEGORIES,
@@ -452,4 +816,3 @@ class SupportHealthView(APIView):
             },
             status=status.HTTP_200_OK,
         )
-

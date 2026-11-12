@@ -15,10 +15,22 @@ from .views import (
     UserRoleManageView,
     AuditLogListView,
     UserPasswordChangeView,
+    AdminDashboardOverviewView,
+    UserAdminToggleVerificationView,
+    UserAdminDeleteView,
+    UserAdminUpdateStatusView,
+    UserAdminUpdateProfileView,
+    UserAdminCreateView,
+    AdminPlatformSettingsView,
+    AdminCMSView,
 )
 
 urlpatterns = [
     path('', UserListView.as_view(), name='user-list'),
+    path('admin/overview/', AdminDashboardOverviewView.as_view(), name='admin-overview'),
+    path('admin/create/', UserAdminCreateView.as_view(), name='user-admin-create'),
+    path('admin/settings/', AdminPlatformSettingsView.as_view(), name='admin-platform-settings'),
+    path('admin/cms/', AdminCMSView.as_view(), name='admin-platform-cms'),
     path('register/', UserRegisterView.as_view(), name='user-register'),
     path('login/', UserLoginView.as_view(), name='user-login'),
     path('password/change/', UserPasswordChangeView.as_view(), name='user-password-change'),
@@ -28,6 +40,10 @@ urlpatterns = [
     path('recruiter/register/', RecruiterRegisterView.as_view(), name='recruiter-register'),
     path('recruiter/login/', RecruiterLoginView.as_view(), name='recruiter-login'),
     path('recruiter/profile/', RecruiterProfileView.as_view(), name='recruiter-profile'),
+    path('<str:user_id>/toggle-verification/', UserAdminToggleVerificationView.as_view(), name='user-toggle-verification'),
+    path('<str:user_id>/status/', UserAdminUpdateStatusView.as_view(), name='user-admin-status'),
+    path('<str:user_id>/admin-update/', UserAdminUpdateProfileView.as_view(), name='user-admin-update'),
+    path('<str:user_id>/delete/', UserAdminDeleteView.as_view(), name='user-admin-delete'),
 
     # RBAC & Authorization Management Routes
     path('permissions/', UserPermissionsView.as_view(), name='user-permissions'),

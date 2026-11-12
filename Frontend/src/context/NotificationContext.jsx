@@ -7,13 +7,19 @@ import {
 const NotificationContext = createContext(null);
 
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState(() => getStoredNotifications());
+  const [notifications, setNotifications] = useState(() => {
+    const list = getStoredNotifications();
+    return Array.isArray(list) ? list : [];
+  });
 
-  const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
+  const unreadCount = useMemo(() => {
+    return Array.isArray(notifications) ? notifications.filter((n) => !n?.read).length : 0;
+  }, [notifications]);
 
   const markAsRead = useCallback((id) => {
     setNotifications((prev) => {
-      const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+      const arr = Array.isArray(prev) ? prev : [];
+      const updated = arr.map((n) => (n?.id === id ? { ...n, read: true } : n));
       saveStoredNotifications(updated);
       return updated;
     });
@@ -21,7 +27,8 @@ export const NotificationProvider = ({ children }) => {
 
   const markAllAsRead = useCallback(() => {
     setNotifications((prev) => {
-      const updated = prev.map((n) => ({ ...n, read: true }));
+      const arr = Array.isArray(prev) ? prev : [];
+      const updated = arr.map((n) => ({ ...n, read: true }));
       saveStoredNotifications(updated);
       return updated;
     });
@@ -29,6 +36,7 @@ export const NotificationProvider = ({ children }) => {
 
   const addNotification = useCallback((notification) => {
     setNotifications((prev) => {
+      const arr = Array.isArray(prev) ? prev : [];
       const updated = [
         {
           id: `notif-${Date.now()}`,
@@ -36,7 +44,7 @@ export const NotificationProvider = ({ children }) => {
           read: false,
           ...notification,
         },
-        ...prev,
+        ...arr,
       ];
       saveStoredNotifications(updated);
       return updated;

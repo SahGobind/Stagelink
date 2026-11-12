@@ -11,6 +11,8 @@ Features:
 import os
 import re
 import base64
+import hmac
+import hashlib
 import logging
 from django.conf import settings
 from cryptography.fernet import Fernet, InvalidToken
@@ -97,6 +99,56 @@ def decrypt_message_text(ciphertext: str) -> str:
     except Exception as e:
         logger.error("Error during message decryption: %s", e)
         return ciphertext
+
+
+# ==============================================================================
+# CRYPTOGRAPHICALLY SIGNED SESSION TOKENS (HMAC-SHA256)
+# ==============================================================================
+
+def generate_signed_session_token(user_id: str, role: str) -> str:
+    """
+    Generates a tamper-proof session token cryptographically signed with HMAC-SHA256.
+    Format: stg-token-{role}-{user_id}-{signature}
+    """
+    raw_secret = getattr(settings, 'SECRET_KEY', 'starcast-dev-insecure-key-2026-xyz')
+    secret_bytes = raw_secret.encode('utf-8') if isinstance(raw_secret, str) else bytes(raw_secret)
+
+    payload = f"{role}:{user_id}".encode('utf-8')
+    sig = hmac.new(secret_bytes, payload, hashlib.sha256).hexdigest()[:16]
+    return f"stg-token-{role}-{user_id}-{sig}"
+
+
+def verify_signed_session_token(token: str):
+    """
+    Verifies that the session token was genuinely signed by our backend SECRET_KEY.
+    Uses constant-time comparison to prevent timing attacks.
+    Returns (user_id, role) tuple if valid, or None if forged/invalid.
+    """
+    if not token or not isinstance(token, str) or not token.startswith("stg-token-"):
+        return None
+
+    try:
+        raw_secret = getattr(settings, 'SECRET_KEY', 'starcast-dev-insecure-key-2026-xyz')
+        secret_bytes = raw_secret.encode('utf-8') if isinstance(raw_secret, str) else bytes(raw_secret)
+
+        body = token[len("stg-token-"):]
+        parts = body.split("-")
+        if len(parts) < 3:
+            return None
+
+        role = parts[0]
+        sig = parts[-1]
+        user_id = "-".join(parts[1:-1])
+
+        payload = f"{role}:{user_id}".encode('utf-8')
+        expected_sig = hmac.new(secret_bytes, payload, hashlib.sha256).hexdigest()[:16]
+
+        if hmac.compare_digest(sig, expected_sig):
+            return user_id, role
+    except Exception as e:
+        logger.warning("Token verification error: %s", e)
+
+    return None
 
 
 # ==============================================================================

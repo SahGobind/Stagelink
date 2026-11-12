@@ -103,6 +103,26 @@ export const SEEDED_ACCOUNTS = [
     createdAt: '2026-08-01T00:00:00.000Z',
   },
   {
+    id: 'supp-agent-1',
+    fullName: 'Liam Patel (Support Agent)',
+    email: 'agent@stagelink.com',
+    phoneNumber: '+91 98200 44556',
+    department: 'Tier-1 Customer Support',
+    role: 'support_agent',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
+    createdAt: '2026-09-01T00:00:00.000Z',
+  },
+  {
+    id: 'supp-lead-1',
+    fullName: 'Elena Rostova (Support Lead)',
+    email: 'lead@stagelink.com',
+    phoneNumber: '+91 98200 77889',
+    department: 'Tier-2 Support Operations',
+    role: 'support_lead',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80',
+    createdAt: '2026-08-15T00:00:00.000Z',
+  },
+  {
     id: 'user-standard',
     fullName: 'Jordan Lee (Standard User)',
     email: 'user@stagelink.com',
@@ -121,7 +141,9 @@ export const DEMO_USERS = {
   admin: SEEDED_ACCOUNTS[4],
   recruiter: SEEDED_ACCOUNTS[5],
   operations: SEEDED_ACCOUNTS[6],
-  user: SEEDED_ACCOUNTS[7],
+  support_agent: SEEDED_ACCOUNTS[7],
+  support_lead: SEEDED_ACCOUNTS[8],
+  user: SEEDED_ACCOUNTS[9],
 };
 
 export const DEFAULT_ROLE_PERMISSIONS = {
@@ -133,6 +155,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     'role:view', 'role:create', 'role:update', 'role:delete', 'role:assign',
     'audit:view', 'audit:export',
     'admin:access', 'superadmin:access',
+    'support:access_portal',
   ],
   admin: [
     'opportunity:view', 'opportunity:create', 'opportunity:update', 'opportunity:delete', 'opportunity:publish',
@@ -142,6 +165,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     'role:view',
     'audit:view',
     'admin:access',
+    'support:access_portal',
   ],
   operations: [
     'opportunity:view',
@@ -149,6 +173,32 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     'profile:view', 'profile:verify',
     'support:view_all', 'support:manage', 'support:respond',
     'admin:access',
+    'support:access_portal',
+  ],
+  support_lead: [
+    'support:access_portal',
+    'support:view_assigned',
+    'support:view_all',
+    'support:view_own',
+    'support:reply',
+    'support:internal_note',
+    'support:update_status',
+    'support:assign',
+    'support:reopen',
+    'support:escalate',
+    'support:manage_categories',
+    'support:view_reports',
+    'support:view_audit',
+    'support:manage_team',
+  ],
+  support_agent: [
+    'support:access_portal',
+    'support:view_assigned',
+    'support:view_own',
+    'support:reply',
+    'support:internal_note',
+    'support:update_status',
+    'support:escalate',
   ],
   recruiter: [
     'opportunity:view', 'opportunity:create', 'opportunity:update', 'opportunity:delete', 'opportunity:publish',
@@ -217,7 +267,9 @@ export const authService = {
   getCurrentUser: () => {
     try {
       const stored = localStorage.getItem(CURRENT_USER_KEY);
-      return stored ? JSON.parse(stored) : null;
+      if (!stored) return null;
+      const parsed = JSON.parse(stored);
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
     } catch {
       return null;
     }

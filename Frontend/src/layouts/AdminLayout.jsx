@@ -4,41 +4,41 @@ import DashboardSidebar from '../components/layout/DashboardSidebar';
 import DashboardHeader from '../components/layout/DashboardHeader';
 import MobileBottomNav from '../components/layout/MobileBottomNav';
 import { useAuth } from '../context/AuthContext';
-
 import ErrorBoundary from '../components/common/ErrorBoundary';
 
 const AdminLayout = () => {
   const { user, role } = useAuth();
   const isSuper = user?.role === 'super_admin' || role === 'super_admin';
   const isOps = !isSuper && (user?.role === 'operations' || role === 'operations');
+  const isRecruiter = !isSuper && !isOps && (user?.role === 'recruiter' || role === 'recruiter');
 
   const headerTitle = isSuper
-    ? 'StageLink Governance Suite'
+    ? 'StageLink Administration'
     : isOps
-    ? 'StageLink Operations Desk'
-    : role === 'recruiter'
-    ? 'StageLink Studio Suite'
-    : 'StageLink Studio Admin';
+    ? 'Operations Command'
+    : isRecruiter
+    ? 'Production Studio Suite'
+    : 'Platform Administration';
 
   const headerSubtitle = isSuper
-    ? 'System Governance, Granular RBAC Permissions & Security Audit Stream'
+    ? 'System telemetry, platform governance, and international operations.'
     : isOps
-    ? 'Support Tickets, Talent Verification & Member Assistance'
-    : role === 'recruiter'
-    ? 'Casting Calls, Talent Discovery & Audition Management'
-    : 'Talent, Casting Calls & Application Management';
+    ? 'Talent verification, member support, and listing moderation.'
+    : isRecruiter
+    ? 'Casting calls, submissions, and talent discovery.'
+    : 'Platform overview, casting operations, and user management.';
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans antialiased">
       {/* Desktop Sidebar */}
-      <div className="hidden md:block">
-        <DashboardSidebar role={isOps ? 'operations' : role} />
+      <div className="hidden md:block shrink-0">
+        <DashboardSidebar role={isOps ? 'operations' : isRecruiter ? 'recruiter' : 'admin'} />
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 pb-16 md:pb-0">
         <DashboardHeader title={headerTitle} subtitle={headerSubtitle} />
-        <main className="flex-1">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full">
           <ErrorBoundary>
             <Outlet />
           </ErrorBoundary>

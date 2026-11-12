@@ -8,7 +8,8 @@ export const AppProvider = ({ children }) => {
   const [savedOpportunityIds, setSavedOpportunityIds] = useState(() => {
     try {
       const stored = localStorage.getItem(SAVED_OPPS_STORAGE_KEY);
-      return stored ? JSON.parse(stored) : ['opp-1'];
+      const parsed = stored ? JSON.parse(stored) : null;
+      return Array.isArray(parsed) ? parsed : ['opp-1'];
     } catch {
       return ['opp-1'];
     }
@@ -18,9 +19,10 @@ export const AppProvider = ({ children }) => {
 
   const toggleSaveOpportunity = useCallback((id) => {
     setSavedOpportunityIds((prev) => {
-      const updated = prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id];
+      const arr = Array.isArray(prev) ? prev : [];
+      const updated = arr.includes(id)
+        ? arr.filter((item) => item !== id)
+        : [...arr, id];
       try {
         localStorage.setItem(SAVED_OPPS_STORAGE_KEY, JSON.stringify(updated));
       } catch {
@@ -30,7 +32,10 @@ export const AppProvider = ({ children }) => {
     });
   }, []);
 
-  const isOpportunitySaved = useCallback((id) => savedOpportunityIds.includes(id), [savedOpportunityIds]);
+  const isOpportunitySaved = useCallback(
+    (id) => (Array.isArray(savedOpportunityIds) ? savedOpportunityIds.includes(id) : false),
+    [savedOpportunityIds]
+  );
 
   const value = useMemo(
     () => ({

@@ -149,7 +149,9 @@ REST_FRAMEWORK = {
 }
 
 # CORS configuration for React frontend
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True').lower() in ('true', '1', 't')
+# Secure default: Disallow wildcard origins in production or when credentials are transmitted
+_default_cors_all = 'True' if (DEBUG and not os.getenv('CORS_ALLOWED_ORIGINS')) else 'False'
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', _default_cors_all).lower() in ('true', '1', 't')
 
 DEFAULT_CORS_ORIGINS = [
     'http://localhost:5173',

@@ -102,10 +102,10 @@ const PERMISSION_CATEGORIES = [
   },
 ];
 
-const AccessControlPanel = () => {
+const AccessControlPanel = ({ initialSection = 'matrix' }) => {
   const { user, isSuperAdmin, hasPermission, refreshPermissions } = useAuth();
 
-  const [panelSection, setPanelSection] = useState('matrix'); // 'matrix' | 'assign' | 'audit'
+  const [panelSection, setPanelSection] = useState(initialSection); // 'matrix' | 'assign' | 'audit'
   const [roles, setRoles] = useState([]);
   const [selectedRole, setSelectedRole] = useState('admin');
   const [rolePermissions, setRolePermissions] = useState([]);

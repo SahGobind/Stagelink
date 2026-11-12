@@ -135,3 +135,74 @@ class VerifyPaymentView(APIView):
             }, status=status.HTTP_200_OK)
         except Exception as err:
             return handle_db_error(err)
+
+
+class PaymentListView(APIView):
+    """List all payment records and transactions in MongoDB Atlas for Admin oversight."""
+    def get(self, request):
+        try:
+            col = get_collection('payments')
+            cursor = col.find().sort("created_at", -1).limit(100)
+            results = [clean_doc(doc) for doc in cursor]
+            return Response({"count": len(results), "results": results}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class PaymentRefundView(APIView):
+    """Admin endpoint to process authorized payment refunds."""
+    def post(self, request, payment_id):
+        from starcast.utils import get_auth_user_from_request
+        from starcast.audit import log_audit_event
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            col = get_collection('payments')
+            query = {"$or": [{"id": payment_id}, {"order_id": payment_id}, {"txn_id": payment_id}]}
+            target = col.find_one(query)
+            if not target:
+                return Response({"error": "Payment record not found.", "code": "NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+            reason = request.data.get("reason", "Requested by customer / administrative refund")
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+            col.update_one(query, {
+                "$set": {
+                    "payment_status": "refunded",
+                    "status": "refunded",
+                    "refunded_at": now_iso,
+                    "refund_reason": reason,
+                    "refunded_by": auth_user.get("email"),
+                    "updated_at": now_iso
+                },
+                "$push": {
+                    "audit_trail": {
+                        "event": "refund_processed",
+                        "timestamp": now_iso,
+                        "actor": auth_user.get("email"),
+                        "reason": reason
+                    }
+                }
+            })
+
+            log_audit_event(
+                action="PAYMENT_REFUNDED",
+                actor=auth_user,
+                resource_type="payment",
+                resource_id=payment_id,
+                status="SUCCESS",
+                details={"amount": target.get("amount"), "reason": reason},
+                request=request
+            )
+
+            return Response({
+                "message": f"Payment {payment_id} successfully refunded.",
+                "status": "refunded",
+                "refunded_at": now_iso
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+

@@ -20,7 +20,8 @@ from .serializers import (
     RecruiterRegistrationSerializer,
 )
 from . import repository
-from starcast.utils import handle_db_error, clean_doc
+from starcast.utils import handle_db_error, clean_doc, get_auth_user_from_request
+from starcast.crypto import generate_signed_session_token as generate_session_token
 from starcast.rbac import (
     Permissions,
     ALL_PERMISSIONS,
@@ -37,59 +38,6 @@ from starcast.audit import log_audit_event, query_audit_logs
 import logging
 
 logger = logging.getLogger(__name__)
-
-def generate_session_token(user_id: str, role: str) -> str:
-    """Generate a consistent session token string for API consumers."""
-    return f"stg-token-{role}-{user_id}-{uuid.uuid4().hex[:12]}"
-
-
-def get_auth_user_from_request(request):
-    """
-    Extracts authenticated user from Authorization header or session token.
-    Token format: stg-token-{role}-{user_id}-{hash} or Bearer {token}
-    """
-    auth_header = request.headers.get("Authorization") or request.META.get("HTTP_AUTHORIZATION", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header[7:].strip()
-    else:
-        token = auth_header.strip()
-
-    if token:
-        if token.startswith("stg-token-"):
-            body = token[len("stg-token-"):]
-            parts = body.split("-")
-            if len(parts) >= 2:
-                # 1. If 3+ parts and last is a 12-char hex hash (standard generate_session_token format)
-                if len(parts) >= 3 and len(parts[-1]) == 12:
-                    candidate_id = "-".join(parts[1:-1])
-                    user = repository.find_user_by_id(candidate_id)
-                    if user:
-                        return user
-                # 2. Try the entire rest after the role segment
-                rest = "-".join(parts[1:])
-                user = repository.find_user_by_id(rest)
-                if user:
-                    return user
-                # 3. Fallback rsplit by '-'
-                try:
-                    candidate_id, _ = rest.rsplit("-", 1)
-                    user = repository.find_user_by_id(candidate_id)
-                    if user:
-                        return user
-                except Exception:
-                    pass
-
-        # 4. Check if token itself is directly a valid user ID
-        user = repository.find_user_by_id(token)
-        if user:
-            return user
-
-    # 5. Fallback: check query parameter or custom header if specified
-    fallback_id = request.query_params.get("id") or request.headers.get("X-User-Id")
-    if fallback_id and fallback_id != "me":
-        return repository.find_user_by_id(fallback_id)
-
-    return None
 
 
 class UserListView(APIView):
@@ -216,18 +164,7 @@ class UserLoginView(APIView):
             
             # Verify password hash
             stored_hash = user.get("password_hash")
-            password_valid = False
-            if stored_hash:
-                password_valid = check_password(raw_password, stored_hash)
-            elif raw_password:
-                # If newly registered offline or unhashed seed account, accept and store password hash
-                password_valid = True
-                try:
-                    repository.update_user(user["id"], {"password_hash": make_password(raw_password)})
-                except Exception:
-                    pass
-
-            if not password_valid:
+            if not stored_hash or not check_password(raw_password, stored_hash):
                 return Response(
                     {"error": "Invalid email or password.", "code": "INVALID_CREDENTIALS"},
                     status=status.HTTP_401_UNAUTHORIZED
@@ -363,17 +300,23 @@ class UserProfilePublishView(APIView):
     """
     def post(self, request):
         auth_user = get_auth_user_from_request(request)
-        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None)
+        if not auth_user:
+            return Response({
+                "error": "Authentication required to publish profile.",
+                "code": "AUTHENTICATION_REQUIRED"
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_id = request.query_params.get("id") or request.data.get("id") or auth_user.get("id")
         if not user_id:
             return Response({"error": "User ID is required to publish profile.", "code": "USER_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Enforce security: Candidates cannot publish another candidate's profile
-        if auth_user and auth_user.get("role") not in ("admin", "operations"):
+        if auth_user.get("role") not in ("admin", "operations", "super_admin"):
             auth_ids = {str(auth_user.get("id")), str(auth_user.get("_id", ""))}
             if user_id not in ("me", auth_user.get("id")) and str(user_id) not in auth_ids:
                 return Response({"error": "You are not authorized to publish another user's profile.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
 
-        if user_id == "me" and auth_user:
+        if user_id == "me":
             user_id = auth_user.get("id") or str(auth_user.get("_id"))
 
         try:
@@ -410,17 +353,23 @@ class UserProfileUnpublishView(APIView):
     """Unpublish candidate profile so it is hidden from public Discover Talent."""
     def post(self, request):
         auth_user = get_auth_user_from_request(request)
-        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None)
-        if not user_id:
-            return Response({"error": "User ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not auth_user:
+            return Response({
+                "error": "Authentication required to unpublish profile.",
+                "code": "AUTHENTICATION_REQUIRED"
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
-        if user_id == "me" and auth_user:
+        user_id = request.query_params.get("id") or request.data.get("id") or auth_user.get("id")
+        if not user_id:
+            return Response({"error": "User ID is required.", "code": "USER_ID_REQUIRED"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if user_id == "me":
             user_id = auth_user.get("id") or str(auth_user.get("_id"))
 
-        if auth_user and auth_user.get("role") not in ("admin", "operations"):
+        if auth_user.get("role") not in ("admin", "operations", "super_admin"):
             auth_ids = {str(auth_user.get("id")), str(auth_user.get("_id", ""))}
             if user_id not in ("me", auth_user.get("id")) and str(user_id) not in auth_ids:
-                return Response({"error": "Not authorized.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+                return Response({"error": "Not authorized to unpublish another candidate's profile.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             updated = repository.update_candidate_full_profile(user_id, {}, publish=False)
@@ -513,13 +462,7 @@ class RecruiterLoginView(APIView):
                 return Response({"error": "Invalid recruiter credentials.", "code": "INVALID_CREDENTIALS"}, status=status.HTTP_401_UNAUTHORIZED)
             
             stored_hash = user.get("password_hash")
-            valid = False
-            if stored_hash:
-                valid = check_password(raw_password, stored_hash)
-            elif raw_password:
-                valid = True
-
-            if not valid:
+            if not stored_hash or not check_password(raw_password, stored_hash):
                 return Response({"error": "Invalid recruiter credentials.", "code": "INVALID_CREDENTIALS"}, status=status.HTTP_401_UNAUTHORIZED)
 
             token = generate_session_token(user["id"], user.get("role", "recruiter"))
@@ -549,7 +492,26 @@ class RecruiterProfileView(APIView):
 
     def put(self, request):
         auth_user = get_auth_user_from_request(request)
-        user_id = request.query_params.get("id") or request.data.get("id") or (auth_user["id"] if auth_user else None) or "rec-marcus"
+        if not auth_user:
+            return Response({
+                "error": "Authentication required to update company profile.",
+                "code": "AUTHENTICATION_REQUIRED"
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
+        user_id = request.query_params.get("id") or request.data.get("id") or auth_user.get("id")
+
+        # Enforce security: Recruiters cannot edit another recruiter's company profile
+        if auth_user.get("role") not in ("admin", "operations", "super_admin"):
+            auth_ids = {str(auth_user.get("id")), str(auth_user.get("_id", ""))}
+            if user_id not in ("me", auth_user.get("id")) and str(user_id) not in auth_ids:
+                return Response({
+                    "error": "You are not authorized to edit another recruiter's profile.",
+                    "code": "FORBIDDEN"
+                }, status=status.HTTP_403_FORBIDDEN)
+
+        if user_id == "me":
+            user_id = auth_user.get("id") or str(auth_user.get("_id"))
+
         try:
             user = repository.find_user_by_id(user_id)
             if not user:
@@ -575,6 +537,19 @@ class RecruiterProfileView(APIView):
                 val = data.get("phoneNumber") or data.get("phone_number")
                 updates["phoneNumber"] = val
                 updates["phone_number"] = val
+            if "yearsOfExperience" in data or "years_of_experience" in data:
+                val = data.get("yearsOfExperience") or data.get("years_of_experience")
+                updates["yearsOfExperience"] = val
+                updates["years_of_experience"] = val
+            if "experienceBio" in data or "experience_bio" in data or "bio" in data:
+                val = data.get("experienceBio") or data.get("experience_bio") or data.get("bio")
+                updates["experienceBio"] = val
+                updates["bio"] = val
+            if "pastProductions" in data or "past_productions" in data or "experience" in data:
+                val = data.get("pastProductions") or data.get("past_productions") or data.get("experience")
+                updates["pastProductions"] = val
+                updates["past_productions"] = val
+                updates["experience"] = val
                 
             updated = repository.update_user(user["id"], updates)
             return Response({
@@ -923,5 +898,517 @@ class UserPasswordChangeView(APIView):
         )
         
         return Response({"message": "Password changed successfully. Your account is secured."}, status=status.HTTP_200_OK)
+
+
+class AdminDashboardOverviewView(APIView):
+    """
+    Authoritative aggregated analytics and overview metrics for StageLink Admin Suite.
+    Directly queries live MongoDB Atlas collections.
+    """
+    def get(self, request):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin", "operations"):
+            return Response({"error": "Admin access required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            from starcast.db import get_collection
+
+            users_col = get_collection('users')
+            opps_col = get_collection('casting_opportunities')
+            apps_col = get_collection('applications')
+            payments_col = get_collection('payments')
+            audit_col = get_collection('audit_logs')
+
+            # 1. Total Counts
+            total_users = users_col.count_documents({}) if users_col is not None else 0
+            total_artists = users_col.count_documents({"role": {"$in": ["candidate", "talent"]}}) if users_col is not None else 0
+            total_companies = users_col.count_documents({"role": {"$in": ["recruiter", "production_company"]}}) if users_col is not None else 0
+            
+            # Active casting calls
+            active_casting_calls = opps_col.count_documents({"status": {"$in": ["published", "open", "active"]}}) if opps_col is not None else 0
+            
+            # Total applications
+            total_applications = apps_col.count_documents({}) if apps_col is not None else 0
+
+            # Pending verifications: unverified users + pending moderation opportunities
+            pending_users = users_col.count_documents({"$or": [{"is_verified": False}, {"status": "pending"}, {"review_status": "pending"}]}) if users_col is not None else 0
+            pending_opps = opps_col.count_documents({"status": {"$in": ["pending", "pending_moderation", "review"]}}) if opps_col is not None else 0
+            pending_verifications = pending_users + pending_opps
+
+            # Total revenue calculated from payments collection
+            total_revenue = 0
+            recent_payments = []
+            if payments_col is not None:
+                pipeline = [
+                    {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+                ]
+                agg = list(payments_col.aggregate(pipeline))
+                if agg:
+                    total_revenue = agg[0].get("total", 0)
+                
+                pay_cursor = payments_col.find().sort("created_at", -1).limit(6)
+                recent_payments = [clean_doc(p) for p in pay_cursor]
+
+            # 2. Recent Registrations (latest 6 users)
+            recent_users_cur = users_col.find({}, {"password_hash": 0}).sort("created_at", -1).limit(6) if users_col is not None else []
+            recent_registrations = [clean_doc(u, drop_password=True) for u in recent_users_cur]
+
+            # 3. Recent Platform Activity (latest 6 audit logs)
+            recent_activity = []
+            if audit_col is not None:
+                audit_cur = audit_col.find().sort("timestamp", -1).limit(6)
+                recent_activity = [clean_doc(a) for a in audit_cur]
+
+            # 4. Casting Call Performance (grouped by category)
+            category_performance = []
+            if opps_col is not None:
+                pipeline_cat = [
+                    {"$group": {"_id": "$category", "count": {"$sum": 1}}},
+                    {"$sort": {"count": -1}},
+                    {"$limit": 6}
+                ]
+                for item in opps_col.aggregate(pipeline_cat):
+                    cat_name = item.get("_id") or "Feature Film"
+                    category_performance.append({
+                        "category": cat_name,
+                        "count": item.get("count", 0)
+                    })
+
+            metrics_data = {
+                "total_users": total_users,
+                "total_artists": total_artists,
+                "total_companies": total_companies,
+                "active_casting_calls": active_casting_calls,
+                "total_applications": total_applications,
+                "pending_verifications": pending_verifications,
+                "total_revenue": total_revenue,
+                "currency": "INR",
+            }
+
+            return Response({
+                "metrics": metrics_data,
+                "kpis": metrics_data,
+                "recent_registrations": recent_registrations,
+                "recent_activity": recent_activity,
+                "category_performance": category_performance,
+                "recent_payments": recent_payments,
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class UserAdminToggleVerificationView(APIView):
+    """Admin endpoint to approve/verify or unverify a user account."""
+    def post(self, request, user_id):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin", "operations"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            target = repository.find_user_by_id(user_id)
+            if not target:
+                return Response({"error": "User not found.", "code": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+            current_status = target.get("is_verified", False)
+            new_status = not current_status
+
+            updated = repository.update_user(target["id"], {
+                "is_verified": new_status,
+                "status": "active" if new_status else "pending",
+                "verification_status": "verified" if new_status else "unverified"
+            })
+
+            log_audit_event(
+                action="USER_VERIFICATION_TOGGLED",
+                actor=auth_user,
+                resource_type="user",
+                resource_id=target["id"],
+                status="SUCCESS",
+                details={"previous_verified": current_status, "new_verified": new_status},
+                request=request
+            )
+
+            return Response({
+                "message": f"User verification status updated to {new_status}.",
+                "user": clean_doc(updated, drop_password=True),
+                "is_verified": new_status
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class UserAdminDeleteView(APIView):
+    """Admin endpoint to safely remove or deactivate a user."""
+    def delete(self, request, user_id):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            target = repository.find_user_by_id(user_id)
+            if not target:
+                return Response({"error": "User not found.", "code": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+            if target.get("id") == "superadmin-1" or target.get("role") == "super_admin":
+                return Response({"error": "Super Admin accounts cannot be deleted.", "code": "PROTECTED_ACCOUNT"}, status=status.HTTP_403_FORBIDDEN)
+
+            col = repository.get_users_col()
+            col.delete_one({"id": target["id"]})
+
+            log_audit_event(
+                action="USER_DELETED",
+                actor=auth_user,
+                resource_type="user",
+                resource_id=target["id"],
+                status="SUCCESS",
+                details={"deleted_user_email": target.get("email"), "deleted_user_role": target.get("role")},
+                request=request
+            )
+
+            return Response({"message": f"User '{target.get('email')}' deleted successfully."}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class UserAdminUpdateStatusView(APIView):
+    """Admin endpoint to activate or suspend any user account."""
+    def post(self, request, user_id):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin", "operations"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        new_status = request.data.get("status")
+        if new_status not in ("active", "suspended", "pending"):
+            return Response({"error": "Invalid status. Must be 'active', 'suspended', or 'pending'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            target = repository.find_user_by_id(user_id)
+            if not target:
+                return Response({"error": "User not found.", "code": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+            if target.get("role") == "super_admin" and new_status == "suspended":
+                return Response({"error": "Super Admin accounts cannot be suspended.", "code": "PROTECTED_ACCOUNT"}, status=status.HTTP_403_FORBIDDEN)
+
+            updated = repository.update_user(target["id"], {
+                "status": new_status,
+                "is_active": (new_status == "active")
+            })
+
+            log_audit_event(
+                action="USER_STATUS_UPDATED",
+                actor=auth_user,
+                resource_type="user",
+                resource_id=target["id"],
+                status="SUCCESS",
+                details={"previous_status": target.get("status"), "new_status": new_status},
+                request=request
+            )
+
+            return Response({
+                "message": f"User account status updated to '{new_status}'.",
+                "user": clean_doc(updated, drop_password=True)
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class UserAdminUpdateProfileView(APIView):
+    """Super Admin endpoint to edit permitted user information."""
+    def put(self, request, user_id):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            target = repository.find_user_by_id(user_id)
+            if not target:
+                return Response({"error": "User not found.", "code": "USER_NOT_FOUND"}, status=status.HTTP_404_NOT_FOUND)
+
+            data = request.data
+            updates = {}
+            if "fullName" in data or "full_name" in data:
+                val = data.get("fullName") or data.get("full_name")
+                updates["fullName"] = val
+                updates["full_name"] = val
+            if "email" in data and data["email"].strip():
+                updates["email"] = data["email"].strip().lower()
+            if "role" in data and data["role"] in ("candidate", "recruiter", "admin", "operations"):
+                updates["role"] = data["role"]
+            if "category" in data:
+                updates["category"] = data["category"]
+            if "location" in data:
+                updates["location"] = data["location"]
+            if "phoneNumber" in data or "phone" in data:
+                val = data.get("phoneNumber") or data.get("phone")
+                updates["phoneNumber"] = val
+                updates["phone_number"] = val
+            if "headline" in data:
+                updates["headline"] = data["headline"]
+            if "bio" in data:
+                updates["bio"] = data["bio"]
+            if "is_verified" in data:
+                updates["is_verified"] = bool(data["is_verified"])
+            if "status" in data and data["status"] in ("active", "suspended", "pending"):
+                updates["status"] = data["status"]
+                updates["is_active"] = (data["status"] == "active")
+
+            updated = repository.update_user(target["id"], updates)
+
+            log_audit_event(
+                action="USER_PROFILE_ADMIN_UPDATED",
+                actor=auth_user,
+                resource_type="user",
+                resource_id=target["id"],
+                status="SUCCESS",
+                details={"updated_fields": list(updates.keys())},
+                request=request
+            )
+
+            return Response({
+                "message": f"Profile for '{target.get('email')}' updated successfully.",
+                "user": clean_doc(updated, drop_password=True)
+            }, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class UserAdminCreateView(APIView):
+    """Super Admin endpoint to directly provision and register a user account."""
+    def post(self, request):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+        email = data.get("email", "").strip().lower()
+        password = data.get("password", "")
+        role = data.get("role", "candidate")
+        full_name = data.get("fullName") or data.get("full_name") or "New Member"
+
+        if not email or not password:
+            return Response({"error": "Email and password are required.", "code": "MISSING_CREDENTIALS"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            existing = repository.find_user_by_email(email)
+            if existing:
+                return Response({"error": "An account with this email already exists.", "code": "USER_EXISTS"}, status=status.HTTP_409_CONFLICT)
+
+            is_valid, errs = validate_password_strength(password)
+            if not is_valid:
+                return Response({"error": "Password does not meet security requirements.", "details": errs}, status=status.HTTP_400_BAD_REQUEST)
+
+            import uuid
+            new_id = f"usr-{uuid.uuid4().hex[:12]}"
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            password_hash = make_password(password)
+
+            user_doc = {
+                "id": new_id,
+                "email": email,
+                "password_hash": password_hash,
+                "fullName": full_name,
+                "full_name": full_name,
+                "role": role,
+                "category": data.get("category", "Actor"),
+                "location": data.get("location", "Mumbai, India"),
+                "phoneNumber": data.get("phone", ""),
+                "is_verified": data.get("is_verified", True),
+                "status": "active",
+                "is_active": True,
+                "created_at": now_iso,
+                "updated_at": now_iso,
+            }
+
+            users_col = repository.get_users_col()
+            users_col.insert_one(user_doc)
+
+            log_audit_event(
+                action="USER_ADMIN_CREATED",
+                actor=auth_user,
+                resource_type="user",
+                resource_id=new_id,
+                status="SUCCESS",
+                details={"created_email": email, "assigned_role": role},
+                request=request
+            )
+
+            return Response({
+                "message": f"User '{email}' provisioned successfully.",
+                "user": clean_doc(user_doc, drop_password=True)
+            }, status=status.HTTP_201_CREATED)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class AdminPlatformSettingsView(APIView):
+    """Super Admin endpoint to manage and retrieve platform-wide configuration settings."""
+    def get(self, request):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            from starcast.db import get_collection
+            settings_col = get_collection('platform_settings')
+            doc = settings_col.find_one({"id": "global_config"}) if settings_col is not None else None
+
+            default_settings = {
+                "general": {
+                    "platform_name": "StageLink",
+                    "tagline": "International Talent & Casting Network",
+                    "contact_email": "support@stagelink.com",
+                    "contact_phone": "+91 98765 43210",
+                    "default_currency": "INR",
+                    "timezone": "Asia/Kolkata (IST)",
+                },
+                "branding": {
+                    "accent_color": "#FA5A36",
+                    "dark_navy": "#0B1120",
+                    "logo_url": "/assets/stagelink-logo.png",
+                    "favicon_url": "/favicon.ico",
+                },
+                "email": {
+                    "smtp_host": "smtp.sendgrid.net",
+                    "smtp_port": "587",
+                    "sender_name": "StageLink Notifications",
+                    "sender_email": "no-reply@stagelink.com",
+                    "enable_tls": True,
+                },
+                "payments": {
+                    "razorpay_enabled": True,
+                    "stripe_enabled": True,
+                    "escrow_enabled": True,
+                    "environment": "live",
+                    "currency": "INR",
+                    "platform_fee_percent": 5.0,
+                },
+                "security": {
+                    "mfa_enforced": False,
+                    "session_timeout_minutes": 120,
+                    "password_min_length": 8,
+                    "rate_limiting_enabled": True,
+                },
+                "file_media": {
+                    "max_video_size_mb": 100,
+                    "max_image_size_mb": 10,
+                    "supported_video_formats": "mp4, mov, webm",
+                    "supported_image_formats": "jpg, png, webp",
+                },
+                "seo": {
+                    "meta_title": "StageLink | Premier Casting & Talent Audition Suite",
+                    "meta_description": "Connect verified actors, models, and voice artists with top production houses.",
+                    "indexing_enabled": True,
+                },
+                "maintenance": {
+                    "maintenance_mode": False,
+                    "maintenance_message": "StageLink is undergoing scheduled platform enhancements. We will be back shortly.",
+                }
+            }
+
+            if doc:
+                merged = {**default_settings, **clean_doc(doc)}
+                return Response(merged, status=status.HTTP_200_OK)
+            return Response(default_settings, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+    def post(self, request):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            from starcast.db import get_collection
+            settings_col = get_collection('platform_settings')
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+            new_settings = request.data
+            new_settings["id"] = "global_config"
+            new_settings["updated_at"] = now_iso
+            new_settings["updated_by"] = auth_user.get("email")
+
+            if settings_col is not None:
+                settings_col.update_one({"id": "global_config"}, {"$set": new_settings}, upsert=True)
+
+            log_audit_event(
+                action="PLATFORM_SETTINGS_UPDATED",
+                actor=auth_user,
+                resource_type="settings",
+                resource_id="global_config",
+                status="SUCCESS",
+                details={"updated_sections": list(new_settings.keys())},
+                request=request
+            )
+
+            return Response({"message": "Platform configuration settings successfully updated and persisted to MongoDB Atlas."}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
+class AdminCMSView(APIView):
+    """Super Admin endpoint to manage website banners, FAQs, and CMS announcements."""
+    def get(self, request):
+        try:
+            from starcast.db import get_collection
+            cms_col = get_collection('platform_cms')
+            doc = cms_col.find_one({"id": "homepage_cms"}) if cms_col is not None else None
+
+            defaults = {
+                "banner": {
+                    "enabled": True,
+                    "text": "Auditions open for Feature Film: Lead & Supporting Characters (Mumbai & Delhi).",
+                    "link": "/admin/casting-calls",
+                    "badge": "Hot Notice",
+                    "theme": "orange"
+                },
+                "faqs": [
+                    {"q": "How does artist verification work on StageLink?", "a": "Our administrative team manually verifies government identification, previous film/theatre credits, and active representation agency references."},
+                    {"q": "How are production studio casting payments protected?", "a": "All transactions are escrowed or settled through bank-grade encrypted payment gateways with instant reconciliation."},
+                    {"q": "Can production houses review high-definition video reels?", "a": "Yes, talent profiles support embedded 4K showreels and direct video audition submissions."}
+                ],
+                "announcements": [
+                    {"id": "ann-1", "title": "Platform Redesign 2.0 Live", "date": "Today", "author": "Super Admin"}
+                ]
+            }
+
+            if doc:
+                return Response({**defaults, **clean_doc(doc)}, status=status.HTTP_200_OK)
+            return Response(defaults, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+    def post(self, request):
+        auth_user = get_auth_user_from_request(request)
+        if not auth_user or auth_user.get("role") not in ("admin", "super_admin"):
+            return Response({"error": "Admin clearance required.", "code": "FORBIDDEN"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            from starcast.db import get_collection
+            cms_col = get_collection('platform_cms')
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+            cms_data = request.data
+            cms_data["id"] = "homepage_cms"
+            cms_data["updated_at"] = now_iso
+            cms_data["updated_by"] = auth_user.get("email")
+
+            if cms_col is not None:
+                cms_col.update_one({"id": "homepage_cms"}, {"$set": cms_data}, upsert=True)
+
+            log_audit_event(
+                action="CMS_CONTENT_UPDATED",
+                actor=auth_user,
+                resource_type="cms",
+                resource_id="homepage_cms",
+                status="SUCCESS",
+                details={"updated_keys": list(cms_data.keys())},
+                request=request
+            )
+
+            return Response({"message": "Website content and announcements persisted successfully."}, status=status.HTTP_200_OK)
+        except Exception as err:
+            return handle_db_error(err)
+
+
 
 

@@ -18,12 +18,27 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '')}/api/support`
   : '/api/support';
 
-const fetchWithTimeout = async (url, options = {}, timeoutMs = 3000) => {
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('starcast_jwt_token');
+  const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 4000) => {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
+  const authHeaders = getAuthHeaders();
+  const mergedHeaders = {
+    ...authHeaders,
+    ...(options.headers || {}),
+  };
   try {
     const res = await fetch(url, {
       ...options,
+      headers: mergedHeaders,
       signal: controller.signal,
     });
     return res;
@@ -608,13 +623,14 @@ export const supportService = {
   },
 
   /**
-   * Retrieves summary metrics for the Operation Team dashboard.
+   * Retrieves summary metrics for the Support / Operation dashboard.
    */
-  getMetrics: async () => {
+  getMetrics: async ({ role = 'operations', userId = '' } = {}) => {
     try {
-      const res = await fetchWithTimeout(`${API_BASE_URL}/metrics/?role=operations`, {
-        headers: { Accept: 'application/json' },
-      });
+      const params = new URLSearchParams();
+      if (role) params.append('role', role);
+      if (userId) params.append('user_id', userId);
+      const res = await fetchWithTimeout(`${API_BASE_URL}/metrics/?${params.toString()}`);
       if (res.ok) {
         return await res.json();
       }
@@ -632,5 +648,81 @@ export const supportService = {
       candidates_count: all.filter((t) => t.userRole === 'candidate').length,
       recruiters_count: all.filter((t) => t.userRole === 'recruiter' || t.userRole === 'admin').length,
     };
+  },
+
+  /**
+   * Assign or reassign ticket (Support Lead / Super Admin only).
+   */
+  assignTicket: async (ticketId, { assignedStaffId, assignedTo }) => {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/assign/`, {
+      method: 'POST',
+      body: JSON.stringify({
+        assigned_staff_id: assignedStaffId,
+        assigned_to: assignedTo,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to assign ticket.');
+    }
+    const data = await res.json();
+    return normalizeTicket(data.ticket);
+  },
+
+  /**
+   * Escalate ticket to Tier-2 / Lead attention.
+   */
+  escalateTicket: async (ticketId, { reason, priority = 'high' }) => {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/escalate/`, {
+      method: 'POST',
+      body: JSON.stringify({
+        reason,
+        priority,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to escalate ticket.');
+    }
+    const data = await res.json();
+    return normalizeTicket(data.ticket);
+  },
+
+  /**
+   * Read-only minimal customer context adhering to Principle of Least Privilege.
+   */
+  getCustomerContext: async (ticketId) => {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/tickets/${ticketId}/customer-context/`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch customer context.');
+    }
+    return await res.json();
+  },
+
+  /**
+   * List support team members & active workloads (Support Lead only).
+   */
+  getTeam: async () => {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/team/`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch support team.');
+    }
+    const data = await res.json();
+    return data.results || [];
+  },
+
+  /**
+   * Knowledge base articles & canned responses for support staff.
+   */
+  getKnowledgeBase: async () => {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/knowledge-base/`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to fetch knowledge base.');
+    }
+    const data = await res.json();
+    return data.articles || [];
   },
 };

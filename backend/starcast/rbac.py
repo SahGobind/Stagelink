@@ -53,9 +53,19 @@ class Permissions:
     # Support Tickets
     SUPPORT_CREATE = "support:create"
     SUPPORT_VIEW_OWN = "support:view_own"
+    SUPPORT_VIEW_ASSIGNED = "support:view_assigned"
     SUPPORT_VIEW_ALL = "support:view_all"
     SUPPORT_UPDATE_STATUS = "support:update_status"
     SUPPORT_REPLY = "support:reply"
+    SUPPORT_INTERNAL_NOTE = "support:internal_note"
+    SUPPORT_ASSIGN = "support:assign"
+    SUPPORT_REOPEN = "support:reopen"
+    SUPPORT_ESCALATE = "support:escalate"
+    SUPPORT_ACCESS_PORTAL = "support:access_portal"
+    SUPPORT_MANAGE_CATEGORIES = "support:manage_categories"
+    SUPPORT_VIEW_REPORTS = "support:view_reports"
+    SUPPORT_VIEW_AUDIT = "support:view_audit"
+    SUPPORT_MANAGE_TEAM = "support:manage_team"
 
     # Roles & Access Control Management
     ROLE_VIEW = "role:view"
@@ -126,6 +136,33 @@ DEFAULT_ROLE_PERMISSIONS: Dict[str, List[str]] = {
         Permissions.SUPPORT_UPDATE_STATUS,
         Permissions.SUPPORT_REPLY,
         Permissions.ADMIN_ACCESS,
+    ],
+
+    "support_lead": [
+        Permissions.SUPPORT_ACCESS_PORTAL,
+        Permissions.SUPPORT_VIEW_ASSIGNED,
+        Permissions.SUPPORT_VIEW_ALL,
+        Permissions.SUPPORT_VIEW_OWN,
+        Permissions.SUPPORT_REPLY,
+        Permissions.SUPPORT_INTERNAL_NOTE,
+        Permissions.SUPPORT_UPDATE_STATUS,
+        Permissions.SUPPORT_ASSIGN,
+        Permissions.SUPPORT_REOPEN,
+        Permissions.SUPPORT_ESCALATE,
+        Permissions.SUPPORT_MANAGE_CATEGORIES,
+        Permissions.SUPPORT_VIEW_REPORTS,
+        Permissions.SUPPORT_VIEW_AUDIT,
+        Permissions.SUPPORT_MANAGE_TEAM,
+    ],
+
+    "support_agent": [
+        Permissions.SUPPORT_ACCESS_PORTAL,
+        Permissions.SUPPORT_VIEW_ASSIGNED,
+        Permissions.SUPPORT_VIEW_OWN,
+        Permissions.SUPPORT_REPLY,
+        Permissions.SUPPORT_INTERNAL_NOTE,
+        Permissions.SUPPORT_UPDATE_STATUS,
+        Permissions.SUPPORT_ESCALATE,
     ],
 
     "recruiter": [
